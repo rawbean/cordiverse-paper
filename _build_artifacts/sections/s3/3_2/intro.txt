@@ -1,0 +1,11 @@
+3.2.  Reactive Coeffects
+Spatial composability is the ability for components to declare dependencies on one another and 
+for the system to resolve, provide, and withdraw those dependencies at runtime. This requires 
+that dependency satisfaction be re-evaluated whenever the shared context changes, so that a 
+component activates when its dependencies become available and deactivates when they are 
+withdrawn. We therefore model dependencies of a component as a specification and classify 
+each change to the context, against that specification, as activating, deactivating, or neutral. 
+Classifying against the specification is what detects a change in satisfaction; responding to 
+that classification is what drives activation and deactivation. We call such coeffects reactive: by 
+classifying context changes and driving activation and deactivation from them, correct coeffect 
+ordering becomes a structural guarantee.

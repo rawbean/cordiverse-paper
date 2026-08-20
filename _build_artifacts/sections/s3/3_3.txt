@@ -1,0 +1,227 @@
+3.3.  The Context Paradigm
+Section 3.1 and Section 3.2 each act on a context, the first as the carrier of effects and the second 
+as the carrier of coeffects, leaving open what a single context carrying both looks like. This 
+section gives that unification a concrete construction, assembles from the coeffects an observational equivalence that supplies the effect independence Section 3.1.3 leaves open, and argues 
+that the resulting context type constitutes a programming paradigm in its own right.
+3.3.1.  Unified Context
+For a context Γ, the effect context 𝜕Γ (Section 3.1) provides a higher-level abstraction, carrying 
+the previous-level context and that level’s accumulator ( Definition 2). Making this structure 
+recursive and combining it with the coeffect context Σ yields the following type:
+Definition 32. The context type Γ∞ is defined as:
+Γ∞ ≔ 𝜇Γ. Γ × (Γ → Γ) × Σ (31)
+where the three projections are:
+• Γ: the current context state (recursive);
+• Γ → Γ: the accumulator, which recovers this level’s effects;
+• Σ: the coeffect context carrying dependency information.
+Under this definition, effect maps 𝔈Γ∞
+ to itself, unifying the 𝜕-tower into a single selfsimilar type. The coeffect context Σ is structurally integrated: dependency operations (set, get) 
+act on Σ, and the accumulator tracks their reversal. Since the type family 𝒱︀ underlying Σ is 
+unconstrained, any state the system needs to share across components can be encoded as a 
+dependency with an appropriate value type— Σ subsumes all shared mutable states, not just 
+inter-component dependencies. Every interaction between a component and its environment 
+passes through this single entity.
+Hierarchical composition. The recursive structure of Γ∞ supports hierarchical control: a 
+parent context aggregates multiple child-level effects, forming a tree-shaped control structure 
+that maintains modularity while enabling unified cross-level management. The effect transformation realizes a literal “plug-in” metaphor:
+• Loading a component corresponds to executing its effects (plugging in);
+• Unloading a component corresponds to recovering its effects (unplugging, without 
+affecting other running components);
+• Components at different levels of the hierarchy are independently loadable and unloadable; a parent context aggregates and manages the effects of all its children, enabling 
+arbitrarily nested composition.
+3.3.2.  Observational Equivalence
+The recovery guarantee of Section 3.1 asserts an equality of states ( Theorem 7), which is an 
+idealization, because the physical state cannot be recovered as it stood. For example, free 
+releases a block to the allocator without restoring the layout the heap had before malloc; and 
+a generative name is not restored by the inverse that discards it, since the next creation draws 
+a fresh one [39]. The equalities of Section 3 are therefore to be read up to an equivalence ≃, 
+and we take ≃ to be an observational equivalence: two states are related when no observer can 
+distinguish them. Comparing behaviour rather than representation is the established route to 
+program equivalence [40], and the relation such a comparison yields depends on what the 
+observer is given to work with [41]. What an observer of a context is given is the coeffects it 
+carries, each of which arrives with an equivalence of its own ( Definition 24), so the relation 
+on a context is assembled from theirs. Assembling it is the business of this subsection, and 
+quotienting by it is what buys the independence Section 3.1.3 asks for.
+Definition 33. Two coeffect contexts are related when they bind the same keys to related values, 
+and two states of a context when their coeffect projections are:
+𝜎 ≃ 𝜎′ ≔ dom(𝜎) = dom(𝜎′) ∧ ∀𝑘 ∈ dom(𝜎). 𝜎(𝑘) ≃𝑘 𝜎′(𝑘)
+𝛾 ≃ 𝛾′ ≔ 𝜎𝛾 ≃ 𝜎𝛾′
+(32)
+writing 𝜎𝛾 for the coeffect projection of 𝛾 (Definition 32).
+The part of a state that no key binds is thereby forgotten, and forgetting it is what lets 
+Theorem 7 be read up to ≃ at all: the heap layout and the generative name of the examples 
+above lie outside the relation unless some key binds them. What Section  3.2.2 needs of ≃ 
+follows rather than being assumed. Related states have the same domain, so they agree on the 
+satisfaction predicate 𝜎 ⊧ 𝑑 and on the classification notify𝑑 of Definition 26, and reactivity is a 
+property of Σ/ ≃.
+Calling the relation observational is a claim about each ≃𝑘 , namely that it separates no more 
+than the operations of 𝑘 can tell apart. An observer of a value runs those operations and reads 
+their outcomes.
+Definition 34. Let 𝑉  carry a set 𝒜︀ of operations in the sense of Definition 24, and write 𝔐(𝑎) 
+for the transformation monoid (Definition 17) of the effect functions 𝑎(𝑥) over every argument 
+𝑥 : 𝑋𝑎. A test over 𝒜︀ is a finite word over the generators of the monoids 𝔐(𝑎), 𝑎 ∈ 𝒜︀, each letter 
+applied to the value the letters before it left; its outcomes are those the letters that are forward 
+maps of operations yield along the way, and it is undefined where a precondition fails. Values 
+𝑣, 𝑣′ : 𝑉  are indistinguishable, written 𝑣 ≈
+𝒜︀
+𝑣′, when every test over 𝒜︀ is defined at both or at 
+neither and yields the same outcomes at both.
+Lemma 35. Indistinguishability is the coarsest relation the operations respect. That is,
+1. every operation of 𝒜︀ respects ≈
+𝒜︀
+ in the sense of Definition 24;
+2. every equivalence that every operation of 𝒜︀ respects is contained in ≈
+𝒜︀
+.
+Every admissible choice of ≃𝑘  is therefore contained in ≈
+𝒜︀𝑘
+, and ≈
+𝒜︀𝑘
+ is itself admissible.
+Proof.
+1. Let 𝑣 ≈
+𝒜︀
+𝑣′ and let 𝑎 ∈ 𝒜︀ be applied to an argument. Prefixing a test by one letter is again 
+a test, so the values the forward map reaches are indistinguishable, as are the values any 
+one yielded inverse reaches from indistinguishable arguments; the one-letter test gives 
+definedness at both or neither and equality of the outcome.
+2. Let 𝑅 be such an equivalence and 𝑣𝑅𝑣′. Each letter of a test is a forward map or a yielded 
+inverse of an operation, and respect carries 𝑅 along either, keeping the values reached 
+related and the outcomes equal at every letter. Hence every test agrees at 𝑣 and 𝑣′. □
+Substituting ≃ for = throughout is not by itself enough, because an effect function returns 
+an inverse as well as a state, and two states that ≃ identifies have to yield inverses ≃ identifies 
+as well.
+Definition 36. A map 𝑓 : Γ → Γ respects ≃ when
+∀𝛾, 𝛾′ ∈ Γ. 𝛾 ≃ 𝛾′ ⇒ 𝑓(𝛾) ≃ 𝑓(𝛾′) (33)
+Two maps are related when they agree at every state, and two pairs in 𝜕Γ when both components are:
+𝑓 ≃ 𝑔 ≔ ∀𝛾 ∈ Γ. 𝑓(𝛾) ≃ 𝑔(𝛾)
+(𝛿, 𝑔) ≃ (𝛿′, 𝑔′) ≔ 𝛿 ≃ 𝛿′ ∧ 𝑔 ≃ 𝑔′ (34)
+A map respecting ≃ is one that descends to Γ/ ≃, and two maps related by ≃ are two that 
+descend to the same map there. An effect function needs both: the first so that the state it 
+computes is determined on the quotient, the second so that the inverse it returns is.
+Definition 37. Read Definition 8 up to ≃: an 𝑒 ∈ 𝔈Γ lies in 𝔈∗
+Γ when 𝑒 respects ≃ as a map Γ →
+𝜕Γ and, writing (𝛿, 𝑔) = 𝑒(𝛾), for every 𝛾 ∈ Γ
+1. 𝑔(𝛿) ≃ 𝛾;
+2. 𝑔 respects ≃.
+Taking ≃ to be equality on Γ recovers Definition 8.
+Lemma 38. With 𝔈∗
+Γ read as in Definition 37, every equality of states asserted in Section 3.1 holds 
+with = replaced by ≃, and the accumulator of every state reachable from (𝛾0, idΓ) respects ≃.
+Proof. An accumulator is a composition of inverses, each respecting ≃ by Definition 37(2), and a 
+composition of maps respecting ≃ respects ≃, the base case being idΓ. The proofs of Section 3.1 
+then go through unchanged, respect being what carries a relation through an inverse: from 
+𝑔2(𝛿2) ≃ 𝛿1 and 𝑔1(𝛿1) ≃ 𝛾 respect gives (𝑔1 ∘ 𝑔2)(𝛿2) ≃ 𝛾, which is the step each composition 
+of inverses takes, and the soundness invariant of Theorem 7 reads 𝜑(𝛾) ≃ 𝛾0 by that step. □
+The commutation Definition 19 asks for is read up to ≃ by the same lemma, and reading it 
+that way is what makes it attainable at all: two operations may leave values that ≃𝑘  identifies and 
+still count as commuting. Of two operations it asks one thing more than of the effect functions 
+their lifts induce, an operation yielding an outcome as well.
+Definition 39. Operations 𝑎 and 𝑎′ are independent when their lifts are independent as effect 
+functions (Definition 19) at every pair of arguments, and neither one’s transformations disturb 
+the outcome the other yields:
+∀𝑥 : 𝑋𝑎, 𝑔 ∈ 𝔐(𝑎′Σ), 𝜎 ∈ Σ. pr3(𝑎Σ(𝑥)(𝑔(𝜎))) = pr3(𝑎Σ(𝑥)(𝜎)) (35)
+and the same with 𝑎 and 𝑎′ exchanged, writing 𝔐(𝑎Σ) for the transformation monoid of the 
+lifts 𝑎Σ(𝑥) over every argument as Definition 34 writes 𝔐(𝑎) for that of the operation itself. A 
+key 𝑘 is commutative when any two operations of 𝒜︀𝑘 are independent, an operation being held 
+independent of itself as well.
+Across distinct keys the condition holds outright.
+Theorem 40. Operations at distinct keys are independent.
+Proof. Let 𝑎 lie in 𝒜︀𝑘 and 𝑎′ in 𝒜︀𝑘′  with 𝑘 ≠ 𝑘′. By Definition 24 every generator of 𝔐(𝑎Σ) is of 
+the form 𝜎 ↦ 𝜎[𝑘 ↦ 𝑢(𝜎(𝑘))] for a map 𝑢 on 𝒱︀𝑘, being either the lift of a forward map or the 
+lift of a yielded inverse, and likewise for 𝑎′ at 𝑘′. Two such maps commute, each reading and 
+writing one key alone and the two keys differing, and Lemma 18(1) extends the commutation 
+from the generators to the two monoids. For the second condition, what 𝑎Σ yields at 𝜎, inverse 
+and outcome alike, is determined by 𝜎(𝑘), which every generator of 𝔐(𝑎′Σ) leaves as it stands.□
+A key whose value is a table of entries added and removed independently is commutative, 
+registration of a route or of an event listener being the representative case: two registrations in 
+either order leave a table that answers every test alike, and either registration can be withdrawn 
+while the other stands. A key whose value is an ordered chain is not, since a middleware 
+inserted before another sees a different request, and neither order can be withdrawn without 
+disturbing the other. The allocator of the opening example divides by what its interface pub -
+lishes. Where the handles it hands out are compared by no operation of the key, ≃𝑘  may relate 
+two heaps up to a renaming of handles, which is how CompCert relates the memory states of 
+a program and of its translation [42], and allocation is commutative; where the addresses are 
+outcomes compared by equality, no admissible ≃𝑘  makes the two orders of allocation agree, and 
+the key is not commutative.
+What a component performs is a sequence of operations in which each may depend on 
+what the ones before it yielded, and effect functions of that shape are what the theorem below 
+speaks of.
+Definition 41. The coeffect-mediated effect functions form the least set 𝔈𝒜︀
+Σ ⊆ 𝔈Σ that contains the 
+unit 𝜂Σ and is closed under the following: for a key 𝑘, an operation 𝑎 ∈ 𝒜︀𝑘, an argument 𝑥 :
+𝑋𝑎, and a family (𝑒𝑏)𝑏∈𝐵𝑎
+ of members,
+𝜎 ↦ 𝐥𝐞𝐭 (𝛿, 𝑠, 𝑏) = 𝑎Σ(𝑥)(𝜎) 𝐢𝐧 𝐥𝐞𝐭 (𝜀, 𝑡) = 𝑒𝑏(𝛿) 𝐢𝐧 (𝜀, 𝑠 ∘ 𝑡) (36)
+is again a member. Each stage performs one operation and chooses what follows it by the 
+outcome, so an argument may depend on the outcomes already obtained. The operations 
+occurring in a member are the ones its stages perform, over every choice of outcome.
+Theorem 42. Let 𝑒1, 𝑒2 ∈ 𝔈𝒜︀
+Σ and let every key at which operations of both occur be commu -
+tative (Definition 39). Then 𝑒1 and 𝑒2 are independent (Definition 19).
+Proof. By induction on the construction of Definition 41, 𝔐(𝑒𝑖) lies in the submonoid generated 
+by the generators of the operations occurring in 𝑒𝑖: the unit generates the trivial monoid, and 
+a stage is a ⋄-composite of 𝑎Σ(𝑥) with a member, to which Lemma 18(2) applies.
+For clause (1) of Definition 19 it is therefore enough, by Lemma 18(1), that a generator of an 
+operation occurring in 𝑒1 commute with a generator of one occurring in 𝑒2. Where the two 
+operations lie at distinct keys this is Theorem 40, and where they lie at one key that key carries 
+operations of both and is commutative by hypothesis.
+For clause (2), take 𝑔 ∈ 𝔐(𝑒2), a composite of generators of the operations occurring in 𝑒2, and 
+induct on the construction of 𝑒1. The unit yields idΣ at every state. At a stage, let (𝛿, 𝑠, 𝑏) =
+𝑎Σ(𝑥)(𝜎) and (𝜀, 𝑡) = 𝑒𝑏(𝛿), so that the stage yields 𝑠 ∘ 𝑡 at 𝜎. Independence of the operations, 
+applied to one generator of 𝑔 at a time, yields 𝑠 and 𝑏 again at 𝑔(𝜎), so the same continuation 
+𝑒𝑏 is chosen, and clause (1) puts the state it runs from at 𝑔(𝛿), where the induction hypothesis 
+yields 𝑡 again. The stage therefore yields 𝑠 ∘ 𝑡 at 𝑔(𝜎). □
+Every interaction between a component and its environment passes through the context, 
+and the type family 𝒱︀ is unconstrained, so a system may bind every location it shares across 
+components at a key of its own (Section 3.3.1). A component’s effect function is then the lift of 
+a coeffect-mediated one along the coeffect projection, and independence transfers to that lift, 
+whose transformations move the projection alone. The assumption Section 3.1.3 leaves open is 
+met that way, and with it the temporal composability of a whole system of components.
+What the decomposition divides is a computation’s commuting part from its order-sensitive 
+part. The commuting part is carried by the effects: a component performs them in whatever 
+order its task calls for, and Corollary 21 reverts them in whatever order the system finds convenient, no two components constraining each other. The order-sensitive part is carried by the 
+coeffects, since a key whose operations do not commute is one whose order has to be imposed 
+from outside the effects, and two places are available for imposing it. Within one component 
+the accumulator imposes it, reverting in LIFO order whatever the effects (Theorem 16). Across 
+components a declared coeffect imposes it, one component providing what another declares 
+and the provision preceding the declaration’s satisfaction ( Section  3.2.2). Composability is 
+thereby had at the grain of components rather than of single effects, which is the scale Section 4 
+works at.
+Two limits of the theorem are worth naming. Binding every shared location at a key is the 
+paradigm’s discipline and not a property of the construction, so a location the system cannot 
+reify as a coeffect lies outside the boundary of Section 6.1 and outside the theorem with it. And 
+commutativity of a key is a property of the interface that key publishes, so meeting it is an 
+obligation on the component providing the key rather than on the components consuming it.
+3.3.3.  Situating the Context Paradigm
+Programming paradigms differ fundamentally in how they handle side effects. Two established 
+poles define the spectrum:
+Explicit state threading (functional).  To preserve referential transparency, purely func -
+tional languages model side effects as explicit transformations on state. The State monad 𝑆 →
+(𝐴, 𝑆) [23] threads an environment through every computation. This approach yields strong 
+compositional guarantees: effects are visible in types and amenable to equational reasoning. 
+However, it imposes significant ergonomic costs: every function in the call chain must accept 
+and return the state parameter, even when it merely passes the state through unchanged. As the 
+number of effect dimensions grows (logging, configuration, I/O), monadic stacking or effecthandler boilerplate proliferates.
+Implicit mutation (imperative/OOP). Mainstream imperative languages permit compo -
+nents to modify shared state and access dependencies without explicit declaration at the 
+call site. On the effect side, a representative example is React’s useEffect hook: it registers a 
+persistent side effect on the component’s internal fiber, yet neither the effect target nor the registration mechanism appears as an explicit parameter—identification relies on call-order position 
+within hidden runtime state. On the coeffect side, Java’s service locator pattern (e.g., Spring’s 
+ApplicationContext.getBean(...)) retrieves dependencies from a process-wide registry at 
+runtime, requiring null checks and type casts at each call site; dependency relationships are 
+implicit and scattered across the codebase. More generally, understanding how f() modifies or 
+depends on the system requires reading its implementation transitively. Refactoring becomes 
+fragile because moving or removing a call may silently break distant invariants.
+The context paradigm combines the traceability of the functional approach with the 
+ergonomics of the imperative approach. Effects and coeffects are both mediated through an 
+explicit context parameter. Each operation is therefore attributable to the specific context on 
+which it was invoked, and hence to the component that context belongs to.
+Beyond combining the strengths of both poles, the context paradigm lets the developer 
+handle each effect and dependency individually and composes them into the system’s behavior 
+automatically. For revertible effects, the developer supplies the inverse of each atomic opera -
+tion, and the inverse of any composite follows by composition (Section 3.1), so a component’s 
+teardown is derived from its loading rather than written alongside it. For reactive coeffects, 
+a component declares only the dependencies it needs, and the runtime resolves and re-wires 
+them automatically ( Section  3.2), keeping them consistently wired as providers are added, 
+removed, or replaced. In both directions, correctness that would otherwise rest on developer 
+discipline becomes a structural property of the paradigm.

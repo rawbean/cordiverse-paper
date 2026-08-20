@@ -1,0 +1,99 @@
+4.1.  Components and Fibers
+This section fixes the objects the rules act on: the component; the fiber, an instantiation of a 
+component carrying a lifecycle state of its own; and the registry, which holds the fibers a state 
+carries and from which the coeffect context is read off.
+Components. A component is given as a triple, its coeffect side split into what it reads from 
+the environment and what it provides to it.
+Definition 43. A component over a context Γ carrying both effects and coeffects (Definition 32) 
+is defined as:
+ℭΓ ≔ 𝔇Γ × 𝔓Γ × 𝔈∗
+Γ (37)
+representing a triple (𝑑, 𝑝, 𝑒), where:
+• 𝑑 : 𝔇Γ is the coeffect specification of Definition 25, declaring the dependencies required 
+from the environment;
+• 𝑝 : 𝔓Γ ≔ 𝖲𝖾𝗍(𝐾) is the provision, declaring the coeffect keys the component may provide, 
+and no key outside 𝑝 is one its effect function writes;
+• 𝑒 : 𝔈∗
+Γ is the witnessed effect function of Definition 8, defining the effects contributed 
+when the component is active together with the inverse that withdraws them.
+The two declarations are the two directions of one interface, 𝑑 what the component reads from 
+the environment and 𝑝 what the component writes to the environment, and Section 4.2 admits 
+no two fibers of one registry whose provisions meet. Subscripts are taken on Γ throughout, the 
+coeffect context being one of its projections (Definition 32), so the 𝔇Σ of Definition 25 is written 
+𝔇Γ here.
+Disjointness of provisions is where this chapter parts company with Section  3.2.3. The 
+isolation of Definition 28 lets one key resolve through a realm table, so that two fibers may 
+provide the same key in different realms; a calculus carrying realms would relax disjointness 
+to disjointness within a realm and would resolve a declared key against the realm of the fiber 
+declaring it. We do not introduce realms here, and read every key at one shared realm instead, 
+which is what makes the disjointness above the right condition and each key’s provider unique 
+(Definition 45). What it restricts is how often a component may be instantiated: one with a nonempty provision has one fiber at a time, so the many instantiations below are of components 
+providing nothing, which is the common case of a component that only consumes, or that 
+registers others.
+A component instantiated in a running system is activated and deactivated over time, so 
+it carries a lifecycle state, and a transition is what moves it from one lifecycle state to another: 
+an activation executes 𝑒, accumulating side effects on the context, and a deactivation applies the 
+accumulator to recover the context. In its simplest form the lifecycle is the two-state model of 
+Figure 1, which Section 4.2 gives rules for; Section 4.3 refines it as each control-flow feature is 
+admitted.
+L-Reload
+L-Unload
+𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾 𝖠𝖼𝗍𝗂𝗏𝖾
+Figure 1 | Base component lifecycle
+Fibers. One component may be instantiated many times over, each instantiation carrying a 
+lifecycle state of its own. We name such an instantiation a fiber. A fiber records the component 
+that produced it, the fiber it was instantiated under, the coeffects it provides, and where in its 
+lifecycle it stands.
+Definition 44. Fix a set 𝔑 of fiber names. A fiber instantiating the component (𝑑, 𝑝, 𝑒) ∈ ℭΓ is a 
+tuple ⟨𝑑, 𝑝, 𝑒, 𝜋, 𝜎, 𝜏, 𝜃⟩, where
+• 𝑑 : 𝔇Γ, 𝑝 : 𝔓Γ, and 𝑒 : 𝔈∗
+Γ are the coeffect specification, provision, and effect function of 
+Definition 43;
+• 𝜋 : 𝔑 ∪ {𝗋𝗈𝗈𝗍} is the parent, the fiber this one was instantiated under, or the root marker 
+𝗋𝗈𝗈𝗍;
+• 𝜎 : Σ is the fiber’s own coeffect table (Definition 22), empty until it activates and written 
+by its effects as they run;
+• 𝜏 : {⊥, ⊤} is the retirement flag, ⊥ in a fresh fiber and ⊤ once the orchestrator has retired 
+the fiber;
+• 𝜃 : ΘΓ is the lifecycle state, which in the two-state model of Section 4.2 is
+ΘΓ ≔ 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾 | 𝖠𝖼𝗍𝗂𝗏𝖾(𝑔, 𝜔) (38)
+where 𝑔 : Γ → Γ is the accumulator and 𝜔 : 𝑑 → 𝔑 the committed view.
+The committed view 𝜔 sends each key the fiber declares to the name of the fiber that 
+provided it when the transition committed. Section  4.3 replaces ΘΓ by the extension that 
+transitions in progress require; the rest of Definition 44 is given once for both, save that 𝑒 is 
+read at the richer effect type each layer of Section 4.3 introduces.
+Registry. A state holds its fibers under their names, and both the identity of a fiber and the 
+coeffect context of Section 3.2 are read off that arrangement.
+Definition 45. Write 𝔉Γ for the set of fibers over Γ. A state 𝛾 ∈ Γ carries a registry
+𝐹𝛾 : 𝔑 ⇀ 𝔉Γ (39)
+a finite partial function whose parent pointers form a tree rooted at 𝗋𝗈𝗈𝗍, together with whatever 
+else in Γ no fiber’s 𝜎 names. We write 𝛾(𝑛) for 𝐹𝛾(𝑛), and abbreviate a field of 𝛾(𝑛) by 
+subscripting it with 𝑛 where the state is clear, so that 𝑑𝑛, 𝑝𝑛, 𝑒𝑛, 𝜋𝑛, 𝜎𝑛, 𝜏𝑛, 𝜃𝑛 are the fields of 
+Definition 44 and 𝑔𝑛, 𝜔𝑛 the accumulator and committed view that 𝜃𝑛 carries; 𝛾[𝜃𝑛 ↦ 𝜃′], 𝛾[𝑛 ↦
+⟨⋯⟩], and 𝛾 ∖ 𝑛 are the states differing from 𝛾 in one field, one fiber, and the presence of one 
+fiber respectively.
+A fiber’s name is what gives it an identity that survives its own mutation: every rule below 
+rewrites the lifecycle state of one fiber and leaves the others alone, so the rule has to say which 
+one, and two fields refer to fibers rather than describe them, the parent 𝜋 and the committed 
+view 𝜔. Names are atoms: no rule computes one, inspects its structure, or relates two of them 
+by anything but equality, and introducing a fiber simply draws one not already in use. This is 
+the discipline of dynamically created local names [39], used here for fiber identity.
+Each fiber owning a table means the coeffect context is derived rather than stored: it is what 
+the active fibers jointly provide.
+𝜎𝛾 ≔ ⋃{𝜎𝑚 | 𝑚 ∈ dom(𝐹𝛾), 𝜃𝑚 = 𝖠𝖼𝗍𝗂𝗏𝖾(−, −)} (40)
+The union is well defined because a fiber writes only the keys it declares, dom(𝜎𝑛) ⊆ 𝑝𝑛, 
+and the provisions of distinct fibers are disjoint (Definition 43), so each 𝑘 ∈ dom(𝜎𝛾) lies in the 
+table of exactly one 𝖠𝖼𝗍𝗂𝗏𝖾 fiber, whose name we write provider𝑘(𝛾) ∈ 𝔑 and call the provider of 
+𝑘. Each key therefore has one possible provider, fixed by the provisions and not by the state. 
+No rule writes 𝜎𝑛 directly: a fiber’s provisions are the set operations its own effect function 
+performs, which land in 𝜎𝑛 and so are already part of the state 𝑒𝑛 returns, and they leave again 
+with the accumulator. Only the coeffect part of an effect is recorded this way, because only the 
+coeffect part is what other fibers declare against; effects that mutate state elsewhere in 𝛾 are 
+tracked by 𝑔 like any other, but no fiber can name them in a specification, so they contribute no 
+ordering constraint.
+The satisfaction relation of Section 3.2.2 then applies unchanged, with 𝛾 ⊧ 𝑑 abbreviating 
+𝜎𝛾 ⊧ 𝑑. A key lies in dom(𝜎𝛾) exactly when some 𝖠𝖼𝗍𝗂𝗏𝖾 fiber has installed it, its provision being 
+the keys it may install rather than the ones it has, so 𝛾 ⊧ 𝑑 already requires that every declared 
+key have an 𝖠𝖼𝗍𝗂𝗏𝖾 provider. Taking the union over 𝖠𝖼𝗍𝗂𝗏𝖾 fibers alone is what lets a fiber 
+cease to provide before it has withdrawn anything, which Section 4.3.1 turns into the ordering 
+discipline.

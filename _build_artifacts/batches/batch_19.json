@@ -1,0 +1,177 @@
+[
+ {
+  "id": 665,
+  "section": "4",
+  "en": "Proof. Write 𝐴′ for the right-hand side. No fiber being failed, the quiet of Definition 49 leaves 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) and 𝖠𝖼𝗍𝗂𝗏𝖾 as the only states and reads 𝑛 ∈ 𝐴′ ⟺ target𝑛(𝛾) ≠ ⊥ By Definition 46 the right side holds exactly when ¬𝜏𝑛 and every 𝑘 ∈ 𝑑𝑛 lies in dom(𝜎𝛾), and dom(𝜎𝛾) = ⋃𝑚∈𝐴′ 𝑝𝑚 by Definition 69. The middle clause is the one the target no longer carries, and registration supplies it: a fiber with 𝜋𝑛 ≠ 𝗋𝗈𝗈𝗍 is registered only by an activation of 𝜋𝑛, and if 𝜋𝑛 ∉ 𝐴′ then 𝜋𝑛 is not 𝖠𝖼𝗍𝗂𝗏𝖾, so its accumulator has run and retired 𝑛 by Definition 47, giving 𝜏𝑛. Hence 𝐴′ satisfies the clauses of Definition 67, and Lemma 68 gives them one solution, so 𝐴 = 𝐴′. □"
+ },
+ {
+  "id": 666,
+  "section": "4",
+  "en": "Lemma 71. (Transposition.) Let the steps be pairwise independent and 𝐹𝑡 well formed, and"
+ },
+ {
+  "id": 667,
+  "section": "4",
+  "en": "let steps 𝑡 and 𝑡 + 1 act on distinct fibers 𝑚 and 𝑛."
+ },
+ {
+  "id": 668,
+  "section": "4",
+  "en": "1. If both apply an activation rule, namely L-Begin, L-Iter, or L-Finish, and step 𝑡 + 1 is"
+ },
+ {
+  "id": 669,
+  "section": "4",
+  "en": "applicable at 𝛾𝑡, then step 𝑡 is applicable at the state step 𝑡 + 1 produces from 𝛾𝑡, and the two orders reach the same 𝛾𝑡+2."
+ },
+ {
+  "id": 670,
+  "section": "4",
+  "en": "2. If step 𝑡 applies an activation rule at 𝑚, step 𝑡 + 1 an orchestration rule at 𝑛, and step 𝑡"
+ },
+ {
+  "id": 671,
+  "section": "4",
+  "en": "does not register 𝑛, then the same holds of the two."
+ },
+ {
+  "id": 672,
+  "section": "4",
+  "en": "Proof. For (1), by Table 1 the step of 𝑚 writes 𝜃𝑚 and, within Ψ𝑡 ∈ 𝔐(𝑒𝑚), the table 𝜎𝑚 and the effect part. It therefore leaves 𝜃𝑛 and 𝑖𝑛 alone, and by the second condition of Definition 60 leaves the inverse and the continuation that 𝑖𝑛 yields alone as well, so only the premises of step 𝑡 + 1 that mention target𝑛 remain to be checked. Its retirement half cannot fall, no activation rule writing a 𝜏. Its resolution half cannot move either: step 𝑡 + 1 being applicable at 𝛾𝑡 puts every 𝑘 ∈ 𝑑𝑛 in dom(𝜎𝑡), and clause (2) of Definition 58 makes the fiber providing such a 𝑘 the only one that can, so 𝑘 ∉ 𝑝𝑚 and no write of 𝜎𝑚 reaches a key of 𝑑𝑛. The same argument in the other direction leaves step 𝑡 applicable. Finally Ψ𝑡 ∈ 𝔐(𝑒𝑚) and Ψ𝑡+1 ∈ 𝔐(𝑒𝑛) commute by the first condition of Definition 60, and the two edits write control fields of distinct fibers, so the composite is the same in either order."
+ },
+ {
+  "id": 673,
+  "section": "4",
+  "en": "For (2), the orchestration step has Ψ𝑡+1 = idΓ by Table  1, so the two state maps commute outright, and its edit𝑡+1 writes 𝜏𝑛 or dom(𝐹𝛾) at 𝑛 alone, which the activation step neither reads nor writes: the premises of the latter read 𝜃𝑚, 𝑖𝑚, 𝜏𝑚, and target𝑚, and an O-Insert of a fresh 𝑛 moves no target, a fresh fiber providing nothing, whereas an O-Retire or O-Remove of 𝑛 leaves 𝜎𝛾 where it was, 𝑛 being 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾 in the one case and unaffected in its table in the other. So step 𝑡 remains applicable. Conversely each premise of the orchestration step is either read at 𝑛, which step 𝑡 does not write, or is one of the two premises of O-Insert that a smaller registry only relaxes, whence its applicability at 𝛾𝑡+1 gives its applicability at 𝛾𝑡; here step 𝑡 not registering 𝑛 is what keeps 𝑛 present at 𝛾𝑡 where O-Retire and O-Remove require it. □"
+ },
+ {
+  "id": 674,
+  "section": "4",
+  "en": "Lemma 72. (Deletion.) Let the sequence of steps be pairwise independent, let every compo -"
+ },
+ {
+  "id": 675,
+  "section": "4",
+  "en": "nent be total on its provision ( Definition 69), let it reach a quiescent 𝛾𝑇 at which no fiber is failed, let [𝑏, 𝑢] be an episode of 𝑛 that closes, let no episode of any 𝑚 with 𝑛 ≺ 𝑚 close in the sequence, and let no fiber 𝑛 registers during [𝑏, 𝑢] have an episode. Write 𝑅 for the names those registrations draw. Then deleting the steps that act on 𝑛 in [𝑏, 𝑢], together with every step acting on a name of 𝑅, leaves a sequence of steps reaching a state ≈-equal to 𝛾𝑇 and ≃-equal to it outside 𝑅."
+ },
+ {
+  "id": 676,
+  "section": "4",
+  "en": "Proof. The deleted steps leave the state where they found it. Let 𝑡1 < ⋯ < 𝑡𝑙 be the steps of [𝑏, 𝑢] that act on fibers other than 𝑛. Corollary 62 reads 𝛾𝑢+1 ≈ (Ψ𝑡𝑙 ∘ ⋯ ∘ Ψ𝑡1 )(𝛾𝑏) whose right side is what the surviving steps of [𝑏, 𝑢] produce on their own, 𝛾𝑏−1 ≈ 𝛾𝑏 and their edits writing control fields of fibers other than 𝑛 that the deletion does not touch. By Table 1 the deleted steps of 𝑛 write no field but 𝜃𝑛, which Lemma 54(4) restores to 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) at 𝑢, no fiber being failed, and which it held at 𝛾𝑏−1. An invariant carries the suffix. Write 𝛾′𝑡 for the state the surviving steps reach at the point corresponding to 𝑡. We claim, for every 𝑡 > 𝑢, that 𝛾𝑡 ≈ 𝛾′𝑡, that every name of 𝑅 is vestigial at 𝛾𝑡 and absent from 𝛾′𝑡, and that the two states agree on every field of every name outside 𝑅."
+ },
+ {
+  "id": 677,
+  "section": "4",
+  "en": "At 𝑡 = 𝑢 + 1 this is the paragraph above together with Definition 47, which leaves each name of 𝑅 retired by the accumulator that ran at 𝑢, 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) and holding an empty table, the fibers of 𝑅 having no episode by hypothesis. The induction step is Lemma 57(1) applied at each name of 𝑅 in turn: a step acting outside 𝑅 has the same premises at the two states, reaches states again ≈-equal, and leaves the entries of 𝑅 vestigial. A step acting on a name of 𝑅 is one of the deleted ones, and Lemma 57(2) is why it has to be deleted rather than kept, an O-Retire or O-Remove of an absent name having no fiber to act on; by (1) again such a step moves no field outside 𝑅, so dropping it preserves the invariant. Hence the final states are ≈-equal, and equal outside 𝑅. No surviving step loses a premise. A step acting on 𝑚 ∉ 𝑅 ∪ {𝑛} reads 𝑛 only through target𝑚(𝛾) or relied𝑚(𝛾). The first depends on 𝑛 when 𝑚 declares a key 𝑛 provides, hence 𝑛 ≺ 𝑚, and when 𝑛 registered 𝑚, which puts 𝑚 ∈ 𝑅."
+ },
+ {
+  "id": 678,
+  "section": "4",
+  "en": "In the first case 𝑚’s episode does not close, by hypothesis, so it is open at 𝛾𝑇 , where quiet gives 𝜔𝑚 = target𝑇 𝑚 and Lemma 70 puts its values among the 𝖠𝖼𝗍𝗂𝗏𝖾 fibers, which 𝑛 is not; since a key has at most one possible provider, 𝑛 provided no key of 𝑑𝑚 at 𝑚’s L-Begin either. The second reads 𝑛 only through the values of 𝜔𝑛, and deleting the episode can only make relied false, which relaxes the guard on L-Unload rather than blocking it. What such a step reads of a name of 𝑅 is covered by the invariant. Pairwise independence is a property of the effect functions, so deleting steps preserves it. □"
+ },
+ {
+  "id": 679,
+  "section": "4",
+  "en": "Theorem 73. (Confluence.) Let a sequence of steps reach a quiescent 𝛾𝑇 at which no fiber is"
+ },
+ {
+  "id": 680,
+  "section": "4",
+  "en": "failed, let the steps be pairwise independent and every component be total on its provision (Definition 69), and let 𝐴 be as in Definition 67. Then"
+ },
+ {
+  "id": 681,
+  "section": "4",
+  "en": "1. (Canonical form.) 𝛾𝑇 is reached, up to the names whose entries the reduction withdraws,"
+ },
+ {
+  "id": 682,
+  "section": "4",
+  "en": "from 𝛾0 by a sequence that takes the same orchestration steps in their original order, those at a fiber the orchestrator inserted preceding every lifecycle step and each of the rest following the step that registered the fiber it acts on, and that takes, for an enumeration 𝑛1, …, 𝑛𝑘 of 𝐴 linearizing ⊲, one episode of each 𝑛𝑖 in that order."
+ },
+ {
+  "id": 683,
+  "section": "4",
+  "en": "2. (Confluence.) Any two such sequences from 𝛾0 taking the same orchestration steps reach"
+ },
+ {
+  "id": 684,
+  "section": "4",
+  "en": "states related, after a renaming as in Lemma 56, by ≃ and by ≈."
+ },
+ {
+  "id": 685,
+  "section": "4",
+  "en": "Proof. For (1), the episodes of the sequence are of two kinds: those that close and those still open at 𝛾𝑇 , which by quiet𝑇 and Lemma 70 are one episode of each fiber of 𝐴. Closing episodes go first, by induction on their number. At each stage pick a closing episode of a fiber 𝑛 that is ⊲-maximal among the fibers whose episodes still close; one exists by Lemma 68 and the finiteness of 𝑁. The three hypotheses of Lemma 72 are then met. No 𝑚 with 𝑛 ≺ 𝑚 has a closing episode, by maximality. And no fiber 𝑛 registers during [𝑏, 𝑢] has an episode: such a fiber is retired by the accumulator that ran at 𝑢 (Definition 47) and by Lemma 54(5) stays retired, so its target view is ⊥ and Lemma 70 puts it outside 𝐴, whence it has no episode open at 𝛾𝑇 ; and ⊲ relates it to 𝑛 through its parent pointer, so by maximality it has no closing one either. The lemma removes the episode, together with the steps of the names it registered, leaving 𝛾𝑇 where it was up to those names."
+ },
+ {
+  "id": 686,
+  "section": "4",
+  "en": "The measure drops by one, so no closing episode remains. A fiber outside 𝐴 takes no lifecycle step. It has no open episode at 𝛾𝑇 , by Lemma 70 and quiet𝑇 , and no closing one now remains, so it has no episode at all and is 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) throughout; LBegin is the only rule that applies there, and applying it would open an episode. Orchestration steps go next. An orchestration step at a fiber the orchestrator inserted moves one place earlier past a lifecycle step of a different fiber by Lemma 71(2), which applies because a step of a fiber of 𝐴 registers no such name: registrations draw fresh names, whereas the name here is one an O-Insert of the original sequence introduced. With a lifecycle step of the same fiber there is nothing to exchange, an O-Insert of 𝑛 already preceding every step of 𝑛 and an ORetire or O-Remove of 𝑛 applying only outside 𝐴, which takes no lifecycle step. Moving each to the front in turn preserves their relative order."
+ },
+ {
+  "id": 687,
+  "section": "4",
+  "en": "An orchestration step at a fiber some activation registered cannot go to the front, its premises requiring that fiber to be present, so it stays where the registration put it; it acts outside 𝐴 by the paragraph above and therefore commutes with everything between it and the registration by the same clause of Lemma 71. Episodes are sorted and made contiguous, by induction on |𝐴|. Let 𝑛1 be ⊲-minimal in 𝐴. Then 𝑑𝑛1 = ⌀ and 𝜋𝑛1 = 𝗋𝗈𝗈𝗍, since Definition 67 puts a provider of a key of 𝑑𝑛1 and the fiber registering 𝑛1 in 𝐴 while ⊲ puts both below 𝑛1. So target𝑛1 reads no field of another fiber and, no orchestration step remaining to write 𝜏𝑛1 and no fiber below 𝑛1 remaining to retire it, is constant. Every step acting on 𝑛1 is an activation step, no episode closing, and its remaining premises read 𝜃𝑛1 and 𝑖𝑛1 , which by Table 1 only 𝑛1 writes; each is therefore applicable at every earlier state, and Lemma 71 moves it one place earlier without moving the endpoint."
+ },
+ {
+  "id": 688,
+  "section": "4",
+  "en": "The number of steps of other fibers preceding a step of 𝑛1 drops by one at each application, so the episode of 𝑛1 becomes an initial contiguous block. The argument repeats on 𝐴 ∖ {𝑛1} over the suffix that follows the block, where 𝑛1 is 𝖠𝖼𝗍𝗂𝗏𝖾 throughout and takes no further step, so it too contributes a constant target. The enumeration this produces linearizes ⊲ by construction. For (2), both sequences reduce by (1) to a canonical one, and the two reductions run over the same 𝐴 up to a renaming. Definition 67 reads 𝜏, 𝜋, 𝑑, and 𝑝, of which the last three are written once with a fiber’s entry (Lemma 54(5)), so what has to be seen is that the same names come into existence carrying the same 𝑑, 𝑝, and 𝜋, and that the same names are retired. Insertions the two sequences share by hypothesis."
+ },
+ {
+  "id": 689,
+  "section": "4",
+  "en": "Registrations they share as well: an activation of a fiber of 𝐴 registers, at each of its iterations, the component the iterator names there, which the second condition of Definition 60 holds fixed across interleavings, so the tree of registrations below an 𝐴-fiber is a function of that fiber’s component; the names those registrations draw are not shared, and it is here that Lemma 56 is applied, matching the two trees by a bijection. And a retirement is either an orchestration step, shared, or the O-Retire an accumulator takes, which retires exactly the names the same activation registered. Two enumerations linearizing ⊲ differ by transpositions of incomparable episodes, which Lemma 71 again leaves the endpoint unchanged by, so the two canonical sequences agree. With the termination of Theorem 66, the lifecycle relation therefore has unique normal forms."
+ },
+ {
+  "id": 690,
+  "section": "4",
+  "en": "□ Failure is excluded from the statement because it is a genuine source of divergence, and the calculus should not be read as denying it: whether a step raises depends on the state it ran against, so one schedule may fail a fiber where another completes it, and the two quiescent states then differ in that fiber’s lifecycle state. They do not differ in anything else, by Corollary 62, which puts a failed fiber’s contribution to the state at nothing. In the base calculus of Section 4.2 the same theorem holds, and the proof needs no substi - tution beyond dropping one clause. L-Unload carries no guard there, so the last paragraph of"
+ },
+ {
+  "id": 691,
+  "section": "4",
+  "en": "Lemma 72 is vacuous; the rest of that lemma appeals to quiet𝑇 alone, which the base calculus"
+ },
+ {
+  "id": 692,
+  "section": "4",
+  "en": "supplies unchanged. The theorem is what licenses reasoning about a Cordis application as though it were stati - cally assembled. An orchestrator that adds a component, removes it, replaces a provider, and reverts the replacement is guaranteed to arrive at the state it would have obtained by writing the final composition down at the outset, and a component author reasoning about which coeffects are in scope may reason about the quiescent state alone. It also delimits the guarantee: it speaks of the state, not of the emissions the system produced along the way, which is the distinction Section 6.1 draws between an acquisition, tracked inside the boundary, and an emission, which crosses it."
+ },
+ {
+  "id": 693,
+  "section": "4",
+  "en": "4.4. Metatheory"
+ },
+ {
+  "id": 694,
+  "section": "4",
+  "en": "Section  4.3 supplies ten rules: the three orchestration rules of Section  4.2; L-Begin, L-Iter, and L-Finish for an activation; L-Divert and L-Raise for the two ways an activation may end early; and L-Leave and L-Unload for a deactivation. This section reads the two dimensions of composability off those rules in their global form, one fiber’s guarantee holding whatever the other fibers do in between, and adds what only a whole system can be asked for: that it always reaches the configuration its targets call for, and that the configuration is the one a static assembly would have produced. Every property below is a property of a sequence of steps, so we index the steps and read the fields of a state off that index. Two conventions carry Section 3.3.2 into this section. Every equality between states below is read up to the observational equivalence ≃ of Definition 33, as Lemma 38 reads those of Section 3.1, and the witness condition an effect function is held to is the one Definition 37 gives, read of an iterator as Definition 51 gives it and of a registering iteration at the ≈ below."
+ },
+ {
+  "id": 695,
+  "section": "4",
+  "en": "Definition 53. Index the steps by 𝑡, so that 𝛾𝑡 is the state the first 𝑡 of them reach, and write"
+ },
+ {
+  "id": 696,
+  "section": "4",
+  "en": "step𝑡 ≔ 𝑟(𝑛) (50) for the step taken at 𝛾𝑡: the rule 𝑟 it applies, one of the ten, and the name 𝑛 ∈ 𝔑 it applies that rule at. The sequence starts at a 𝛾0 with dom(𝐹0) = ⌀, so every fiber comes into existence by an O-Insert, whether the orchestrator’s or one an iteration takes ( Definition 47). A field of 𝛾𝑡 carries the index as a superscript, so that 𝜃𝑡 𝑛, 𝜔𝑡 𝑛, 𝜎𝑡 𝑛, 𝑔𝑡 𝑛, and 𝑖𝑡 𝑛 are the lifecycle state, committed view, table, accumulator, and remaining iterator of 𝑛 at 𝛾𝑡, and 𝐹𝑡 and 𝜎𝑡 the registry and coeffect context of 𝛾𝑡 itself, the 𝐹𝛾 and 𝜎𝛾 of Definition 45 read there. Predicates take the state as their argument and everything else as a subscript, so installed𝑡 𝑛, target𝑡 𝑛, relied𝑡 𝑛, and quiet𝑡 are the predicates of Definition 46, Definition 49, and Definition 50 at 𝛾𝑡. An episode of 𝑛 is a maximal interval [𝑏, 𝑢] of indices throughout which installed𝑡 𝑛 holds. It opens at 𝑏, where 𝑏 > 0 and ¬ installed𝑏−1 𝑛 , the empty 𝐹0 leaving no fiber installed at the outset;"
+ },
+ {
+  "id": 697,
+  "section": "4",
+  "en": "it closes at 𝑢 when installed𝑢 𝑛 and not installed𝑢+1 𝑛 , which a final episode need not do. Every rule of Section 4.3 concludes in the shape 𝛾 ⟶ 𝛿[⋯], where the premises compute 𝛿 from 𝛾 and leave it as 𝛾 where they compute nothing, and the bracket edits named fields of the registry. The two halves are named separately, and both are maps on all of Γ. The state map of a step taken at 𝛾𝑡 by a rule acting on 𝑛 is Ψ𝑡 ≔ { pr1 ∘ 𝑖 at L-Iter, L-Finish, and a landing L-Divert 𝑔 at L-Unload idΓ at every other rule (51) where 𝑖 and 𝑔 are the iterator and the accumulator that 𝜃𝑡 𝑛 carries, and the edit edit𝑡 : Γ → Γ is the bracket read as a function, assigning to the fields it names the values the premises computed at 𝛾𝑡. Both are therefore fixed by step𝑡 together with 𝛾𝑡 and defined at every state, which is what lets Theorem 61 and Lemma 71 evaluate them away from 𝛾𝑡."
+ },
+ {
+  "id": 698,
+  "section": "4",
+  "en": "Each step factors as 𝛾𝑡+1 = edit𝑡(Ψ𝑡(𝛾𝑡)) (52) At L-Unload, for instance, edit𝑡 is [𝜃𝑛 ↦ 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜁)], and at O-Remove it is the removal ∖ 𝑛, which is why the second half is an edit rather than an assignment. The fields divide along the same seam: the tables 𝜎𝑚, which no edit𝑡 writes once the O-Insert creating 𝑚 has set it empty, and the control fields 𝜃𝑚, 𝜏𝑚, 𝜋𝑚, 𝑑𝑚, 𝑝𝑚, 𝑒𝑚 together with dom(𝐹𝛾), which no Ψ𝑡 writes save through the primitive of Definition 47. Write 𝛾 ≈ 𝛿 when two states agree on everything but the control fields. The relation ≈ is not the ≃ of Definition 33, and neither refines the other, because each forgets what the other has to keep. Recovery exactness is a claim about effects, so ≈ compares the tables and the ambient state exactly and forgets only the registry’s record of which fiber installed them."
+ },
+ {
+  "id": 699,
+  "section": "4",
+  "en": "A rule reads the control fields to decide whether it applies, so ≃ has to keep them, and this section reads it as the conjunction of Definition  33 with agreement on the registry’s domain and on every control field of every fiber: 𝛾 ≃ 𝛿 ≔ 𝜎𝛾 ≃ 𝜎𝛿 ∧ dom(𝐹𝛾) = dom(𝐹𝛿) ∧ ∀𝑛, 𝑐 ∈ {𝜃, 𝜏, 𝜋, 𝑑, 𝑝, 𝑒}. 𝑐(𝛾(𝑛)) ≃ 𝑐(𝛿(𝑛))(53) A field of function type, as 𝑒𝑛 and the 𝑔 inside 𝜃𝑛 are, is compared as Definition 36 compares maps, an iterator as Definition 51 compares two, and a field of any other type by equality. The results below hold up to both relations, one for each half of the state, Lemma 55 establishing the ≃ half once for all ten rules. Table 1 is the ten rules of Section 4.3 read as such writes. The accumulator, the committed view, and the remaining iterator are constituents of 𝜃𝑛, so the third column records the writes to them as well, and ℎ there names the inverse the iteration of the fourth column yields, idΓ where L-Divert aborts that iteration."
+ }
+]

@@ -1,0 +1,795 @@
+3.  Revertible Effects and Reactive Coeffects
+This section lifts the concepts of effects and coeffects introduced in Section 2 to runtime mechanisms, constructing a theory of dynamic composition. The central idea is to turn the typing 
+contexts carrying effects and coeffects into context types, i.e., runtime-operable types that reify 
+the context as a first-class entity. For the effect type, we model it as a context transformation 
+paired with an inverse, achieving local temporal composability. For the coeffect context, we 
+model it as a type carrying dependency information, achieving local spatial composability. An 
+observational equivalence on the coeffects then supplies the effects with independence. The 
+unified context that carries both effects and coeffects constitutes a programming paradigm in 
+its own right.
+3.1.  Revertible Effects
+Temporal composability is the ability to load and unload components at runtime such that, upon 
+unloading, the shared environment is recovered to its pre-composition state. This requires that 
+every modification a component makes to the environment be both trackable and recoverable. 
+We therefore model an effect as a function of type Γ → Γ × (Γ → Γ): applied to the current 
+context, it yields the modified context together with an explicit inverse. Supplying that inverse 
+is what lets the effect be reverted, and returning it to the runtime is what makes the effect 
+trackable. We call such effects revertible: by tracking and composing these inverses during 
+execution, complete environment recovery becomes a structural guarantee.
+3.1.1.  Effect Context
+Given any impure function 𝑓impure : 𝑋 → 𝑌 , we transform it into a pure form 𝑓 : Γ × 𝑋 → Γ ×
+𝑌 , where Γ is the context and all possible side effects can be represented as transformations 
+on Γ. For any fixed input 𝑥 : 𝑋, the induced map 𝛾 ↦ pr1(𝑓(𝛾, 𝑥)) captures the side effect of 𝑓 
+independently of the return value. Effects on Γ therefore live in the monoid of transformations 
+Γ → Γ under composition ∘, where each monoid axiom has a direct reading as a property of 
+effects:
+• Closure: the sequential composition of two effects is again an effect;
+• Associativity: a composite effect is independent of how it is bracketed;
+• Identity: idΓ, the identity function on Γ, acts as the unit of composition.
+To model effects that can be undone, we pair each transformation 𝑓 with another transformation 𝑔 that undoes 𝑓, and call 𝑔 a left inverse of 𝑓, abbreviated to inverse throughout the paper. 
+Undoing is one-sided: what an inverse is held to is 𝑔 ∘ 𝑓 and never 𝑓 ∘ 𝑔. Pairs of transformations 
+carry a multiplication of their own:
+Definition 1. Define the twisted composition of pairs of context transformations by
+(𝑓1, 𝑔1) ∘ (𝑓2, 𝑔2) ≔ (𝑓1 ∘ 𝑓2, 𝑔2 ∘ 𝑔1) (4)
+As for ∘ itself, the left operand acts after the right, and the inverses accumulate in the opposite 
+order. It makes (Γ → Γ) × (Γ → Γ) a monoid with unit (idΓ, idΓ), the product of the monoid of 
+transformations with its opposite, which we call the twisted composition monoid 𝔗Γ over Γ.
+To track effects within the context itself, we introduce the following definition:
+Definition 2. Given a context Γ, define its effect context as:
+𝜕Γ ≔ Γ × (Γ → Γ) (5)
+It can be understood as a pair (𝛾, 𝜑), where:
+• 𝛾 : Γ is the current context state;
+• 𝜑 : Γ → Γ is the accumulator, the composite of the inverses of the effects performed so far, 
+and the function that recovers the context to its initial state.
+In particular, the initial effect context can be represented as (𝛾0, idΓ).
+We also write 𝜕2Γ = 𝜕Γ × (𝜕Γ → 𝜕Γ), and so on up the tower.
+Given the presence of the accumulator 𝜑, all effects performed on 𝜕Γ can be tracked and 
+recovered. We now give the concrete constructions for tracking and recovery.
+Definition 3. Define the transformation trackΓ on pairs of context functions:
+trackΓ : (Γ → Γ) × (Γ → Γ) → 𝜕Γ → 𝜕Γ
+trackΓ = (𝑓, 𝑔) ↦ (𝛾, 𝜑) ↦ (𝑓(𝛾), 𝜑 ∘ 𝑔)
+(6)
+This transformation converts a forward function 𝑓 together with a candidate inverse 𝑔 into 
+a transformation of the effect context 𝜕Γ. Applying trackΓ(𝑓, 𝑔) to a state (𝛾, 𝜑) transforms 𝛾 
+by 𝑓 and composes the inverse 𝑔 onto 𝜑, thereby tracking the effect of 𝑓 in the context.
+Theorem 4. For every (𝑓, 𝑔) ∈ (Γ → Γ) × (Γ → Γ) the following diagram commutes, that is,
+pr1 ∘ trackΓ(𝑓, 𝑔) = 𝑓 ∘ pr1 (7)
+𝑓
+𝑓′
+pr1 pr1track
+Γ Γ
+𝜕Γ 𝜕Γ
+Proof. For all (𝛾, 𝜑) ∈ 𝜕Γ:
+(pr1 ∘ trackΓ(𝑓, 𝑔))(𝛾, 𝜑) = pr1(𝑓(𝛾), 𝜑 ∘ 𝑔)
+= 𝑓(𝛾)
+= (𝑓 ∘ pr1)(𝛾, 𝜑) □
+Theorem 5. trackΓ is a monoid homomorphism from 𝔗Γ into 𝜕Γ → 𝜕Γ. That is,
+1. trackΓ(idΓ, idΓ) = id𝜕Γ;
+2. for all (𝑓1, 𝑔1), (𝑓2, 𝑔2) ∈ 𝔗Γ,
+trackΓ((𝑓1, 𝑔1) ∘ (𝑓2, 𝑔2)) = trackΓ(𝑓1, 𝑔1) ∘ trackΓ(𝑓2, 𝑔2) (8)
+Proof.
+1. The unit is carried to the unit, since trackΓ(idΓ, idΓ)(𝛾, 𝜑) = (𝛾, 𝜑 ∘ idΓ) = (𝛾, 𝜑).
+2. For the multiplication, take any (𝛾, 𝜑) ∈ 𝜕Γ:
+(trackΓ(𝑓1, 𝑔1) ∘ trackΓ(𝑓2, 𝑔2))(𝛾, 𝜑) = trackΓ(𝑓1, 𝑔1)(𝑓2(𝛾), 𝜑 ∘ 𝑔2)
+= (𝑓1(𝑓2(𝛾)), 𝜑 ∘ 𝑔2 ∘ 𝑔1)
+= trackΓ(𝑓1 ∘ 𝑓2, 𝑔2 ∘ 𝑔1)(𝛾, 𝜑) □
+Definition 6. Define the transformation recoverΓ on 𝜕Γ:
+recoverΓ : 𝜕Γ → 𝜕Γ
+recoverΓ = (𝛾, 𝜑) ↦ (𝜑(𝛾), idΓ)
+(9)
+This transformation applies the recovery function 𝜑 to the current state 𝛾 and resets 𝜑 to the 
+identity. The following diagram illustrates how recover recovers the context to its initial state 
+after a sequence of effects track(𝑓1, 𝑔1), ⋯, track(𝑓𝑛, 𝑔𝑛) has been applied to 𝜕Γ:
+𝑓1 𝑓𝑛
+𝑓′
+1 𝑓′
+𝑛
+track track track
+recover
+Γ Γ Γ Γ
+𝜕Γ 𝜕Γ 𝜕Γ 𝜕Γ
+The diagram shows that the tracked effects followed by recover carry the initial effect context 
+back to itself. What each tracking step preserves is the result of recovery itself, from whatever 
+state it is taken:
+Theorem 7. For every (𝛾, 𝜑) ∈ 𝜕Γ and every pair (𝑓, 𝑔) with 𝑔(𝑓(𝛾)) = 𝛾,
+recoverΓ(trackΓ(𝑓, 𝑔)(𝛾, 𝜑)) = recoverΓ(𝛾, 𝜑) (10)
+Proof.
+recoverΓ(trackΓ(𝑓, 𝑔)(𝛾, 𝜑)) = recoverΓ(𝑓(𝛾), 𝜑 ∘ 𝑔)
+= (𝜑(𝑔(𝑓(𝛾))), idΓ)
+= (𝜑(𝛾), idΓ) = recoverΓ(𝛾, 𝜑) □
+A sequence of pairs needs no separate argument. Let (𝑓1, 𝑔1), ⋯, (𝑓𝑛, 𝑔𝑛) be applied in order 
+from (𝛾, 𝜑), and write 𝛿0 = 𝛾 and 𝛿𝑖 = 𝑓𝑖(𝛿𝑖−1). By Theorem 5 the composite trackΓ(𝑓𝑛, 𝑔𝑛) ∘ ⋯ ∘
+trackΓ(𝑓1, 𝑔1) is trackΓ of the twisted composite (𝑓𝑛 ∘ ⋯ ∘ 𝑓1, 𝑔1 ∘ ⋯ ∘ 𝑔𝑛), and if 𝑔𝑖(𝛿𝑖) = 𝛿𝑖−1 for 
+every 𝑖 then (𝑔1 ∘ ⋯ ∘ 𝑔𝑛)(𝛿𝑛) = 𝛿0 = 𝛾. That pair therefore meets the hypothesis of Theorem 7 
+at 𝛾, and one application of the theorem gives
+recoverΓ((trackΓ(𝑓𝑛, 𝑔𝑛) ∘ ⋯ ∘ trackΓ(𝑓1, 𝑔1))(𝛾, 𝜑)) = recoverΓ(𝛾, 𝜑) (11)
+Taking (𝛾, 𝜑) = (𝛾0, idΓ), recovery carries every state reached this way back to (𝛾0, idΓ). A 
+pair with 𝑔 ∘ 𝑓 = idΓ meets the hypothesis at every state.
+Recovery reads a state through the quantity 𝜑(𝛾), and we refer to 𝜑(𝛾) = 𝛾0 as the soundness 
+invariant of a state in 𝜕Γ.
+3.1.2.  Revertible Effect Functions
+The track/recover model of the previous section takes inverses as given a priori: trackΓ(𝑓, 𝑔) 
+fixes 𝑔 before any context state is seen, so one 𝑔 has to serve every state the effect is applied at. 
+In practice, however, the inverse of each effect is not known a priori: it must be supplied by the 
+caller at the point of effect application. Moreover, recover is all-or-nothing: it cannot selectively 
+undo one effect while retaining others. To address both issues, we enhance the model at both 
+the input and output sides:
+1. On the input side, we not only transform Γ but also return an inverse function alongside 
+it, so that the inverse is supplied where the effect is applied: Γ → Γ × (Γ → Γ), i.e., Γ →
+𝜕Γ;
+2. On the output side, we not only transform 𝜕Γ but also return an inverse function alongside it, so that one effect can be undone while the others are retained: 𝜕Γ → 𝜕Γ × (𝜕Γ →
+𝜕Γ), i.e., 𝜕Γ → 𝜕2Γ.
+This enhancement preserves structural consistency between input and output, so we can 
+still define corresponding theory that maintains the mathematical properties of track. The 
+resulting types are the effect functions 𝔈Γ and their witnessed refinement 𝔈∗
+Γ:
+Definition 8. Define the effect function 𝔈Γ and witnessed effect function 𝔈∗
+Γ as:
+𝔈Γ ≔ Γ → Γ × (Γ → Γ)
+𝔈∗
+Γ ≔ (𝑒 : Γ → Γ × (Γ → Γ))
+× ((𝛾 : Γ) → ((𝛿 : Γ) × (𝑔 : Γ → Γ) × ((𝛿, 𝑔) = 𝑒(𝛾) → 𝑔(𝛿) = 𝛾)))
+(12)
+where 𝑒(𝛾) yields a pair (𝛿, 𝑔) representing:
+• 𝛿 : Γ is the new context;
+• 𝑔 : Γ → Γ is the inverse function of the current effect.
+An element of 𝔈∗
+Γ chooses its inverse per state, and the constraint 𝑔(𝛿) = 𝛾 holds that choice 
+to reverting the effect where it was applied, leaving 𝑔 unconstrained everywhere else. A single 
+𝑔 with 𝑔 ∘ 𝑓 = idΓ meets the constraint at every state at once, and induces an element of 𝔈∗
+Γ by 
+(𝑓, 𝑔) ↦ 𝛾 ↦ (𝑓(𝛾), 𝑔), which Theorem 11 shows to be a homomorphism. The constraint can be 
+visualized as the following commutative diagram, ensuring that the inverse 𝑒 returns indeed 
+reverses the transformation at the state where 𝑒 was applied:
+𝑓
+𝑔
+𝑒 pr1
+pr2
+Γ Γ
+𝜕Γ
+Since effect functions 𝔈Γ are no longer endomorphisms on the context, they cannot be 
+directly composed. We therefore define a new operation for effect composition:
+Definition 9. Given functions 𝑓, 𝑔 ∈ 𝔈Γ, define their effect composition 𝑓 ⋄ 𝑔 as:
+𝑓 ⋄ 𝑔 : Γ → 𝜕Γ
+𝑓 ⋄ 𝑔 = 𝛾 ↦
+𝐥𝐞𝐭 (𝛿, 𝑠) = 𝑔(𝛾) 𝐢𝐧
+𝐥𝐞𝐭 (𝜀, 𝑡) = 𝑓(𝛿) 𝐢𝐧
+(𝜀, 𝑠 ∘ 𝑡)
+(13)
+Theorem 10. Effect composition carries the monoid structure of 𝔗Γ over to 𝔈Γ. That is,
+1. (𝔈Γ, ⋄) is a monoid with unit 𝜂Γ ≔ 𝛾 ↦ (𝛾, idΓ);
+2. the assignment (𝑓, 𝑔) ↦ 𝛾 ↦ (𝑓(𝛾), 𝑔) is a monoid homomorphism from 𝔗Γ into 𝔈Γ.
+Proof.
+1. Associativity and the unit laws follow componentwise from those of ∘.
+2. Write 𝑒𝑖 = 𝛾 ↦ (𝑓𝑖(𝛾), 𝑔𝑖); then (𝑒1 ⋄ 𝑒2)(𝛾) = (𝑓1(𝑓2(𝛾)), 𝑔2 ∘ 𝑔1), which is the image of 
+(𝑓1, 𝑔1) ∘ (𝑓2, 𝑔2), and (idΓ, idΓ) maps to 𝜂Γ. □
+Theorem 11. Witnessing survives effect composition, and a uniform inverse witnesses at every 
+state. That is,
+1. 𝔈∗
+Γ is a submonoid of 𝔈Γ;
+2. the homomorphism of Theorem 10 carries every pair with 𝑔 ∘ 𝑓 = idΓ into 𝔈∗
+Γ.
+Proof.
+1. The unit lies in 𝔈∗
+Γ since idΓ(𝛾) = 𝛾. For closure, take 𝑓, 𝑔 ∈ 𝔈∗
+Γ and any 𝛾 ∈ Γ, and 
+let (𝛿, 𝑠) = 𝑔(𝛾), (𝜀, 𝑡) = 𝑓(𝛿), so that (𝑓 ⋄ 𝑔)(𝛾) = (𝜀, 𝑠 ∘ 𝑡). Then 𝑠(𝛿) = 𝛾 and 𝑡(𝜀) = 𝛿, 
+therefore (𝑠 ∘ 𝑡)(𝜀) = 𝑠(𝛿) = 𝛾.
+2. 𝑔 ∘ 𝑓 = idΓ gives 𝑔(𝑓(𝛾)) = 𝛾 at every 𝛾, so the image of such a pair is witnessed at every 
+state. □
+Just as track lifts a pair of transformations on Γ to 𝜕Γ, we define effect to lift 𝔈Γ to 𝔈𝜕Γ:
+Definition 12. Define the effect function transformation effectΓ as:
+effectΓ : 𝔈Γ → 𝜕Γ → 𝜕2Γ
+effectΓ = 𝑒 ↦ (𝛾, 𝜑) ↦ 𝐥𝐞𝐭 (𝛿, 𝑔) = 𝑒(𝛾) 𝐢𝐧
+((𝛿, 𝜑 ∘ 𝑔), trackΓ(𝑔, pr1 ∘ 𝑒))
+(14)
+Since effectΓ(𝑒) is itself 𝔈𝜕Γ, what it returns is an inverse in the sense of Definition 8 read 
+one level up. That inverse is itself a track of the pair obtained by swapping the two directions 
+of the effect. The ordinary tracking rule applies once more: undoing the effect is an effect in its 
+own right, transforming the state by 𝑔, and the way to undo that is to perform the effect again, 
+which is what pr1 ∘ 𝑒 does. The inverse therefore composes onto the accumulator it is handed, 
+exactly as track prescribes.
+We can now prove properties for effect analogous to those of track.
+Theorem 13. effect preserves the ⋄ operation. That is, ∀𝑓, 𝑔 ∈ 𝔈Γ:
+effectΓ(𝑓) ⋄ effectΓ(𝑔) = effectΓ(𝑓 ⋄ 𝑔) (15)
+Proof. Take any (𝛾, 𝜑) ∈ 𝜕Γ, and let (𝛿, 𝑠) = 𝑔(𝛾) and (𝜀, 𝑡) = 𝑓(𝛿), so that (𝑓 ⋄ 𝑔)(𝛾) = (𝜀, 𝑠 ∘ 𝑡) 
+and pr1 ∘ (𝑓 ⋄ 𝑔) = (pr1 ∘ 𝑓) ∘ (pr1 ∘ 𝑔). Then
+(effectΓ(𝑓) ⋄ effectΓ(𝑔))(𝛾, 𝜑) = ((𝜀, 𝜑 ∘ 𝑠 ∘ 𝑡), trackΓ(𝑠, pr1 ∘ 𝑔) ∘ trackΓ(𝑡, pr1 ∘ 𝑓))
+= ((𝜀, 𝜑 ∘ 𝑠 ∘ 𝑡), trackΓ(𝑠 ∘ 𝑡, (pr1 ∘ 𝑓) ∘ (pr1 ∘ 𝑔)))
+= effectΓ(𝑓 ⋄ 𝑔)(𝛾, 𝜑)
+where the first step unfolds Definition 12 at (𝛾, 𝜑) and at (𝛿, 𝜑 ∘ 𝑠), the second is Theorem 5, 
+and the third folds Definition 12. □
+How the two levels relate is what the following diagram shows. Its upper triangle is the 
+witness condition of 𝑒, according to Definition  8, and its lower triangle is the question of 
+whether 𝑒′ is witnessed the way 𝑒 is.
+𝑓
+𝑓′
+𝑔
+𝑔′
+𝑒
+𝑒′
+pr1
+pr1
+pr2
+pr2
+effect
+Γ Γ
+𝜕Γ 𝜕Γ
+𝜕2Γ
+Between the levels, the projection pr1 relates each lifted map to the map it lifts, as it does 
+for trackΓ in Theorem 4.
+Theorem 14. Let 𝑒 ∈ 𝔈Γ, write 𝑓 ≔ pr1 ∘ 𝑒, and let 𝑒′ ≔ effectΓ(𝑒) with forward map 𝑓′ ≔ pr1 ∘
+𝑒′. Then
+1. pr1 ∘ 𝑓′ = 𝑓 ∘ pr1;
+2. for each (𝛾, 𝜑) ∈ 𝜕Γ, the lifted inverse 𝑔′ ≔ pr2(𝑒′(𝛾, 𝜑)) and the inverse 𝑔 ≔ pr2(𝑒(𝛾)) 
+witnessed there satisfy pr1 ∘ 𝑔′ = 𝑔 ∘ pr1.
+Proof.
+1. By Definition 12, 𝑓′(𝛾, 𝜑) = (𝑓(𝛾), 𝜑 ∘ 𝑔), whose state is 𝑓(𝛾) = (𝑓 ∘ pr1)(𝛾, 𝜑).
+2. This is Theorem 4 applied to 𝑔′ = trackΓ(𝑔, 𝑓). □
+Whether the lower triangle closes is settled by computing what the lifted inverse returns:
+Theorem 15. Let 𝑒 ∈ 𝔈∗
+Γ and write 𝑓 ≔ pr1 ∘ 𝑒. Fix (𝛾, 𝜑) ∈ 𝜕Γ, let (𝛿, 𝑔) = 𝑒(𝛾), and write (Δ, 𝑔′) 
+for the value of effectΓ(𝑒) at (𝛾, 𝜑). Then
+𝑔′(Δ) = (𝛾, 𝜑 ∘ 𝑔 ∘ 𝑓) (16)
+The state is recovered exactly. The accumulator is restored as well, equivalently effectΓ(𝑒) ∈
+𝔈∗
+𝜕Γ, if and only if 𝑔 ∘ 𝑓 = idΓ; and in every case (𝜑 ∘ 𝑔 ∘ 𝑓)(𝛾) = 𝜑(𝛾), so the soundness invariant 
+is preserved.
+Proof. By Definition 12, Δ = (𝛿, 𝜑 ∘ 𝑔) and 𝑔′ = trackΓ(𝑔, 𝑓), so
+𝑔′(Δ) = (𝑔(𝛿), 𝜑 ∘ 𝑔 ∘ 𝑓) = (𝛾, 𝜑 ∘ 𝑔 ∘ 𝑓)
+using 𝑔(𝛿) = 𝛾. Membership in 𝔈∗
+𝜕Γ requires this to equal (𝛾, 𝜑) at every input; taking 𝜑 = idΓ 
+turns the equality of accumulators into 𝑔 ∘ 𝑓 = idΓ, and that condition conversely gives the 
+equality of accumulators for every 𝜑. Finally (𝜑 ∘ 𝑔 ∘ 𝑓)(𝛾) = 𝜑(𝑔(𝛿)) = 𝜑(𝛾). □
+The lower triangle therefore closes only when the inverse witnessed at 𝛾 reverts 𝑓 at 
+every state, so effectΓ does not carry 𝔈∗
+Γ into 𝔈∗
+𝜕Γ. What holds in every case is agreement 
+at 𝛾: recoverΓ(𝑔′(Δ)) = recoverΓ(𝛾, 𝜑), which is the whole of what Theorem 7 assumes of an 
+accumulator, so reverting leaves the recovery target untouched.
+Reverting effects in the reverse of the order in which they were applied requires nothing 
+further, because each inverse then meets the state its own application produced:
+Theorem 16. Let 𝑒1, ⋯, 𝑒𝑛 ∈ 𝔈∗
+Γ be applied in order from (𝛾0, idΓ) and reverted in the reverse 
+order. Then
+1. each revert recovers the context state its application ran against;
+2. every intermediate state satisfies the soundness invariant.
+Proof. Each step is an application or a revert. An application carries (𝛾, 𝜑) to (𝛿, 𝜑 ∘ 𝑔) with 
+𝑔(𝛿) = 𝛾, so it preserves 𝜑(𝛾) by Theorem 7, whose hypothesis is exactly the witness of 𝔈∗
+Γ. 
+Reverting in the reverse order hands each inverse the state its own application produced, so by 
+Theorem 15 that revert recovers the preceding state exactly and preserves 𝜑(𝛾) as well; neither 
+conclusion depends on the accumulator the inverse receives. □
+3.1.3.  Independence of Effects
+Reverting an effect at the state its own application produced is what Theorem  16 covers; 
+reverting one at any other state is what this subsection covers. Two situations call for the latter. 
+An inverse may be run while later effects are still in place, which is what withdrawing one 
+component from a running system amounts to; and one sequence may interleave the effects of 
+several components, each keeping the inverses of its own, so that the inverses of one component 
+are separated by the applications of another. In both an inverse meets a state that foreign effects 
+have moved, and whether it still reverts what it was built to revert is a question of commutation: 
+what has to commute is every transformation one effect can perform with every transformation 
+the other can perform, forward map and yielded inverse alike. A single accumulator settles 
+neither situation, 𝜑 being a composite that runs every inverse it holds in one order and all 
+at once.
+Definition 17. For an effect function 𝑒 ∈ 𝔈Γ, the transformation monoid 𝔐(𝑒) is the submonoid of 
+Γ → Γ generated by the forward map of 𝑒 together with every inverse 𝑒 yields, and the generators 
+of 𝔐(𝑒) are the elements of that generating set:
+𝔐(𝑒) ≔ ⟨{pr1 ∘ 𝑒} ∪ {pr2(𝑒(𝛾)) | 𝛾 ∈ Γ}⟩ (17)
+An effect induced by a pair (𝑓, 𝑔) ∈ 𝔗Γ has 𝑓 and 𝑔 for its generators, the inverse it yields being 
+𝑔 at every state.
+Lemma 18. Commutation is settled on the generators, and ⋄ enlarges no transformation 
+monoid. That is,
+1. if every generator of 𝔐(𝑒1) commutes with every generator of 𝔐(𝑒2), then every element 
+of 𝔐(𝑒1) commutes with every element of 𝔐(𝑒2);
+2. 𝔐(𝑒1 ⋄ 𝑒2) ⊆ ⟨𝔐(𝑒1) ∪ 𝔐(𝑒2)⟩.
+Proof.
+1. The maps commuting with every generator of 𝔐(𝑒2) form a submonoid of Γ → Γ, since 
+idΓ lies in it and 𝑓 ∘ 𝑓′ does where 𝑓 and 𝑓′ do. That submonoid contains the generators of 
+𝔐(𝑒1) by hypothesis and hence contains 𝔐(𝑒1). Fixing 𝑓 ∈ 𝔐(𝑒1), the maps commuting 
+with 𝑓 likewise form a submonoid containing the generators of 𝔐(𝑒2) and hence 𝔐(𝑒2).
+2. By Definition 9 the forward map of 𝑒1 ⋄ 𝑒2 is (pr1 ∘ 𝑒1) ∘ (pr1 ∘ 𝑒2) and the inverse it yields 
+at any state is 𝑠 ∘ 𝑡 for an 𝑠 yielded by 𝑒2 and a 𝑡 yielded by 𝑒1. Every generator of 𝔐(𝑒1 ⋄
+𝑒2) is therefore a composite of generators of the two. □
+Definition 19. Effect functions 𝑒1, 𝑒2 ∈ 𝔈Γ are independent when
+1. every transformation of one commutes with every transformation of the other,
+∀𝑓 ∈ 𝔐(𝑒1), 𝑔 ∈ 𝔐(𝑒2). 𝑓 ∘ 𝑔 = 𝑔 ∘ 𝑓 (18)
+2. neither one’s transformations disturb the inverse the other yields,
+∀𝑔 ∈ 𝔐(𝑒2), 𝛾 ∈ Γ. pr2(𝑒1(𝑔(𝛾))) = pr2(𝑒1(𝛾)) (19)
+and the same with 𝑒1 and 𝑒2 exchanged.
+A family (𝑒𝑙)𝑙∈𝐿 is pairwise independent  when 𝑒𝑙 and 𝑒𝑙′  are independent for every 𝑙 ≠ 𝑙′. A 
+family may repeat an effect function, and holding one independent of itself is holding 𝔐(𝑒) 
+commutative.
+For effects induced by pairs (𝑓1, 𝑔1) and (𝑓2, 𝑔2), clause (1) is by Lemma 18(1) the commutation of the four pairs 𝑓1, 𝑓2; 𝑔1, 𝑔2; 𝑓1, 𝑔2; and 𝑔1, 𝑓2, and clause (2) holds outright, an induced 
+effect yielding one inverse at every state. Commutation under ⋄ is a different property. What 
+𝑒1 ⋄ 𝑒2 = 𝑒2 ⋄ 𝑒1 equates is the composite forward map of the two orders with each other and 
+the composite inverse of the two orders with each other, each inverse entering the composite 
+at the state its own application produced; independence instead relates each transformation 
+of one effect to each transformation of the other, a forward map paired with a foreign inverse 
+included.
+Under independence an inverse may be run at a state later effects have moved, and what it 
+withdraws there is its own contribution and nothing else:
+Theorem 20. Let 𝑒1, ⋯, 𝑒𝑛 ∈ 𝔈∗
+Γ be pairwise independent and applied in order from 𝛾0. Write 
+𝑓𝑖 ≔ pr1 ∘ 𝑒𝑖, let 𝛿𝑖 ≔ 𝑓𝑖(𝛿𝑖−1) with 𝛿0 ≔ 𝛾0, and let 𝑔𝑖 ≔ pr2(𝑒𝑖(𝛿𝑖−1)) be the inverse 𝑒𝑖 yields 
+where it is applied. Fix 𝑗 and write 𝛿′
+𝑖 ≔ (𝑓𝑖 ∘ ⋯ ∘ 𝑓𝑗+1)(𝛿𝑗−1) for the states of the sequence with 
+𝑒𝑗 omitted, so that 𝛿′
+𝑗 = 𝛿𝑗−1. Then for every 𝑢 with 𝑗 ≤ 𝑢 ≤ 𝑛,
+1. 𝛿𝑢 = 𝑓𝑗(𝛿′
+𝑢) and 𝑔𝑗(𝛿𝑢) = 𝛿′
+𝑢;
+2. each 𝑒𝑖 with 𝑖 > 𝑗 yields at 𝛿′
+𝑖−1 the same inverse 𝑔𝑖 it yields at 𝛿𝑖−1.
+Proof.
+1. The first equation is an induction on 𝑢. At 𝑢 = 𝑗 it reads 𝛿𝑗 = 𝑓𝑗(𝛿𝑗−1), which is the 
+definition of 𝛿𝑗. For the inductive step, 𝛿𝑢+1 = 𝑓𝑢+1(𝛿𝑢) = 𝑓𝑢+1(𝑓𝑗(𝛿′
+𝑢)) = 𝑓𝑗(𝑓𝑢+1(𝛿′
+𝑢)) =
+𝑓𝑗(𝛿′
+𝑢+1), the middle equality being clause (1) of Definition 19 for 𝑒𝑢+1 and 𝑒𝑗, which are 
+distinct effects of the family since 𝑢 + 1 > 𝑗. For the second equation, clause (1) carries 
+𝑔𝑗 out through the forward maps applied after 𝑒𝑗, leaving the witness of 𝑒𝑗 to be used at 
+the one state it holds at:
+𝑔𝑗(𝛿𝑢) = (𝑔𝑗 ∘ 𝑓𝑢 ∘ ⋯ ∘ 𝑓𝑗+1)(𝛿𝑗) = (𝑓𝑢 ∘ ⋯ ∘ 𝑓𝑗+1)(𝑔𝑗(𝑓𝑗(𝛿𝑗−1))) = 𝛿′
+𝑢
+the last equality resting on 𝑔𝑗(𝑓𝑗(𝛿𝑗−1)) = 𝛿𝑗−1, which is the witness Definition 8 requires 
+of 𝑒𝑗 at 𝛿𝑗−1.
+2. By (1) the state 𝛿𝑖−1 is 𝑓𝑗(𝛿′
+𝑖−1), and 𝑓𝑗 ∈ 𝔐(𝑒𝑗), so clause (2) of Definition 19 for 𝑒𝑖 and 
+𝑒𝑗 gives pr2(𝑒𝑖(𝑓𝑗(𝛿′
+𝑖−1))) = pr2(𝑒𝑖(𝛿′
+𝑖−1)). □
+Clause (1) locates the state an inverse reaches: it is the state the same sequence would have 
+reached had the effect never been applied, whatever effects were applied after it. Clause (2) 
+locates the inverses the others hold there, and together the two let the theorem be applied again 
+to the shorter sequence:
+Corollary 21. Let 𝑒1, ⋯, 𝑒𝑛 ∈ 𝔈∗
+Γ be pairwise independent and applied in order from 𝛾0, and let 
+𝑔1, ⋯, 𝑔𝑛 be as above. Applying the 𝑛 inverses at 𝛿𝑛 in the order of any permutation of {1, ⋯, 𝑛} 
+reaches 𝛾0.
+Proof. By downward induction on 𝑛. Let the permutation begin with 𝑗. By Theorem 20(1) applying 𝑔𝑗 at 𝛿𝑛 reaches 𝛿′
+𝑛, the state the sequence with 𝑒𝑗 omitted reaches, and by Theorem 20(2) 
+the inverses the remaining effects yielded there are the 𝑔𝑖 in hand. That sequence is pairwise 
+independent, being a subfamily, so the induction hypothesis applies to it and to the rest of the 
+permutation; the empty sequence reaches 𝛾0. □
+LIFO order is one such permutation, and Theorem 16 reverts in it with no hypothesis at all. 
+What independence buys is every other order, and with it the sequence that interleaves several 
+components, which Section 4.4.2 carries to a trace of a whole system.
+Together, these constructions constitute revertible effects: each effect function in 𝔈∗
+Γ explicitly 
+provides its own inverse, effect tracks these inverses on the effect context 𝜕Γ, and the ⋄ operation 
+composes them while preserving revertibility. What they deliver is local temporal composability, 
+local in that the guarantee is read of one component’s effects taken by themselves. We take that 
+to be the following criterion: for every sequence of effect functions a component applies, the 
+accumulator recovers the context it began at ( Theorem 7), and reverting the sequence hands 
+each inverse the state its own application ran against ( Theorem 16). Loading a component is 
+applying such a sequence and accumulating its inverses in 𝜑; unloading it is applying 𝜑.
+Two things the criterion leaves out, and both arrive once several components are in play: 
+reverting out of the order the accumulator imposes, and a sequence that interleaves the 
+effects of others. Independence delivers them ( Corollary  21), and it is a condition on the 
+effects rather than a property of the construction, Section 3.3.2 being where the discipline that 
+meets it is identified and Section 4.4.2 where the guarantee is read of a whole system’s trace. 
+Where independence fails, the order has to be carried elsewhere: within one component by 
+the accumulator, which reverts in LIFO order whatever the effects ( Section 4.3.2), and across 
+components by a declared coeffect, which orders one activation against another (Section 4.3.1).
+3.2.  Reactive Coeffects
+Spatial composability is the ability for components to declare dependencies on one another and 
+for the system to resolve, provide, and withdraw those dependencies at runtime. This requires 
+that dependency satisfaction be re-evaluated whenever the shared context changes, so that a 
+component activates when its dependencies become available and deactivates when they are 
+withdrawn. We therefore model dependencies of a component as a specification and classify 
+each change to the context, against that specification, as activating, deactivating, or neutral. 
+Classifying against the specification is what detects a change in satisfaction; responding to 
+that classification is what drives activation and deactivation. We call such coeffects reactive: by 
+classifying context changes and driving activation and deactivation from them, correct coeffect 
+ordering becomes a structural guarantee.
+3.2.1.  Coeffect Context
+Traditional inversion-of-control (IoC) containers [38] typically model dependencies as simple 
+key-value mappings. This section formalizes IoC as a coeffect context that synergizes with 
+revertible effects to provide a mathematical foundation for dynamic composition.
+Definition 22. Given a type family 𝒱︀ : 𝐾 → Type, define the coeffect context as the dependent 
+partial function type:
+Σ ≔ (𝑘 : 𝐾) ⇀ 𝒱︀𝑘 (20)
+where 𝜎 : Σ is a finite partial function assigning to each 𝑘 ∈ dom(𝜎) ⊆ 𝐾 a value of type 𝒱︀𝑘. 
+We write:
+• 𝜎(𝑘) for application (defined when 𝑘 ∈ dom(𝜎));
+• 𝜎[𝑘 ↦ 𝑣] for the table binding 𝑣 at 𝑘 and agreeing with 𝜎 elsewhere;
+• 𝜎 ∖ 𝑘 for restriction (defined when 𝑘 ∈ dom(𝜎));
+• 𝑘 ∈ dom(𝜎) for membership.
+The use of a type family 𝒱︀ ensures that each dependency key 𝑘 is associated with a specific 
+value type 𝒱︀𝑘, providing static type safety for dependency access. Extension and restriction 
+carry preconditions, imposed by the operations below: a dependency cannot be provided 
+twice (𝑘 ∉ dom(𝜎) for extension) nor revoked if absent (𝑘 ∈ dom(𝜎) for restriction). A violated 
+precondition is signalled as an error and produces no transition, so the effect algebra, which 
+describes the transitions that do occur, applies to these operations unchanged. A reader preferring to internalize the failure may read every Σ ⇀ Σ below as Σ → 𝖬𝖺𝗒𝖻𝖾(Σ) and compose in 
+the 𝖬𝖺𝗒𝖻𝖾 monad (Section 2.1), at the cost of replacing each identity by the partial identity on 
+the operation’s domain. Based on this context structure, we define two core operations:
+Definition 23. The get and set operations on Σ are defined as:
+get : (𝑘 : 𝐾) → Σ ⇀ 𝒱︀𝑘
+get = 𝑘 ↦ 𝜎 ↦ 𝜎(𝑘)
+set : (𝑘 : 𝐾) × 𝒱︀𝑘 → Σ ⇀ Σ × (Σ ⇀ Σ)
+set = (𝑘, 𝑣) ↦ 𝜎 ↦ (𝜎[𝑘 ↦ 𝑣], 𝜆𝜎′.𝜎′ ∖ 𝑘)
+(21)
+where get(𝑘) requires 𝑘 ∈ dom(𝜎) and set(𝑘, 𝑣) requires 𝑘 ∉ dom(𝜎) as preconditions.
+Notably, set(𝑘, 𝑣) has type 𝔈∗
+Σ, precisely an effect function on the coeffect context. We can 
+therefore directly apply the effect machinery from Section  3.1: effectΣ provides automatic 
+tracking and recovery of dependency registrations. This is the synergy between reactive coef -
+fects and revertible effects: coeffect operations are effects, and effects are revertible.
+What get hands a component is a value, and what the component can do with that value is 
+whatever the coeffect at that key provides. A key therefore carries more than a value type:
+Definition 24. A coeffect at a key 𝑘 is a triple (𝒱︀𝑘, ≃𝑘 , 𝒜︀𝑘), where 𝒱︀𝑘 is the value type of Definition 22, ≃𝑘  is an equivalence relation on 𝒱︀𝑘 up to which values at 𝑘 are compared (Section 3.3.2), 
+and 𝒜︀𝑘 is a set of coeffect operations, the operations the value bound at 𝑘 provides to a component 
+holding it. An operation 𝑎 ∈ 𝒜︀𝑘 carries an argument type 𝑋𝑎 and an outcome type 𝐵𝑎, and acts 
+on the value alone:
+𝑎 : 𝑋𝑎 → 𝒱︀𝑘 ⇀ 𝒱︀𝑘 × (𝒱︀𝑘 ⇀ 𝒱︀𝑘) × 𝐵𝑎 (22)
+its first two constituents forming an effect function on 𝒱︀𝑘 witnessed as Definition 8 requires, 
+and its third an outcome. Each operation is required to respect ≃𝑘 : at ≃𝑘 -related values it is defined 
+at both or at neither, and where defined it yields ≃𝑘 -related successors, inverses that again carry 
+≃𝑘 -related values to ≃𝑘 -related values, and equal outcomes. An operation acts on the coeffect 
+context through its lift
+𝑎Σ(𝑥)(𝜎) ≔ 𝐥𝐞𝐭 (𝑣, 𝑔, 𝑏) = 𝑎(𝑥)(𝜎(𝑘)) 𝐢𝐧 (𝜎[𝑘 ↦ 𝑣], 𝜆𝜎′.𝜎′[𝑘 ↦ 𝑔(𝜎′(𝑘))], 𝑏) (23)
+defined when 𝑘 ∈ dom(𝜎), whose first two constituents are an effect function on Σ.
+Typing an operation of 𝑘 on 𝒱︀𝑘 is what confines it to the binding at 𝑘: the lift reads and 
+writes that binding and leaves every other key as it stands, so no side condition is needed 
+to say so. Where isolation is in force the binding it reaches is the one the realm resolves to 
+(Definition 28), two keys sharing a realm sharing one binding. An operation whose behaviour 
+turns on another key reads that key’s value into its argument 𝑋𝑎, and the reactive discipline of 
+the next subsection is what holds the value fixed for as long as the component that read it runs 
+(Theorem 63).
+3.2.2.  Specification and Notification
+The preceding definitions describe how individual dependencies are registered and accessed. 
+Accessing an absent dependency, however, is a runtime failure. A component should therefore 
+activate only once all the dependencies it declares are present, rather than accessing them optimistically and failing when one is missing. This raises two questions: whether a component’s 
+declared dependencies are jointly satisfied, and how the system should respond when that 
+status changes. The coeffect context Σ carries a natural observational structure that makes both 
+questions tractable: for any coeffect specification 𝑑 ⊆ 𝐾, define the satisfaction predicate:
+𝜎 ⊧ 𝑑 ≔ ∀𝑘 ∈ 𝑑. 𝑘 ∈ dom(𝜎) (24)
+This predicate is decidable (since dom(𝜎) is finite). Since all mutations to 𝜎 pass through 
+effect functions (whose inverses recover the previous domain), changes to satisfaction are 
+detectable at each effect boundary. This is the algebraic basis of reactivity: the effect system 
+guarantees that every coeffect change is observed.
+Definition 25. A coeffect specification is:
+𝔇Σ ≔ 𝖲𝖾𝗍(𝐾) (25)
+representing the set of dependencies a component declares from the environment.
+What makes this specification reactive is how it classifies state transitions. Any effect that 
+transforms 𝜎 to 𝜎′ can be classified by a specification 𝑑 ∈ 𝔇Σ according to whether 𝑑’s satisfaction status is altered:
+Definition 26. Given a coeffect specification 𝑑 ⊆ 𝐾 and states 𝜎, 𝜎′ ∈ Σ, define:
+notify𝑑(𝜎, 𝜎′) ≔
+{
+activating if 𝜎 ⊭ 𝑑 ∧ 𝜎′ ⊧ 𝑑
+deactivating if 𝜎 ⊧ 𝑑 ∧ 𝜎′ ⊭ 𝑑
+neutral otherwise
+(26)
+This is well-defined because 𝜎 ⊧ 𝑑 is decidable and all state transitions are mediated 
+by effect functions. The reactive invariant is: an activating transition triggers execution of 
+the component’s effects (with full effect tracking), whereas a deactivating transition triggers 
+recovery by applying the accumulator. The precise operational semantics of these transitions 
+depend on their interaction with control flows, and are developed in Section 4.
+What set and notify deliver together is local spatial composability, local in the same sense as 
+before, the guarantee being read of one component’s coeffects taken by themselves. We take that 
+to be the following criterion: a component activates only at a state satisfying its specification, 
+so it never reads a binding that is absent, and every change to the context is classified against 
+that specification, so a loss of satisfaction is detected where it happens and drives a deactiva -
+tion. Both halves are immediate from the definitions above, satisfaction being a precondition 
+checked where the component would activate and notify𝑑 being defined at every transition.
+The criterion covers one direction of the coeffect ordering and not the other. If component 
+𝐴 provides a key 𝑘 and component 𝐵 declares 𝑘 ∈ 𝑑𝐵, then 𝐵 can activate only after 𝐴 has 
+activated and provided 𝑘, since 𝜎 ⊧ 𝑑𝐵 requires 𝑘 ∈ dom(𝜎). The converse fails: unloading 𝐴 
+removes 𝑘 from dom(𝜎) and so breaks 𝐵’s satisfaction, but a notification cannot by itself keep 
+𝑘 readable for as long as 𝐵’s own teardown needs it, nor hold 𝐴’s recovery back until 𝐵 
+has finished. Ordering a withdrawal after the deactivations it causes is a condition on other 
+components rather than on the one acting, so it belongs to the global form of the guarantee, 
+and Section 4.3.1 supplies the machinery it takes.
+3.2.3.  Isolation and Interception
+The basic coeffect context Σ models a flat dependency table. In practice, however, the system 
+may need to bind distinct values to the same logical dependency for different components. 
+This section extends the coeffect context with two mechanisms: coeffect isolation (the same key 
+resolves differently in different contexts) and coeffect interception (cross-cutting behavior on 
+dependency access).
+Realization. The two mechanisms differ from get and set in what they act on. A provision 
+writes the shared table every component reads, so it is an effect on that table and carries an 
+inverse to withdraw it. Isolation and interception instead adjust how a key is resolved for the 
+components under one context, leaving the table itself as it stands. Typing an operation as an 
+effect fixes its denotation, a successor state paired with an inverse, but not its realization, which 
+determines how that inverse is carried out.
+Definition 27. An effect function on a context admits two realizations:
+• In-place realization mutates the context and returns a nontrivial inverse; the successor 
+aliases the input, and recovery runs the inverse to undo the mutation.
+• Derived realization leaves the input intact and returns a fresh context deriving from it, 
+with the identity as its inverse; recovery discards the derived context. A context derived 
+from another is what the recursive structure of Definition 32 carries.
+In a purely functional setting the two coincide, and an imperative host may choose either per 
+operation; Section 5.1.2 implements both. Isolation and interception are given derived realization outright: each produces a fresh context whose own table differs from the inherited one, so 
+each is typed below as a map from context to context rather than as an effect function. Nothing 
+in the shared table changes, so there is no inverse to track and nothing for Definition 12 to lift, 
+and recovery discards the derived context along with the adjustment it carried. Assignment 
+on a derived table overrides whatever the inherited table held at the key, which is why neither 
+operation carries a precondition.
+Coeffect Isolation. By introducing isolation realms, coeffect isolation allows the same dependency to bind to different values in different contexts. This has broad applications in multitenant systems, testing environments, and component sandboxes.
+Definition 28. Define the coeffect context with isolation as:
+Σiso ≔ (𝐾 ⇀ 𝑅) × ((𝑟 : 𝑅) ⇀ 𝒱︀𝑟) (27)
+It can be represented as a pair (𝜌, 𝜎), where:
+• 𝜌 : 𝐾 ⇀ 𝑅 is the isolation realm table, assigning a realm identifier to each isolated key; a 
+key outside dom(𝜌) resolves to its own realm, so we write 𝜌(𝑘) = 𝑘 there (𝑅 ⊇ 𝐾);
+• 𝜎 : (𝑟 : 𝑅) ⇀ 𝒱︀𝑟 is the dependency table, a partial dependent function from realm identifiers to typed values.
+The two-layer mapping structure decouples the logical layer from the storage layer, making 
+dependency access context-aware. When accessing a key 𝑘, the system first resolves 𝜌(𝑘) to 
+obtain a realm identifier 𝑟, then accesses 𝜎(𝑟) for the actual value.
+Definition 29. The get, set, and isolate operations on Σiso are:
+get : (𝑘 : 𝐾) → Σiso ⇀ 𝒱︀𝜌(𝑘)
+get = 𝑘 ↦ (𝜌, 𝜎) ↦ 𝜎(𝜌(𝑘))
+set : (𝑘 : 𝐾) × 𝒱︀𝜌(𝑘) → Σiso ⇀ Σiso × (Σiso ⇀ Σiso)
+set = (𝑘, 𝑣) ↦ (𝜌, 𝜎) ↦ ((𝜌, 𝜎[𝜌(𝑘) ↦ 𝑣]), 𝜆(𝜌′, 𝜎′).(𝜌′, 𝜎′ ∖ 𝜌′(𝑘)))
+isolate : 𝐾 × 𝑅 → Σiso → Σiso
+isolate = (𝑘, 𝑟) ↦ (𝜌, 𝜎) ↦ (𝜌[𝑘 ↦ 𝑟], 𝜎)
+(28)
+where get and set carry the preconditions of Definition 23 transported along 𝜌, namely 𝜌(𝑘) ∈
+dom(𝜎) and 𝜌(𝑘) ∉ dom(𝜎). The context that isolate(𝑘, 𝑟) derives assigns the realm 𝑟 to 𝑘 and 
+inherits the dependency table unchanged, so a key already isolated is reassigned rather than 
+refused.
+The coeffect isolation mechanism essentially implements a runtime ad-hoc polymorphism 
+system. Through isolation realm identifiers, the same dependency key can resolve to entirely 
+different values in different contexts, and this polymorphism can be dynamically adjusted 
+at runtime. Compared to traditional dependency injection, coeffect isolation provides finergrained control, enabling customized isolation for specific components; set remains an effect 
+function (𝔈∗
+Σiso ) and thus inherits revertibility, whereas isolate needs none, deriving a context 
+instead of writing the shared table.
+Coeffect Interception. The second mechanism, coeffect interception, attaches cross-cutting 
+metadata to dependency access, adding behavior without modifying the dependency value. 
+This metadata can be either context-carried or component-declared, so we extend both the 
+coeffect context and the coeffect specification:
+Definition 30. Define the coeffect context and specification with interception as:
+Σinter ≔ ((𝑘 : 𝐾) → ℳ︀𝑘) × ((𝑘 : 𝐾) ⇀ (ℳ︀𝑘 → 𝒱︀𝑘))
+𝔇inter ≔ (𝑘 : 𝐾) ⇀ ℳ︀𝑘
+(29)
+The context Σinter is a pair (𝜄, 𝜎): 𝜄 is the context-carried metadata installed on the context itself, 
+empty (𝜖𝑘) by default; and 𝜎 maps each key 𝑘 to a provider function from metadata ℳ︀𝑘 to value 
+𝒱︀𝑘. A specification 𝑑 ∈ 𝔇inter carries the component-declared metadata, assigning each key its 
+metadata 𝑑(𝑘), with dom(𝑑) serving as the dependency set. Each key equips its metadata with 
+a monoid (ℳ︀𝑘, ⊕𝑘, 𝜖𝑘): the merge ⊕𝑘 is associative with identity 𝜖𝑘 (the empty metadata).
+Definition 31. The get, set, and intercept operations on Σinter are:
+get : (𝑘 : 𝐾) × ℳ︀𝑘 → Σinter ⇀ 𝒱︀𝑘
+get = (𝑘, 𝜇) ↦ (𝜄, 𝜎) ↦ 𝜎(𝑘)(𝜇 ⊕𝑘 𝜄(𝑘))
+set : (𝑘 : 𝐾) × (ℳ︀𝑘 → 𝒱︀𝑘) → Σinter ⇀ Σinter × (Σinter ⇀ Σinter)
+set = (𝑘, 𝜓) ↦ (𝜄, 𝜎) ↦ ((𝜄, 𝜎[𝑘 ↦ 𝜓]), 𝜆(𝜄′, 𝜎′).(𝜄′, 𝜎′ ∖ 𝑘))
+intercept : (𝑘 : 𝐾) × ℳ︀𝑘 → Σinter → Σinter
+intercept = (𝑘, 𝜈) ↦ (𝜄, 𝜎) ↦ (𝜄[𝑘 ↦ 𝜄(𝑘) ⊕𝑘 𝜈], 𝜎)
+(30)
+where get and set carry the preconditions of Definition 23 on the provider table, namely 𝑘 ∈
+dom(𝜎) and 𝑘 ∉ dom(𝜎). The context that intercept(𝑘, 𝜈) derives merges 𝜈 onto the metadata 
+inherited at 𝑘 and inherits the provider table unchanged.
+When a component with specification 𝑑 accesses key 𝑘, the system evaluates 𝜎(𝑘)(𝑑(𝑘) ⊕𝑘
+𝜄(𝑘)): the component-declared metadata is merged with the context-carried metadata 𝜄, and 
+the provider function is applied to the result. This merge follows each key’s own semantics 
+(e.g. scalar fields are overwritten, set-valued fields unioned) and is right-biased, so 𝜄(𝑘) takes 
+priority and can override the component’s declaration, letting an enclosing context constrain 
+how a component uses a coeffect without modifying that component (e.g. Section 6.3).
+3.3.  The Context Paradigm
+Section 3.1 and Section 3.2 each act on a context, the first as the carrier of effects and the second 
+as the carrier of coeffects, leaving open what a single context carrying both looks like. This 
+section gives that unification a concrete construction, assembles from the coeffects an observational equivalence that supplies the effect independence Section 3.1.3 leaves open, and argues 
+that the resulting context type constitutes a programming paradigm in its own right.
+3.3.1.  Unified Context
+For a context Γ, the effect context 𝜕Γ (Section 3.1) provides a higher-level abstraction, carrying 
+the previous-level context and that level’s accumulator ( Definition 2). Making this structure 
+recursive and combining it with the coeffect context Σ yields the following type:
+Definition 32. The context type Γ∞ is defined as:
+Γ∞ ≔ 𝜇Γ. Γ × (Γ → Γ) × Σ (31)
+where the three projections are:
+• Γ: the current context state (recursive);
+• Γ → Γ: the accumulator, which recovers this level’s effects;
+• Σ: the coeffect context carrying dependency information.
+Under this definition, effect maps 𝔈Γ∞
+ to itself, unifying the 𝜕-tower into a single selfsimilar type. The coeffect context Σ is structurally integrated: dependency operations (set, get) 
+act on Σ, and the accumulator tracks their reversal. Since the type family 𝒱︀ underlying Σ is 
+unconstrained, any state the system needs to share across components can be encoded as a 
+dependency with an appropriate value type— Σ subsumes all shared mutable states, not just 
+inter-component dependencies. Every interaction between a component and its environment 
+passes through this single entity.
+Hierarchical composition. The recursive structure of Γ∞ supports hierarchical control: a 
+parent context aggregates multiple child-level effects, forming a tree-shaped control structure 
+that maintains modularity while enabling unified cross-level management. The effect transformation realizes a literal “plug-in” metaphor:
+• Loading a component corresponds to executing its effects (plugging in);
+• Unloading a component corresponds to recovering its effects (unplugging, without 
+affecting other running components);
+• Components at different levels of the hierarchy are independently loadable and unloadable; a parent context aggregates and manages the effects of all its children, enabling 
+arbitrarily nested composition.
+3.3.2.  Observational Equivalence
+The recovery guarantee of Section 3.1 asserts an equality of states ( Theorem 7), which is an 
+idealization, because the physical state cannot be recovered as it stood. For example, free 
+releases a block to the allocator without restoring the layout the heap had before malloc; and 
+a generative name is not restored by the inverse that discards it, since the next creation draws 
+a fresh one [39]. The equalities of Section 3 are therefore to be read up to an equivalence ≃, 
+and we take ≃ to be an observational equivalence: two states are related when no observer can 
+distinguish them. Comparing behaviour rather than representation is the established route to 
+program equivalence [40], and the relation such a comparison yields depends on what the 
+observer is given to work with [41]. What an observer of a context is given is the coeffects it 
+carries, each of which arrives with an equivalence of its own ( Definition 24), so the relation 
+on a context is assembled from theirs. Assembling it is the business of this subsection, and 
+quotienting by it is what buys the independence Section 3.1.3 asks for.
+Definition 33. Two coeffect contexts are related when they bind the same keys to related values, 
+and two states of a context when their coeffect projections are:
+𝜎 ≃ 𝜎′ ≔ dom(𝜎) = dom(𝜎′) ∧ ∀𝑘 ∈ dom(𝜎). 𝜎(𝑘) ≃𝑘 𝜎′(𝑘)
+𝛾 ≃ 𝛾′ ≔ 𝜎𝛾 ≃ 𝜎𝛾′
+(32)
+writing 𝜎𝛾 for the coeffect projection of 𝛾 (Definition 32).
+The part of a state that no key binds is thereby forgotten, and forgetting it is what lets 
+Theorem 7 be read up to ≃ at all: the heap layout and the generative name of the examples 
+above lie outside the relation unless some key binds them. What Section  3.2.2 needs of ≃ 
+follows rather than being assumed. Related states have the same domain, so they agree on the 
+satisfaction predicate 𝜎 ⊧ 𝑑 and on the classification notify𝑑 of Definition 26, and reactivity is a 
+property of Σ/ ≃.
+Calling the relation observational is a claim about each ≃𝑘 , namely that it separates no more 
+than the operations of 𝑘 can tell apart. An observer of a value runs those operations and reads 
+their outcomes.
+Definition 34. Let 𝑉  carry a set 𝒜︀ of operations in the sense of Definition 24, and write 𝔐(𝑎) 
+for the transformation monoid (Definition 17) of the effect functions 𝑎(𝑥) over every argument 
+𝑥 : 𝑋𝑎. A test over 𝒜︀ is a finite word over the generators of the monoids 𝔐(𝑎), 𝑎 ∈ 𝒜︀, each letter 
+applied to the value the letters before it left; its outcomes are those the letters that are forward 
+maps of operations yield along the way, and it is undefined where a precondition fails. Values 
+𝑣, 𝑣′ : 𝑉  are indistinguishable, written 𝑣 ≈
+𝒜︀
+𝑣′, when every test over 𝒜︀ is defined at both or at 
+neither and yields the same outcomes at both.
+Lemma 35. Indistinguishability is the coarsest relation the operations respect. That is,
+1. every operation of 𝒜︀ respects ≈
+𝒜︀
+ in the sense of Definition 24;
+2. every equivalence that every operation of 𝒜︀ respects is contained in ≈
+𝒜︀
+.
+Every admissible choice of ≃𝑘  is therefore contained in ≈
+𝒜︀𝑘
+, and ≈
+𝒜︀𝑘
+ is itself admissible.
+Proof.
+1. Let 𝑣 ≈
+𝒜︀
+𝑣′ and let 𝑎 ∈ 𝒜︀ be applied to an argument. Prefixing a test by one letter is again 
+a test, so the values the forward map reaches are indistinguishable, as are the values any 
+one yielded inverse reaches from indistinguishable arguments; the one-letter test gives 
+definedness at both or neither and equality of the outcome.
+2. Let 𝑅 be such an equivalence and 𝑣𝑅𝑣′. Each letter of a test is a forward map or a yielded 
+inverse of an operation, and respect carries 𝑅 along either, keeping the values reached 
+related and the outcomes equal at every letter. Hence every test agrees at 𝑣 and 𝑣′. □
+Substituting ≃ for = throughout is not by itself enough, because an effect function returns 
+an inverse as well as a state, and two states that ≃ identifies have to yield inverses ≃ identifies 
+as well.
+Definition 36. A map 𝑓 : Γ → Γ respects ≃ when
+∀𝛾, 𝛾′ ∈ Γ. 𝛾 ≃ 𝛾′ ⇒ 𝑓(𝛾) ≃ 𝑓(𝛾′) (33)
+Two maps are related when they agree at every state, and two pairs in 𝜕Γ when both components are:
+𝑓 ≃ 𝑔 ≔ ∀𝛾 ∈ Γ. 𝑓(𝛾) ≃ 𝑔(𝛾)
+(𝛿, 𝑔) ≃ (𝛿′, 𝑔′) ≔ 𝛿 ≃ 𝛿′ ∧ 𝑔 ≃ 𝑔′ (34)
+A map respecting ≃ is one that descends to Γ/ ≃, and two maps related by ≃ are two that 
+descend to the same map there. An effect function needs both: the first so that the state it 
+computes is determined on the quotient, the second so that the inverse it returns is.
+Definition 37. Read Definition 8 up to ≃: an 𝑒 ∈ 𝔈Γ lies in 𝔈∗
+Γ when 𝑒 respects ≃ as a map Γ →
+𝜕Γ and, writing (𝛿, 𝑔) = 𝑒(𝛾), for every 𝛾 ∈ Γ
+1. 𝑔(𝛿) ≃ 𝛾;
+2. 𝑔 respects ≃.
+Taking ≃ to be equality on Γ recovers Definition 8.
+Lemma 38. With 𝔈∗
+Γ read as in Definition 37, every equality of states asserted in Section 3.1 holds 
+with = replaced by ≃, and the accumulator of every state reachable from (𝛾0, idΓ) respects ≃.
+Proof. An accumulator is a composition of inverses, each respecting ≃ by Definition 37(2), and a 
+composition of maps respecting ≃ respects ≃, the base case being idΓ. The proofs of Section 3.1 
+then go through unchanged, respect being what carries a relation through an inverse: from 
+𝑔2(𝛿2) ≃ 𝛿1 and 𝑔1(𝛿1) ≃ 𝛾 respect gives (𝑔1 ∘ 𝑔2)(𝛿2) ≃ 𝛾, which is the step each composition 
+of inverses takes, and the soundness invariant of Theorem 7 reads 𝜑(𝛾) ≃ 𝛾0 by that step. □
+The commutation Definition 19 asks for is read up to ≃ by the same lemma, and reading it 
+that way is what makes it attainable at all: two operations may leave values that ≃𝑘  identifies and 
+still count as commuting. Of two operations it asks one thing more than of the effect functions 
+their lifts induce, an operation yielding an outcome as well.
+Definition 39. Operations 𝑎 and 𝑎′ are independent when their lifts are independent as effect 
+functions (Definition 19) at every pair of arguments, and neither one’s transformations disturb 
+the outcome the other yields:
+∀𝑥 : 𝑋𝑎, 𝑔 ∈ 𝔐(𝑎′Σ), 𝜎 ∈ Σ. pr3(𝑎Σ(𝑥)(𝑔(𝜎))) = pr3(𝑎Σ(𝑥)(𝜎)) (35)
+and the same with 𝑎 and 𝑎′ exchanged, writing 𝔐(𝑎Σ) for the transformation monoid of the 
+lifts 𝑎Σ(𝑥) over every argument as Definition 34 writes 𝔐(𝑎) for that of the operation itself. A 
+key 𝑘 is commutative when any two operations of 𝒜︀𝑘 are independent, an operation being held 
+independent of itself as well.
+Across distinct keys the condition holds outright.
+Theorem 40. Operations at distinct keys are independent.
+Proof. Let 𝑎 lie in 𝒜︀𝑘 and 𝑎′ in 𝒜︀𝑘′  with 𝑘 ≠ 𝑘′. By Definition 24 every generator of 𝔐(𝑎Σ) is of 
+the form 𝜎 ↦ 𝜎[𝑘 ↦ 𝑢(𝜎(𝑘))] for a map 𝑢 on 𝒱︀𝑘, being either the lift of a forward map or the 
+lift of a yielded inverse, and likewise for 𝑎′ at 𝑘′. Two such maps commute, each reading and 
+writing one key alone and the two keys differing, and Lemma 18(1) extends the commutation 
+from the generators to the two monoids. For the second condition, what 𝑎Σ yields at 𝜎, inverse 
+and outcome alike, is determined by 𝜎(𝑘), which every generator of 𝔐(𝑎′Σ) leaves as it stands.□
+A key whose value is a table of entries added and removed independently is commutative, 
+registration of a route or of an event listener being the representative case: two registrations in 
+either order leave a table that answers every test alike, and either registration can be withdrawn 
+while the other stands. A key whose value is an ordered chain is not, since a middleware 
+inserted before another sees a different request, and neither order can be withdrawn without 
+disturbing the other. The allocator of the opening example divides by what its interface pub -
+lishes. Where the handles it hands out are compared by no operation of the key, ≃𝑘  may relate 
+two heaps up to a renaming of handles, which is how CompCert relates the memory states of 
+a program and of its translation [42], and allocation is commutative; where the addresses are 
+outcomes compared by equality, no admissible ≃𝑘  makes the two orders of allocation agree, and 
+the key is not commutative.
+What a component performs is a sequence of operations in which each may depend on 
+what the ones before it yielded, and effect functions of that shape are what the theorem below 
+speaks of.
+Definition 41. The coeffect-mediated effect functions form the least set 𝔈𝒜︀
+Σ ⊆ 𝔈Σ that contains the 
+unit 𝜂Σ and is closed under the following: for a key 𝑘, an operation 𝑎 ∈ 𝒜︀𝑘, an argument 𝑥 :
+𝑋𝑎, and a family (𝑒𝑏)𝑏∈𝐵𝑎
+ of members,
+𝜎 ↦ 𝐥𝐞𝐭 (𝛿, 𝑠, 𝑏) = 𝑎Σ(𝑥)(𝜎) 𝐢𝐧 𝐥𝐞𝐭 (𝜀, 𝑡) = 𝑒𝑏(𝛿) 𝐢𝐧 (𝜀, 𝑠 ∘ 𝑡) (36)
+is again a member. Each stage performs one operation and chooses what follows it by the 
+outcome, so an argument may depend on the outcomes already obtained. The operations 
+occurring in a member are the ones its stages perform, over every choice of outcome.
+Theorem 42. Let 𝑒1, 𝑒2 ∈ 𝔈𝒜︀
+Σ and let every key at which operations of both occur be commu -
+tative (Definition 39). Then 𝑒1 and 𝑒2 are independent (Definition 19).
+Proof. By induction on the construction of Definition 41, 𝔐(𝑒𝑖) lies in the submonoid generated 
+by the generators of the operations occurring in 𝑒𝑖: the unit generates the trivial monoid, and 
+a stage is a ⋄-composite of 𝑎Σ(𝑥) with a member, to which Lemma 18(2) applies.
+For clause (1) of Definition 19 it is therefore enough, by Lemma 18(1), that a generator of an 
+operation occurring in 𝑒1 commute with a generator of one occurring in 𝑒2. Where the two 
+operations lie at distinct keys this is Theorem 40, and where they lie at one key that key carries 
+operations of both and is commutative by hypothesis.
+For clause (2), take 𝑔 ∈ 𝔐(𝑒2), a composite of generators of the operations occurring in 𝑒2, and 
+induct on the construction of 𝑒1. The unit yields idΣ at every state. At a stage, let (𝛿, 𝑠, 𝑏) =
+𝑎Σ(𝑥)(𝜎) and (𝜀, 𝑡) = 𝑒𝑏(𝛿), so that the stage yields 𝑠 ∘ 𝑡 at 𝜎. Independence of the operations, 
+applied to one generator of 𝑔 at a time, yields 𝑠 and 𝑏 again at 𝑔(𝜎), so the same continuation 
+𝑒𝑏 is chosen, and clause (1) puts the state it runs from at 𝑔(𝛿), where the induction hypothesis 
+yields 𝑡 again. The stage therefore yields 𝑠 ∘ 𝑡 at 𝑔(𝜎). □
+Every interaction between a component and its environment passes through the context, 
+and the type family 𝒱︀ is unconstrained, so a system may bind every location it shares across 
+components at a key of its own (Section 3.3.1). A component’s effect function is then the lift of 
+a coeffect-mediated one along the coeffect projection, and independence transfers to that lift, 
+whose transformations move the projection alone. The assumption Section 3.1.3 leaves open is 
+met that way, and with it the temporal composability of a whole system of components.
+What the decomposition divides is a computation’s commuting part from its order-sensitive 
+part. The commuting part is carried by the effects: a component performs them in whatever 
+order its task calls for, and Corollary 21 reverts them in whatever order the system finds convenient, no two components constraining each other. The order-sensitive part is carried by the 
+coeffects, since a key whose operations do not commute is one whose order has to be imposed 
+from outside the effects, and two places are available for imposing it. Within one component 
+the accumulator imposes it, reverting in LIFO order whatever the effects (Theorem 16). Across 
+components a declared coeffect imposes it, one component providing what another declares 
+and the provision preceding the declaration’s satisfaction ( Section  3.2.2). Composability is 
+thereby had at the grain of components rather than of single effects, which is the scale Section 4 
+works at.
+Two limits of the theorem are worth naming. Binding every shared location at a key is the 
+paradigm’s discipline and not a property of the construction, so a location the system cannot 
+reify as a coeffect lies outside the boundary of Section 6.1 and outside the theorem with it. And 
+commutativity of a key is a property of the interface that key publishes, so meeting it is an 
+obligation on the component providing the key rather than on the components consuming it.
+3.3.3.  Situating the Context Paradigm
+Programming paradigms differ fundamentally in how they handle side effects. Two established 
+poles define the spectrum:
+Explicit state threading (functional).  To preserve referential transparency, purely func -
+tional languages model side effects as explicit transformations on state. The State monad 𝑆 →
+(𝐴, 𝑆) [23] threads an environment through every computation. This approach yields strong 
+compositional guarantees: effects are visible in types and amenable to equational reasoning. 
+However, it imposes significant ergonomic costs: every function in the call chain must accept 
+and return the state parameter, even when it merely passes the state through unchanged. As the 
+number of effect dimensions grows (logging, configuration, I/O), monadic stacking or effecthandler boilerplate proliferates.
+Implicit mutation (imperative/OOP). Mainstream imperative languages permit compo -
+nents to modify shared state and access dependencies without explicit declaration at the 
+call site. On the effect side, a representative example is React’s useEffect hook: it registers a 
+persistent side effect on the component’s internal fiber, yet neither the effect target nor the registration mechanism appears as an explicit parameter—identification relies on call-order position 
+within hidden runtime state. On the coeffect side, Java’s service locator pattern (e.g., Spring’s 
+ApplicationContext.getBean(...)) retrieves dependencies from a process-wide registry at 
+runtime, requiring null checks and type casts at each call site; dependency relationships are 
+implicit and scattered across the codebase. More generally, understanding how f() modifies or 
+depends on the system requires reading its implementation transitively. Refactoring becomes 
+fragile because moving or removing a call may silently break distant invariants.
+The context paradigm combines the traceability of the functional approach with the 
+ergonomics of the imperative approach. Effects and coeffects are both mediated through an 
+explicit context parameter. Each operation is therefore attributable to the specific context on 
+which it was invoked, and hence to the component that context belongs to.
+Beyond combining the strengths of both poles, the context paradigm lets the developer 
+handle each effect and dependency individually and composes them into the system’s behavior 
+automatically. For revertible effects, the developer supplies the inverse of each atomic opera -
+tion, and the inverse of any composite follows by composition (Section 3.1), so a component’s 
+teardown is derived from its loading rather than written alongside it. For reactive coeffects, 
+a component declares only the dependencies it needs, and the runtime resolves and re-wires 
+them automatically ( Section  3.2), keeping them consistently wired as providers are added, 
+removed, or replaced. In both directions, correctness that would otherwise rest on developer 
+discipline becomes a structural property of the paradigm.

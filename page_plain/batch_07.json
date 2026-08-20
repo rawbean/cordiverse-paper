@@ -1,0 +1,34 @@
+[
+ {
+  "page": 57,
+  "plain": "本页实现协效应读写：上下文挂 store/isolate/intercept 三张表；get 先查领域再取值；set 包在 effect 里，装上或拆掉都会 notify 依赖方。工程直觉：这是可追踪的依赖注入表——改绑定自动刷新下游，隔离靠换 realm 符号，拦截只改「怎么用」不改「解析到谁」。"
+ },
+ {
+  "page": 58,
+  "plain": "本页讲 notify：扫活纤程，inject 命中同领域就 refresh；提供方一进 UNLOADING 就不算提供，依赖方会先开始拆。isolate/intercept 用子上下文改表，丢掉子上下文即恢复。use 把子组件登记成父纤程的 effect。工程直觉：父子卸载级联，DI 生命周期和可撤销效应绑在同一条链上。"
+ },
+ {
+  "page": 59,
+  "plain": "本页给出 fiber 惯性状态机：refresh 重算 target，空闲才启动 reload/unload；reload 先写入 committed 再跑 apply，结束若 target 变了就链式 unload；unload 对称地清完再决定是否 reload。工程直觉：过渡一旦开始先跑完，避免半加载半卸载抖来抖去，热插拔才稳。"
+ },
+ {
+  "page": 60,
+  "plain": "本页强调 target 用提供方 uid 而非值：换提供方必重载，同纤程原地改值则看不见。三条线落实协效应序——committed 在加载期可读、先标 UNLOADING 停供、unload 等依赖方拆完再回收。工程直觉：先断供、再等下游、最后清自己，避免拆到一半还有人在用你提供的依赖。"
+ },
+ {
+  "page": 61,
+  "plain": "本页用 Proxy 做 ctx[key]：沿纤程链读 committed 视图，未声明或未加载就抛错，比裸 get 更严。接着引入组件加载器：编排器用声明式配置描述系统，加载器把配置差分翻成 use/unload。重要在于：从手写命令式装配，升级到「改配置表、系统自己对账」。"
+ },
+ {
+  "page": 62,
+  "plain": "本页定义配置条目（id/url/isolate/intercept/config/disabled），并说明它们正好覆盖支持集所需字段；group/include 也是普通组件。对账为何安全：合流保证最终只取决于最终配置，终止性保证对账会做完。工程直觉：配置树是权威真相，热改路径不同也不怕终点飘。"
+ },
+ {
+  "page": 63,
+  "plain": "本页按字段做最小扰动对账：改 id/url 重建，改 isolate 重划领域，intercept 原地改，config 交给组件差分，disabled 装卸。隔离支持本地/全局 realm，并用 delimiter 标签判断绑定是不是自己的。工程直觉：像 reconcile 循环——只动该动的那一块，避免整树推倒重来。"
+ },
+ {
+  "page": 64,
+  "plain": "本页补完 isolation 迁移：自己的绑定跟着 realm 搬家，依赖方按 delimiter 决定得失；然后进入 HMR——源文件变了就在进程内换模块，靠 fiber dispose 再 use，无需 Webpack 式 accept 边界。工程直觉：可撤销效应把热更新收成普通生命周期操作。"
+ }
+]

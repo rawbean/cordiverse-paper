@@ -1,0 +1,177 @@
+[
+ {
+  "id": 630,
+  "section": "4",
+  "en": "Proof. The L-Begin at 𝑏 − 1 writes 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀, and by Table 1 it is the one rule leading into that lifecycle state; its premise 𝜃𝑛 = 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) and Lemma 54(4) put any second application of it outside the episode. So 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 occupies an initial interval [𝑏, 𝑟] of [𝑏, 𝑢] and is not re-entered. The first claim is then the premise target𝑛(𝛾) = 𝜔′ that Table  1 gives L-Iter and L-Finish, together with 𝜔′ = 𝜔 by Lemma 54(2). For the dichotomy, step𝑟 is a rule whose premise has 𝜃𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, −) and whose conclusion does not, of which Table 1 offers L-Finish, L-Divert, and L-Raise; the first lands in 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔) and the other two in 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, 𝜔, −), from which Lemma 54(4) makes an LUnload the only exit and Corollary 62 supplies the equation. The iteration a landing L-Divert contributes is one of 𝑛’s own, hence among the maps that accumulator withdraws. Where instead 𝑟 = 𝑢, the sequence ends with the transition still in flight and the first claim is all that is asserted. □"
+ },
+ {
+  "id": 631,
+  "section": "4",
+  "en": "4.4.4. Progress"
+ },
+ {
+  "id": 632,
+  "section": "4",
+  "en": "A guard that defers a provider’s withdrawal until its dependents are gone delivers Theorem 63 only if it eventually releases. One relation on the fibers of a registry carries the argument."
+ },
+ {
+  "id": 633,
+  "section": "4",
+  "en": "Definition 65. The precedence relation on the names of a registry is"
+ },
+ {
+  "id": 634,
+  "section": "4",
+  "en": "𝑛 ≺ 𝑚 ≔ 𝑝𝑛 ∩ 𝑑𝑚 ≠ ⌀ (60) so that 𝑛 may provide a key 𝑚 declares. It reads 𝑑 and 𝑝 alone, which by Lemma 54(5) come into existence with a fiber’s entry and are never written again."
+ },
+ {
+  "id": 635,
+  "section": "4",
+  "en": "Theorem 66 and Theorem 73 are established on the hypothesis that ≺ is acyclic, which is"
+ },
+ {
+  "id": 636,
+  "section": "4",
+  "en": "an assumption and not something the definition delivers, 𝑛 ≺ 𝑛 holding of a component that declares a key it provides itself. What ≺ orders is the two fibers’ activations and not their lifetimes: 𝑛 ≺ 𝑚 says that 𝑛 has to become 𝖠𝖼𝗍𝗂𝗏𝖾 before 𝑚 can, whereas that a provider outlives its consumer is Theorem 63(2), a theorem about the guarded calculus. A fiber’s target view answers to the fiber that created it as well as to its providers. What a creator writes is 𝜏𝑛, through the primitive of Definition 47, and 𝜏 is monotone by Lemma 54(5). A creator can therefore turn its child’s target view at most once over that child’s whole existence. Progress is a claim that some rule applies, so it is formulated over the rules a host must offer: L-Begin, L-Leave, L-Unload, the landing rules L-Iter, L-Finish, and L-Raise, and L-Divert. It appeals to the aborting alternative of L-Divert nowhere, so a host bound by the inertia of Section 4.3.3 is covered as well."
+ },
+ {
+  "id": 637,
+  "section": "4",
+  "en": "Theorem 66. (Progress.) Assume ≺ acyclic, len(𝑒𝑛) ≤ 𝐾 for every 𝑛, and the set 𝑁 of names of"
+ },
+ {
+  "id": 638,
+  "section": "4",
+  "en": "Definition 60 finite; and let every step apply a lifecycle rule. Write 𝑆(𝑛) for the number of steps"
+ },
+ {
+  "id": 639,
+  "section": "4",
+  "en": "acting on 𝑛 and 𝑉 (𝑛) ≔ |{𝑡 : target𝑡 𝑛 ≠ target𝑡+1 𝑛 }| (61) for the number of times its target view turns. Then"
+ },
+ {
+  "id": 640,
+  "section": "4",
+  "en": "1. (No deadlock.) ¬ quiet𝑡 implies that some lifecycle rule applies at 𝛾𝑡;"
+ },
+ {
+  "id": 641,
+  "section": "4",
+  "en": "2. (Termination.) 𝑆(𝑛) ≤ (𝐾 + 4)(𝑉 (𝑛) + 1), and both 𝑉 (𝑛) and ∑𝑛 𝑆(𝑛) are finite."
+ },
+ {
+  "id": 642,
+  "section": "4",
+  "en": "Consequently every maximal sequence of lifecycle steps ends in a quiescent state."
+ },
+ {
+  "id": 643,
+  "section": "4",
+  "en": "Proof. No deadlock. Let ¬ quiet𝑡, so some fiber 𝑛 satisfies neither clause of the quiet of Definition 49. Reading Table 1 against the four kinds it can then be:"
+ },
+ {
+  "id": 644,
+  "section": "4",
+  "en": "• 𝜃𝑡 𝑛 = 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) with target𝑡 𝑛 ≠ ⊥: L-Begin applies;"
+ },
+ {
+  "id": 645,
+  "section": "4",
+  "en": "• 𝜃𝑡 𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, 𝜔𝑛) with target𝑡 𝑛 = 𝜔𝑛: whichever of L-Iter, L-Finish, and L-Raise the value of 𝑖𝑡 𝑛(𝛾𝑡) selects applies;"
+ },
+ {
+  "id": 646,
+  "section": "4",
+  "en": "• 𝜃𝑡 𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, 𝜔𝑛) with target𝑡 𝑛 ≠ 𝜔𝑛: L-Raise applies if 𝑖𝑡 𝑛(𝛾𝑡) raises, and other - wise L-Divert does, landing that iteration rather than aborting it;"
+ },
+ {
+  "id": 647,
+  "section": "4",
+  "en": "• 𝜃𝑡 𝑛 = 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔𝑛) with target𝑡 𝑛 ≠ 𝜔𝑛: L-Leave applies. Let no fiber be of any of these kinds, leaving some 𝑚0 with 𝜃𝑡 𝑚0 = 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, −). Construct 𝑚0, 𝑚1, … as follows: given 𝑚𝑗 in 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀, either ¬ relied𝑡 𝑚𝑗 , in which case L-Unload applies to 𝑚𝑗 and the construction stops, or there are 𝑚𝑗+1 ≠ 𝑚𝑗 and 𝑘𝑗 with installed𝑡 𝑚𝑗+1 and 𝜔𝑡 𝑚𝑗+1 (𝑘𝑗) = 𝑚𝑗. In the latter case 𝑘𝑗 ∈ 𝑑𝑚𝑗+1 ∩ dom(𝜎𝑡 𝑚𝑗 ) ⊆ 𝑑𝑚𝑗+1 ∩ 𝑝𝑚𝑗 the second membership being Theorem 63(3) at the episode of 𝑚𝑗+1 that 𝑡 lies in, so that 𝑚𝑗 ≺ 𝑚𝑗+1. Moreover target𝑡 𝑚𝑗+1 ≠ 𝜔𝑡 𝑚𝑗+1 : an 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 fiber is outside the union defining 𝜎𝛾, so 𝑘𝑗 at 𝛾𝑡 is unprovided or provided by a fiber other than 𝑚𝑗. Were 𝑚𝑗+1 in 𝖠𝖼𝗍𝗂𝗏𝖾 or 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 it would then be of one of the four kinds excluded, so it is in 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 and the construction continues. The 𝑚𝑗 are ≺-increasing, hence distinct by acyclicity, and dom(𝐹𝑡) is finite, so the construction stops. Termination. Two claims bound 𝑆(𝑛)."
+ },
+ {
+  "id": 648,
+  "section": "4",
+  "en": "(A) Over a maximal interval on which target𝑡 𝑛 is constant at 𝜔∗, at most 𝐾 + 4 steps act on 𝑛. Reading the 𝜃𝑛 columns of Table 1, from 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔) with 𝜔 ≠ 𝜔∗ the fiber takes an L-Leave and an L-Unload and then, if 𝜔∗ ≠ ⊥, an L-Begin and at most len(𝑒𝑛) ≤ 𝐾 landings, plus a second L-Unload where the last landing is an L-Raise; from 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 against an 𝜔 ≠ 𝜔∗ it takes an LDivert in place of the L-Leave, and from any other state a suffix of that sequence. No further L-Divert or L-Leave falls in the interval, the 𝜔 that the L-Begin writes being target𝑡 𝑛 = 𝜔∗ itself, and at 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔∗), at 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) with 𝜔∗ = ⊥, and at 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉) no rule applies at all. (B) If target𝑡 𝑛 ≠ target𝑡+1 𝑛 and step 𝑡 acts on 𝑚, then either 𝑚 ≺ 𝑛 or step 𝑡 writes 𝜏𝑛. By"
+ },
+ {
+  "id": 649,
+  "section": "4",
+  "en": "Definition 46 the value of target𝑛 is a function of 𝜏𝑛 and of the tables of the providers of the"
+ },
+ {
+  "id": 650,
+  "section": "4",
+  "en": "keys of 𝑑𝑛; a provider satisfies 𝑘 ∈ dom(𝜎𝑚) ∩ 𝑑𝑛 and hence 𝑚 ≺ 𝑛, and a table changes only at a step acting on its own fiber by Lemma 54(1). Acyclicity gives 𝑚 ≠ 𝑛 in the first case, and the monotonicity of Lemma 54(5) admits the second at one 𝑡 per fiber. By (A) the interval count bounds 𝑆(𝑛) as 𝑆(𝑛) ≤ (𝐾 + 4)(𝑉 (𝑛) + 1), and by (B) each turn of target𝑛 either consumes a step of a fiber strictly ≺-below 𝑛 or is the one turn 𝜏𝑛 affords, so 𝑉 (𝑛) ≤ 1 + ∑𝑚≺𝑛 𝑆(𝑚). Since ≺ is acyclic and 𝑁 is finite, the recursion 𝐵(𝑛) ≔ (𝐾 + 4)(2 + ∑ 𝑚≺𝑛 𝐵(𝑚)) is well founded and defines 𝐵 with 𝑆(𝑛) ≤ 𝐵(𝑛); hence 𝑉 (𝑛) is finite and ∑𝑛 𝑆(𝑛) ≤ ∑𝑛 𝐵(𝑛). By (1) a sequence that cannot be extended is quiescent. □ Finiteness of 𝑁 is assumed rather than derived, and one condition on the components delivers it."
+ },
+ {
+  "id": 651,
+  "section": "4",
+  "en": "The components a host holds are finitely many programs given before anything runs, so if no component can register, however indirectly, a fiber of a component that registers one of its own, the registrations form a tree of bounded depth, and len(𝑒𝑛) ≤ 𝐾 bounds its branching. What the assumption rules out is a component that registers instances of itself without bound. The target records the providing fiber rather than a boolean, and under the single-source discipline of Section 4.2 the two drive the same transitions, a key having one possible provider there. What the view buys is the vocabulary of the results above, Theorem 63 and Theorem 64 both speaking of the resolution a fiber activated against, and it is what makes those results survive the scoped resolution of Section  3.2.3, under which one key resolves to different providers in different realms and the provisions no longer force the view. The implementation carries that scoping and holds the view in fiber.committed (Section 5.1.3)."
+ },
+ {
+  "id": 652,
+  "section": "4",
+  "en": "4.4.5. Confluence"
+ },
+ {
+  "id": 653,
+  "section": "4",
+  "en": "The results so far are about individual fibers. The property that characterizes the system as a whole is that its dynamic history leaves no trace: whatever sequence of activations and deactivations a running system has been through, the state it quiesces at is the one the same insertions and retirements would have produced had each component that ends up active been loaded once, in dependency order, and none ever unloaded. The lifecycle relation is confluent, and the normal form it converges on is the statically assembled one. This is the analogue, for dynamic composition, of the consistency with a from-scratch evaluation that change propagation establishes for incremental computation [45]. The claim is about ⟶ alone. Orchestration steps are inputs, and two sequences given different inputs land in different places for no interesting reason;"
+ },
+ {
+  "id": 654,
+  "section": "4",
+  "en": "what is at issue is whether the lifecycle rules, which are nondeterministic in which fiber steps next and in which exit a 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 fiber takes, can be made to disagree. Three lemmas are needed first. The first fixes the set of fibers that end up 𝖠𝖼𝗍𝗂𝗏𝖾 without reference to any sequence of steps, which is what makes it a function of the input rather than of the schedule."
+ },
+ {
+  "id": 655,
+  "section": "4",
+  "en": "Definition 67. A fiber is supported at 𝛾 when it is not retired, the fiber registering it is supported,"
+ },
+ {
+  "id": 656,
+  "section": "4",
+  "en": "and every key it declares is provided by a supported fiber. The support relation on dom(𝐹𝛾) is the union of the two relations those clauses read, 𝑚 ⊲ 𝑛 ≔ 𝑚 ≺ 𝑛 ∨ 𝜋𝑛 = 𝑚 (62) and where it is well founded (Lemma 68) we write 𝐴 for the support set, the fibers supported at 𝛾: 𝑛 ∈ 𝐴 ≔ ¬𝜏𝑛 ∧ (𝜋𝑛 = 𝗋𝗈𝗈𝗍 ∨ 𝜋𝑛 ∈ 𝐴) ∧ ∀𝑘 ∈ 𝑑𝑛. ∃𝑚 ∈ 𝐴. 𝑘 ∈ 𝑝𝑚 (63) where 𝜋𝑛 = 𝗋𝗈𝗈𝗍 marks a fiber the orchestrator inserted and 𝜋𝑛 otherwise the fiber whose activation registers 𝑛. The clauses read no field but 𝜏, 𝜋, 𝑑, 𝑝. Both halves relate a fiber to one immediately below it, a parent rather than an ancestor and a direct provider rather than a transitive one, since that is what the clauses read; where the results below want an order they take the transitive closure, whose minimal elements, maximal elements, and linearizations are those of ⊲. The clauses refer to 𝐴 itself, so the definition is a recursion along ⊲, and it is the following that makes it one with a solution."
+ },
+ {
+  "id": 657,
+  "section": "4",
+  "en": "Lemma 68. (Support is well founded.) Let ≺ be acyclic and let 𝛾 be reached by a sequence of"
+ },
+ {
+  "id": 658,
+  "section": "4",
+  "en": "steps. Then ⊲ is well founded, and 𝐴 is the one solution of Definition 67, a function of 𝜏, 𝜋, 𝑑, and 𝑝 alone."
+ },
+ {
+  "id": 659,
+  "section": "4",
+  "en": "Proof. Order the names of dom(𝐹𝛾) by the index of the step that registered each, which Definition 53 supplies by starting the sequence at an empty registry. The parent half of ⊲ descends in that index: an O-Insert has 𝜋 ∈ dom(𝐹𝛾) as a premise, so a parent pointer names a fiber registered earlier, and iterating it reaches the whole ancestry of a name in finitely many steps. A cycle therefore has to use ≺, and since ≺ is acyclic it has to mix the two, which needs some 𝑚 to declare a key that a fiber of 𝑚’s own subtree may provide. Such a fiber is registered by an activation of 𝑚 or of one of 𝑚’s descendants, hence at a step after the L-Begin of 𝑚; that L-Begin has 𝛾 ⊧ 𝑑𝑚 as a premise, so a fiber providing the key is 𝖠𝖼𝗍𝗂𝗏𝖾 already before it, and clause (2) of Definition 58 leaves the key no second possible provider. The fiber that would close the cycle is therefore never registered, and the edge is absent from dom(𝐹𝛾)."
+ },
+ {
+  "id": 660,
+  "section": "4",
+  "en": "A well-founded recursion has one solution, and the clauses read the four fields alone. □ The last clause reads 𝑝, the keys a component may provide, whereas the target reads dom(𝜎𝛾), the keys its fibers have installed, and Definition 43 relates the two by dom(𝜎𝑛) ⊆ 𝑝𝑛 alone. The support set therefore over-approximates the 𝖠𝖼𝗍𝗂𝗏𝖾 fibers in general, and the condition that closes the gap is the following."
+ },
+ {
+  "id": 661,
+  "section": "4",
+  "en": "Definition 69. A component (𝑑, 𝑝, 𝑒) is total on its provision when an activation of it that finishes"
+ },
+ {
+  "id": 662,
+  "section": "4",
+  "en": "has installed every key of 𝑝, so that dom(𝜎𝑛) = 𝑝𝑛 at every 𝖠𝖼𝗍𝗂𝗏𝖾 fiber instantiating it. Like independence (Definition 60) this is a condition on the components alone, mentioning no lifecycle state and no step, and independence already bounds how far it can fail: were a component to install a key only at context states another component’s effects reach, its forward map would not commute with that component’s, so the keys a fiber installs are fixed by its component rather than by the schedule. What totality adds is that the fixed set is all of 𝑝 rather than a proper subset of it."
+ },
+ {
+  "id": 663,
+  "section": "4",
+  "en": "Lemma 70. (Support at quiescence.) Let ≺ be acyclic, let quiet(𝛾), let no fiber of 𝛾 be failed,"
+ },
+ {
+  "id": 664,
+  "section": "4",
+  "en": "and let every component of 𝛾 be total on its provision (Definition 69). Then the support set is the set of 𝖠𝖼𝗍𝗂𝗏𝖾 fibers: 𝐴 = {𝑛 : 𝜃𝑛 = 𝖠𝖼𝗍𝗂𝗏𝖾(−, −)} (64)"
+ }
+]

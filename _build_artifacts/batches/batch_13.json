@@ -1,0 +1,177 @@
+[
+ {
+  "id": 455,
+  "section": "3",
+  "en": "Definition 37. Read Definition 8 up to ≃: an 𝑒 ∈ 𝔈Γ lies in 𝔈∗"
+ },
+ {
+  "id": 456,
+  "section": "3",
+  "en": "Γ when 𝑒 respects ≃ as a map Γ → 𝜕Γ and, writing (𝛿, 𝑔) = 𝑒(𝛾), for every 𝛾 ∈ Γ"
+ },
+ {
+  "id": 457,
+  "section": "3",
+  "en": "1. 𝑔(𝛿) ≃ 𝛾;"
+ },
+ {
+  "id": 458,
+  "section": "3",
+  "en": "2. 𝑔 respects ≃."
+ },
+ {
+  "id": 459,
+  "section": "3",
+  "en": "Taking ≃ to be equality on Γ recovers Definition 8."
+ },
+ {
+  "id": 460,
+  "section": "3",
+  "en": "Lemma 38. With 𝔈∗"
+ },
+ {
+  "id": 461,
+  "section": "3",
+  "en": "Γ read as in Definition 37, every equality of states asserted in Section 3.1 holds with = replaced by ≃, and the accumulator of every state reachable from (𝛾0, idΓ) respects ≃."
+ },
+ {
+  "id": 462,
+  "section": "3",
+  "en": "Proof. An accumulator is a composition of inverses, each respecting ≃ by Definition 37(2), and a composition of maps respecting ≃ respects ≃, the base case being idΓ. The proofs of Section 3.1 then go through unchanged, respect being what carries a relation through an inverse: from 𝑔2(𝛿2) ≃ 𝛿1 and 𝑔1(𝛿1) ≃ 𝛾 respect gives (𝑔1 ∘ 𝑔2)(𝛿2) ≃ 𝛾, which is the step each composition of inverses takes, and the soundness invariant of Theorem 7 reads 𝜑(𝛾) ≃ 𝛾0 by that step. □ The commutation Definition 19 asks for is read up to ≃ by the same lemma, and reading it that way is what makes it attainable at all: two operations may leave values that ≃𝑘 identifies and still count as commuting. Of two operations it asks one thing more than of the effect functions their lifts induce, an operation yielding an outcome as well."
+ },
+ {
+  "id": 463,
+  "section": "3",
+  "en": "Definition 39. Operations 𝑎 and 𝑎′ are independent when their lifts are independent as effect"
+ },
+ {
+  "id": 464,
+  "section": "3",
+  "en": "functions (Definition 19) at every pair of arguments, and neither one’s transformations disturb the outcome the other yields: ∀𝑥 : 𝑋𝑎, 𝑔 ∈ 𝔐(𝑎′Σ), 𝜎 ∈ Σ. pr3(𝑎Σ(𝑥)(𝑔(𝜎))) = pr3(𝑎Σ(𝑥)(𝜎)) (35) and the same with 𝑎 and 𝑎′ exchanged, writing 𝔐(𝑎Σ) for the transformation monoid of the lifts 𝑎Σ(𝑥) over every argument as Definition 34 writes 𝔐(𝑎) for that of the operation itself. A key 𝑘 is commutative when any two operations of 𝒜︀𝑘 are independent, an operation being held independent of itself as well. Across distinct keys the condition holds outright."
+ },
+ {
+  "id": 465,
+  "section": "3",
+  "en": "Theorem 40. Operations at distinct keys are independent."
+ },
+ {
+  "id": 466,
+  "section": "3",
+  "en": "Proof. Let 𝑎 lie in 𝒜︀𝑘 and 𝑎′ in 𝒜︀𝑘′ with 𝑘 ≠ 𝑘′. By Definition 24 every generator of 𝔐(𝑎Σ) is of the form 𝜎 ↦ 𝜎[𝑘 ↦ 𝑢(𝜎(𝑘))] for a map 𝑢 on 𝒱︀𝑘, being either the lift of a forward map or the lift of a yielded inverse, and likewise for 𝑎′ at 𝑘′. Two such maps commute, each reading and writing one key alone and the two keys differing, and Lemma 18(1) extends the commutation from the generators to the two monoids. For the second condition, what 𝑎Σ yields at 𝜎, inverse and outcome alike, is determined by 𝜎(𝑘), which every generator of 𝔐(𝑎′Σ) leaves as it stands.□ A key whose value is a table of entries added and removed independently is commutative, registration of a route or of an event listener being the representative case: two registrations in either order leave a table that answers every test alike, and either registration can be withdrawn while the other stands."
+ },
+ {
+  "id": 467,
+  "section": "3",
+  "en": "A key whose value is an ordered chain is not, since a middleware inserted before another sees a different request, and neither order can be withdrawn without disturbing the other. The allocator of the opening example divides by what its interface pub - lishes. Where the handles it hands out are compared by no operation of the key, ≃𝑘 may relate two heaps up to a renaming of handles, which is how CompCert relates the memory states of a program and of its translation [42], and allocation is commutative; where the addresses are outcomes compared by equality, no admissible ≃𝑘 makes the two orders of allocation agree, and the key is not commutative. What a component performs is a sequence of operations in which each may depend on what the ones before it yielded, and effect functions of that shape are what the theorem below speaks of."
+ },
+ {
+  "id": 468,
+  "section": "3",
+  "en": "Definition 41. The coeffect-mediated effect functions form the least set 𝔈𝒜︀"
+ },
+ {
+  "id": 469,
+  "section": "3",
+  "en": "Σ ⊆ 𝔈Σ that contains the unit 𝜂Σ and is closed under the following: for a key 𝑘, an operation 𝑎 ∈ 𝒜︀𝑘, an argument 𝑥 : 𝑋𝑎, and a family (𝑒𝑏)𝑏∈𝐵𝑎 of members, 𝜎 ↦ 𝐥𝐞𝐭 (𝛿, 𝑠, 𝑏) = 𝑎Σ(𝑥)(𝜎) 𝐢𝐧 𝐥𝐞𝐭 (𝜀, 𝑡) = 𝑒𝑏(𝛿) 𝐢𝐧 (𝜀, 𝑠 ∘ 𝑡) (36) is again a member. Each stage performs one operation and chooses what follows it by the outcome, so an argument may depend on the outcomes already obtained. The operations occurring in a member are the ones its stages perform, over every choice of outcome."
+ },
+ {
+  "id": 470,
+  "section": "3",
+  "en": "Theorem 42. Let 𝑒1, 𝑒2 ∈ 𝔈𝒜︀"
+ },
+ {
+  "id": 471,
+  "section": "3",
+  "en": "Σ and let every key at which operations of both occur be commu - tative (Definition 39). Then 𝑒1 and 𝑒2 are independent (Definition 19)."
+ },
+ {
+  "id": 472,
+  "section": "3",
+  "en": "Proof. By induction on the construction of Definition 41, 𝔐(𝑒𝑖) lies in the submonoid generated by the generators of the operations occurring in 𝑒𝑖: the unit generates the trivial monoid, and a stage is a ⋄-composite of 𝑎Σ(𝑥) with a member, to which Lemma 18(2) applies. For clause (1) of Definition 19 it is therefore enough, by Lemma 18(1), that a generator of an operation occurring in 𝑒1 commute with a generator of one occurring in 𝑒2. Where the two operations lie at distinct keys this is Theorem 40, and where they lie at one key that key carries operations of both and is commutative by hypothesis. For clause (2), take 𝑔 ∈ 𝔐(𝑒2), a composite of generators of the operations occurring in 𝑒2, and induct on the construction of 𝑒1. The unit yields idΣ at every state. At a stage, let (𝛿, 𝑠, 𝑏) = 𝑎Σ(𝑥)(𝜎) and (𝜀, 𝑡) = 𝑒𝑏(𝛿), so that the stage yields 𝑠 ∘ 𝑡 at 𝜎."
+ },
+ {
+  "id": 473,
+  "section": "3",
+  "en": "Independence of the operations, applied to one generator of 𝑔 at a time, yields 𝑠 and 𝑏 again at 𝑔(𝜎), so the same continuation 𝑒𝑏 is chosen, and clause (1) puts the state it runs from at 𝑔(𝛿), where the induction hypothesis yields 𝑡 again. The stage therefore yields 𝑠 ∘ 𝑡 at 𝑔(𝜎). □ Every interaction between a component and its environment passes through the context, and the type family 𝒱︀ is unconstrained, so a system may bind every location it shares across components at a key of its own (Section 3.3.1). A component’s effect function is then the lift of a coeffect-mediated one along the coeffect projection, and independence transfers to that lift, whose transformations move the projection alone. The assumption Section 3.1.3 leaves open is met that way, and with it the temporal composability of a whole system of components. What the decomposition divides is a computation’s commuting part from its order-sensitive part."
+ },
+ {
+  "id": 474,
+  "section": "3",
+  "en": "The commuting part is carried by the effects: a component performs them in whatever order its task calls for, and Corollary 21 reverts them in whatever order the system finds convenient, no two components constraining each other. The order-sensitive part is carried by the coeffects, since a key whose operations do not commute is one whose order has to be imposed from outside the effects, and two places are available for imposing it. Within one component the accumulator imposes it, reverting in LIFO order whatever the effects (Theorem 16). Across components a declared coeffect imposes it, one component providing what another declares and the provision preceding the declaration’s satisfaction ( Section  3.2.2). Composability is thereby had at the grain of components rather than of single effects, which is the scale Section 4 works at. Two limits of the theorem are worth naming."
+ },
+ {
+  "id": 475,
+  "section": "3",
+  "en": "Binding every shared location at a key is the paradigm’s discipline and not a property of the construction, so a location the system cannot reify as a coeffect lies outside the boundary of Section 6.1 and outside the theorem with it. And commutativity of a key is a property of the interface that key publishes, so meeting it is an obligation on the component providing the key rather than on the components consuming it."
+ },
+ {
+  "id": 476,
+  "section": "3",
+  "en": "3.3.3. Situating the Context Paradigm"
+ },
+ {
+  "id": 477,
+  "section": "3",
+  "en": "Programming paradigms differ fundamentally in how they handle side effects. Two established poles define the spectrum: Explicit state threading (functional). To preserve referential transparency, purely func - tional languages model side effects as explicit transformations on state. The State monad 𝑆 → (𝐴, 𝑆) [23] threads an environment through every computation. This approach yields strong compositional guarantees: effects are visible in types and amenable to equational reasoning. However, it imposes significant ergonomic costs: every function in the call chain must accept and return the state parameter, even when it merely passes the state through unchanged. As the number of effect dimensions grows (logging, configuration, I/O), monadic stacking or effecthandler boilerplate proliferates. Implicit mutation (imperative/OOP). Mainstream imperative languages permit compo - nents to modify shared state and access dependencies without explicit declaration at the call site."
+ },
+ {
+  "id": 478,
+  "section": "3",
+  "en": "On the effect side, a representative example is React’s useEffect hook: it registers a persistent side effect on the component’s internal fiber, yet neither the effect target nor the registration mechanism appears as an explicit parameter—identification relies on call-order position within hidden runtime state. On the coeffect side, Java’s service locator pattern (e.g., Spring’s ApplicationContext.getBean(...)) retrieves dependencies from a process-wide registry at runtime, requiring null checks and type casts at each call site; dependency relationships are implicit and scattered across the codebase. More generally, understanding how f() modifies or depends on the system requires reading its implementation transitively. Refactoring becomes fragile because moving or removing a call may silently break distant invariants. The context paradigm combines the traceability of the functional approach with the ergonomics of the imperative approach."
+ },
+ {
+  "id": 479,
+  "section": "3",
+  "en": "Effects and coeffects are both mediated through an explicit context parameter. Each operation is therefore attributable to the specific context on which it was invoked, and hence to the component that context belongs to. Beyond combining the strengths of both poles, the context paradigm lets the developer handle each effect and dependency individually and composes them into the system’s behavior automatically. For revertible effects, the developer supplies the inverse of each atomic opera - tion, and the inverse of any composite follows by composition (Section 3.1), so a component’s teardown is derived from its loading rather than written alongside it. For reactive coeffects, a component declares only the dependencies it needs, and the runtime resolves and re-wires them automatically ( Section  3.2), keeping them consistently wired as providers are added, removed, or replaced. In both directions, correctness that would otherwise rest on developer discipline becomes a structural property of the paradigm."
+ },
+ {
+  "id": 480,
+  "section": "3",
+  "en": "3. Revertible Effects and Reactive Coeffects"
+ },
+ {
+  "id": 481,
+  "section": "3",
+  "en": "This section lifts the concepts of effects and coeffects introduced in Section 2 to runtime mechanisms, constructing a theory of dynamic composition. The central idea is to turn the typing contexts carrying effects and coeffects into context types, i.e., runtime-operable types that reify the context as a first-class entity. For the effect type, we model it as a context transformation paired with an inverse, achieving local temporal composability. For the coeffect context, we model it as a type carrying dependency information, achieving local spatial composability. An observational equivalence on the coeffects then supplies the effects with independence. The unified context that carries both effects and coeffects constitutes a programming paradigm in its own right."
+ },
+ {
+  "id": 482,
+  "section": "4",
+  "en": "4.1. Components and Fibers"
+ },
+ {
+  "id": 483,
+  "section": "4",
+  "en": "This section fixes the objects the rules act on: the component; the fiber, an instantiation of a component carrying a lifecycle state of its own; and the registry, which holds the fibers a state carries and from which the coeffect context is read off. Components. A component is given as a triple, its coeffect side split into what it reads from the environment and what it provides to it."
+ },
+ {
+  "id": 484,
+  "section": "4",
+  "en": "Definition 43. A component over a context Γ carrying both effects and coeffects (Definition 32)"
+ },
+ {
+  "id": 485,
+  "section": "4",
+  "en": "is defined as: ℭΓ ≔ 𝔇Γ × 𝔓Γ × 𝔈∗ Γ (37) representing a triple (𝑑, 𝑝, 𝑒), where:"
+ },
+ {
+  "id": 486,
+  "section": "4",
+  "en": "• 𝑑 : 𝔇Γ is the coeffect specification of Definition 25, declaring the dependencies required from the environment;"
+ },
+ {
+  "id": 487,
+  "section": "4",
+  "en": "• 𝑝 : 𝔓Γ ≔ 𝖲𝖾𝗍(𝐾) is the provision, declaring the coeffect keys the component may provide, and no key outside 𝑝 is one its effect function writes;"
+ },
+ {
+  "id": 488,
+  "section": "4",
+  "en": "• 𝑒 : 𝔈∗ Γ is the witnessed effect function of Definition 8, defining the effects contributed when the component is active together with the inverse that withdraws them. The two declarations are the two directions of one interface, 𝑑 what the component reads from the environment and 𝑝 what the component writes to the environment, and Section 4.2 admits no two fibers of one registry whose provisions meet. Subscripts are taken on Γ throughout, the coeffect context being one of its projections (Definition 32), so the 𝔇Σ of Definition 25 is written 𝔇Γ here. Disjointness of provisions is where this chapter parts company with Section  3.2.3. The isolation of Definition 28 lets one key resolve through a realm table, so that two fibers may provide the same key in different realms; a calculus carrying realms would relax disjointness to disjointness within a realm and would resolve a declared key against the realm of the fiber declaring it."
+ },
+ {
+  "id": 489,
+  "section": "4",
+  "en": "We do not introduce realms here, and read every key at one shared realm instead, which is what makes the disjointness above the right condition and each key’s provider unique (Definition 45). What it restricts is how often a component may be instantiated: one with a nonempty provision has one fiber at a time, so the many instantiations below are of components providing nothing, which is the common case of a component that only consumes, or that registers others. A component instantiated in a running system is activated and deactivated over time, so it carries a lifecycle state, and a transition is what moves it from one lifecycle state to another: an activation executes 𝑒, accumulating side effects on the context, and a deactivation applies the accumulator to recover the context. In its simplest form the lifecycle is the two-state model of Figure 1, which Section 4.2 gives rules for; Section 4.3 refines it as each control-flow feature is admitted."
+ }
+]

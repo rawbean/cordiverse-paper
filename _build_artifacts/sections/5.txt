@@ -1,0 +1,552 @@
+5.  Implementation and Case Study
+This section presents Cordis, which realizes the formal models of Section  3 as a practical 
+programming abstraction. Cordis is a meta-framework of spatiotemporal composability: unlike 
+application frameworks that target a specific domain (e.g., web routing, ORM, UI rendering), it 
+prescribes no concrete scenario; its sole responsibility is to supply universal dynamic compo -
+sition semantics. The implementation is layered into three tiers: (1) the core library (Section 5.1) 
+implements the effect and coeffect systems directly; (2) the component loader  ( Section  5.2) 
+extends the core with configuration reconciliation and hot module replacement; and (3) application frameworks such as Koishi (Section 5.3) build domain-specific functionality on top of 
+the former two tiers.
+5.1.  Core Library
+Table  2 summarizes the correspondence between theoretical constructs and their runtime 
+counterparts. In particular, we use the runtime names introduced below throughout this 
+section, reserving the theoretical symbols for the formal correspondence. We also write @@name 
+for a framework-internal symbol key, so the brackets in ctx[@@store] denote symbol-keyed 
+access to an opaque slot on the context, rather than indexing into a string-keyed map.
+Theory (Section 3, Section 4) Implementation
+Γ∞ ctx, the first-class context
+𝛾 ∈ Γ the context tree together with everything the running system 
+has touched
+𝔈Γ, 𝔈iter
+Γ Effect callback returning / yielding inverses
+effectΓ(𝑒) ctx.effect(callback)
+Σ, Σiso, Σinter ctx[@@store], ctx[@@isolate], ctx[@@intercept]
+get(𝑘), set(𝑘, 𝑣) ctx.get(key), ctx.set(key, value)
+isolate(𝑘, 𝑟) ctx.isolate(key, realm)
+intercept(𝑘, 𝜈) ctx.intercept(key, metadata)
+⟨𝑑, 𝑝, 𝑒, 𝜋, 𝜎, 𝜏, 𝜃⟩ fiber, the instantiation of a component in ℭΓ
+dom(𝐹𝛾) enumerated through ctx.registry
+𝑛 : 𝔑 fiber.uid
+𝑑 : 𝔇Γ fiber.inject
+𝑝 : 𝔓Γ the component’s provide
+𝑒 : 𝔈∗
+Γ fiber.apply
+𝜋 : 𝔑 fiber.parent.fiber.uid, the fiber owning the context it was 
+instantiated on
+derived realization (Definition 27) fiber.ctx, the child context the fiber runs in
+𝜃 (Definition 44) fiber.state, the lifecycle state, whose LOADING is 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 and 
+whose FAILED is 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉)
+recover, accumulator 𝑔 fiber.dispose, the accumulator
+𝜔 (Definition 44) fiber.committed, the committed view
+provider𝑘(𝛾) an Impl whose provider fiber is ACTIVE
+target(𝛾, 𝑛) fiber.target, recomputed by refresh (Algorithm 5), where 
+⊥ is INACTIVE
+𝖥𝗎𝗍𝗎𝗋𝖾, inertia (Section 4.3.3) fiber.inertia, the handle of the transition in flight
+O-Insert, O-Retire (Definition 47) ctx.use and the inverse of its callback (Algorithm 4)
+O-Remove the fiber dropped from its runtime, with uid cleared
+L-Begin, L-Iter, L-Finish execute’s iteration loop (Algorithm 1)
+L-Divert the guard failing at an iteration boundary ( Algorithm 1), or 
+reload chaining into unload
+L-Leave refresh marking the fiber UNLOADING (Line 10)
+L-Unload unload and its inertial chaining (Algorithm 5)
+guard on L-Unload unload awaiting the notified dependents (Line 25)
+L-Raise the error recorded on the fiber, with its target set to ⊥
+Table 2 | Theory-to-implementation correspondence
+The remainder of this section builds the core library from the bottom up. Section  5.1.1 
+realizes revertible effects, the sole primitive through which a context is mutated; Section 5.1.2 
+realizes reactive coeffects over it; Section 5.1.3 composes both into the component lifecycle; and 
+Section 5.1.4 exposes the context-level operations built on them.
+5.1.1.  Effect Tracking
+This section realizes revertible effects ( Section 3.1). Every context mutation in Cordis flows 
+through a single primitive, ctx.effect: coeffect provision, component instantiation, and every 
+other context-mutating operation reduces to a ctx.effect call, so any operation performed 
+through the context is automatically tracked and recovered upon component unloading. Operationally, ctx.effect is the realization of effectiter
+Γ  (Definition 52): it takes a callback of type 𝔈iter
+Γ  
+and lifts it to 𝔈iter
+𝜕Γ , yielding a dispose closure that, when invoked, recovers the effect. Cordis 
+accepts both 𝔈Γ and 𝔈iter
+Γ  through this one operation (ad-hoc polymorphism); we take the 
+iterator form as representative, since a plain effect function is the degenerate iterator that yields 
+a single inverse. What the operation does not check is the witness that 𝔈∗
+Γ carries: the callback 
+supplies an inverse, and that the inverse recovers the effect it accompanies is an obligation on 
+the component author rather than a property the runtime verifies. Theorem 61 is where the 
+calculus appeals to it, and Section 6.1 is where the obligation is delimited.
+Algorithm 1 shows the construction of ctx.effect. We write 𝑓 ∘ 𝑔 for the disposer that runs 
+𝑓 after 𝑔, and id for the no-op; prepending each new inverse therefore yields LIFO recovery.
+Algorithm 1 Effect tracking
+1 async function execute(callback, guard)
+2 iter ← callback()
+3 inverse ← id
+4 while guard()
+5 (value, done) ← await iter.next()
+6 if value then inverse ← value ∘ inverse
+7 if done then break
+8 return inverse
+9 function effect(ctx, callback)
+10 armed ← true
+11 task ← execute(callback, () ↦ armed)
+12 async function dispose()
+13 if not armed then return
+14 armed ← false
+15 recover ← await task
+16 recover()
+17 ctx.dispose ← dispose ∘ ctx.dispose
+18 return dispose
+The engine execute drives the callback as an effect iterator ( 𝔈iter
+Γ , Definition 51) and folds 
+the inverse yielded at each step into a single composite. Before each step it consults a callersupplied guard; once the guard trips, iteration stops and only the inverses accumulated so far 
+remain. This is the step-boundary interruption of Section 4.3.2: the 𝖬𝖺𝗒𝖻𝖾(𝔈iter) continuation 
+is realized by the iterator’s done flag together with guard.
+ctx.effect is a thin wrapper over execute that adds two things. First, self-disposal: the 
+guard reports the armed flag, and the returned dispose flips armed to false, which simultaneously 
+halts any in-flight iteration and makes recovery fire at most once. Firing twice would apply 
+an inverse at a state no application of the effect produced, where nothing holds it to reverting 
+anything. Second, parent composition: dispose is prepended to the enclosing context’s accu -
+mulated inverse ctx.dispose, so a child effect’s inverse is itself an effect on the parent, which 
+is the recursive structure of 𝜕2Γ. The component level (Section 5.1.3) reuses the same execute 
+with a guard that tests the stability of fiber.target instead of armed.
+5.1.2.  Coeffect Operations
+This section realizes reactive coeffects (Section 3.2). All coeffect operations act on three symbolkeyed slots that each context carries:
+• @@store: the value store 𝜎 : (𝑟 : 𝑅) ⇀ 𝒱︀𝑟 from realm symbols to typed values;
+• @@isolate: the realm table 𝜌 : Map(𝐾, 𝑅) from coeffect keys to realm symbols;
+• @@intercept: the interception table 𝜄 : (𝑘 : 𝐾) → ℳ︀𝑘 assigning each key its metadata.
+The first two compose into the two-layer resolution 𝑘 → 𝜌(𝑘) → 𝜎(𝜌(𝑘)): ctx.get(key) 
+(Algorithm 2) reads the realm symbol 𝜌(𝑘) from @@isolate, then the bound value 𝜎(𝜌(𝑘)) from 
+@@store. The 𝜌 indirection lets isolation redirect a key to an independent binding, whereas 
+@@intercept is consulted only when a binding is accessed, adjusting how it is used rather 
+than what it resolves to. We realize these operations in two parts: (1) provision and notification, 
+which install or retract bindings and propagate the change to dependents; and (2) isolation and 
+interception, which reshape how a key resolves.
+Provision and notification. Since set(𝑘, 𝑣) has type 𝔈Σ (Section 3.1), coeffect provision is 
+a ctx.effect call and inherits its automatic tracking and recovery. Algorithm 2 implements 
+ctx.set(key, value), the concrete set(𝑘, 𝑣): the callback binds a value into the store under the 
+realm symbol 𝜌(𝑘), and the returned dispose function removes it. Both installation and removal 
+invoke notify to propagate the change to dependent components.
+Algorithm 2 Coeffect operations
+1 function get(ctx, key)
+2 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘)
+3 return ctx[@@store][realm] ▷ 𝜎(𝜌(𝑘))
+4 function set(ctx, key, value)
+5 function callback()
+6 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘)
+7 ctx[@@store][realm] ← value ▷ 𝜎[𝜌(𝑘) ↦ 𝑣]
+8 notify(ctx, [key])
+9 return function()
+10 delete ctx[@@store][realm] ▷ 𝜎 ∖ 𝜌(𝑘)
+11 notify(ctx, [key])
+12 return ctx.effect(callback)
+Algorithm 3 propagates each binding change to dependents by testing, for each live fiber, 
+whether a changed key appears in its fiber.inject and resolves to the same realm; if so, it calls 
+refresh (Section 5.1.3) to re-evaluate that fiber against the new state, and it returns the fibers it 
+re-evaluated so that a caller can wait for them. This is the reactive classification of Definition 26: 
+a change that flips satisfaction activates or deactivates the fiber, and refresh’s idempotence 
+renders a neutral change harmless. The interaction of this re-evaluation with diverse control 
+flows is developed in Section 5.1.3.
+Algorithm 3 Reactive notification
+1 function notify(ctx, keys)
+2 affected ← ⌀
+3 for fiber in all_fibers do
+4 for key in keys do
+5 if key ∈ fiber.inject and fiber.ctx[@@isolate][key] = ctx[@@isolate][key] then
+6 refresh(fiber)
+7 affected ← affected ∪ {fiber}
+8 break
+9 return affected
+A binding counts as available to a dependent only while the fiber that installed it is ACTIVE, 
+so refresh resolves each declared key against an active provider rather than against the store 
+alone. This is the provided by  relation of Definition  46, and it is what makes a withdrawal 
+visible to dependents one step before it happens: a provider that has entered UNLOADING has 
+stopped providing, so its dependents recompute an unsatisfied target view and begin their 
+own teardown while its bindings are all still in place.
+Isolation and interception.  The two operations do structurally the same thing: each 
+derives a child context that adjusts one inherited table for key, leaving the parent untouched, 
+so recovery is implicit: discarding the child context suffices, with no explicit inverse to run. 
+ctx.isolate(key, realm) overrides the realm mapping 𝜌 with realm, or a freshly generated 
+symbol by default (realizing isolate, Definition  29), so two contexts that assign different 
+symbols to the same key resolve to independent bindings. ctx.intercept(key, metadata)  
+merges metadata into the interception table 𝜄 (realizing intercept, Definition 31): following that 
+definition, the new metadata is combined with whatever the context already carries for key and 
+takes priority over it.
+5.1.3.  Component Lifecycle
+A component is instantiated as a fiber by ctx.use. This section gives the fiber (introduced in 
+Section 5.1) operational meaning as the inertial state machine of Section 4.3.3. Two fields drive 
+the algorithm below: fiber.parent, the parent context of fiber.ctx that forms the component 
+hierarchy (the recursive structure of Γ∞, Section 3.3.1), and fiber.inertia, a handle to the inflight asynchronous transition (or null if idle).
+Algorithm  4 shows component instantiation. A component pairs a coeffect specification 
+component.inject ( 𝑑) with an effect function component.apply; instantiation binds the 
+component’s config into fiber.apply (Line 9), the config-applied effect function ( 𝑒) that the 
+lifecycle then runs. The callback function (Line 2) is the effect tracked in the parent fiber: when 
+executed, it initiates the child’s lifecycle by calling refresh ( Algorithm  5); when recovered, 
+it forces the child’s target to ⊥ and triggers unload. This is the registration primitive of 
+Definition 47, with callback as its O-Insert and the closure callback returns as its O-Retire: an 
+instantiation is an ordinary tracked effect of the parent, so unloading a parent cascades to its 
+children.
+Algorithm 4 Component instantiation
+1 function use(ctx, component, config)
+2 function callback()
+3 refresh(fiber)
+4 return function()
+5 fiber.target ← ⊥
+6 unload(fiber)
+7 fiber ← Fiber(parent: ctx, inject: component.inject)
+8 fiber.ctx ← ctx[fiber ↦ fiber]
+9 fiber.apply ← () ↦ component.apply(fiber.ctx, config)
+10 ctx.effect(callback)
+11 return fiber
+Algorithm 5 realizes the inertial state machine of Section 4.3.3, in which reload and unload 
+are inertial: once entered, a transition runs to completion before the system responds to a targetstate change. It uses two auxiliary lookups over the coeffect store: resolve(inject) returns the 
+bindings the declared keys currently resolve to, and provided(fiber) returns the keys whose 
+binding this fiber installed. The refresh function recomputes fiber.target from the coeffect 
+store and, if the fiber is not already in a transition, initiates either a reload or unload task2. The 
+reload function records the current target and executes the component’s effect function apply. 
+Upon completion, it checks whether the target still matches: if so, the fiber enters ACTIVE; if not 
+(regardless of whether the new target is ⊥ or a different set of providers), it chains into unload. 
+Symmetrically, unload recovers all tracked effects in LIFO order and then either enters INACTIVE 
+or chains into reload. This mutual recursion implements the inertial property: once a transition 
+begins, it completes before any new transition can start.
+Algorithm 5 Component lifecycle
+1 function refresh(fiber)
+2 target ← target(𝛾, 𝑛)
+3 if target = fiber.target then return
+4 fiber.target ← target
+5 if fiber.inertia then return
+6 if target ≠ ⊥ then
+7 fiber.state ← LOADING
+8 fiber.inertia ← create_task(reload(fiber))
+9 else
+10 fiber.state ← UNLOADING ▷ out of service before any inverse is scheduled
+11 fiber.inertia ← create_task(unload(fiber))
+12 async function reload(fiber)
+13 target0 ← fiber.target
+14 fiber.committed ← resolve(fiber.inject) ▷ commit the view
+15 recover ← await execute(fiber.apply, () ↦ fiber.target = target0)
+16 fiber.dispose ← recover ∘ fiber.dispose
+17 if fiber.target = target0 then
+18 fiber.state ← ACTIVE
+2create_task schedules an async function to run concurrently and returns a handle to it (stored in fiber.inertia). 
+We write it explicitly for language independence: with eager scheduling (e.g., TypeScript promises), the call 
+is implicit and the returned promise is the handle, whereas with lazy scheduling (e.g., Python coroutines, Rust 
+futures) the host must spawn the task for it to progress.
+19 notify(fiber.ctx, provided(fiber))
+20 fiber.inertia ← null
+21 else
+22 fiber.state ← UNLOADING
+23 fiber.inertia ← create_task(unload(fiber))
+24 async function unload(fiber)
+25 await all(notify(fiber.ctx, provided(fiber)).map(f ↦ f.await())) ▷ drain dependents
+26 await fiber.dispose()
+27 fiber.dispose ← id
+28 fiber.committed ← ⊥
+29 if fiber.target = ⊥ then
+30 fiber.state ← INACTIVE
+31 fiber.inertia ← null
+32 else
+33 fiber.state ← LOADING
+34 fiber.inertia ← create_task(reload(fiber))
+fiber.target is computed by resolving each declared key against the current coeffect store 
+and tupling the uid of the fiber that provides it, so it is a digest of target(𝛾, 𝑛) (Definition 46). 
+Identifying a binding by its provider rather than by its value is what makes a single comparison 
+against the recorded target sufficient: a uid is drawn fresh and never reused, so a provider that 
+is replaced cannot be mistaken for the one it replaced, even when the two provide equal values. 
+Since notify (Section 5.1.2) recomputes the target on every coeffect change, a fiber reloads 
+precisely when one of its declared keys comes to be provided by a different fiber. A provider 
+that overwrites its own binding in place is therefore not observed; a component that wants its 
+replacement to propagate withdraws the binding and installs it afresh.
+The algorithm operates at two complementary levels. At the transition level, reload and 
+unload check the target at completion, enabling inertial chaining across transitions. At the 
+iteration level within each transition, the effect execution (Algorithm 1) checks the target at each 
+iteration boundary, enabling partial rollback within a single transition. These two mechanisms 
+correspond to the inter-transition chaining of Section 4.3.3 and the intra-transition staleness 
+check that Theorem 64 rests on.
+Three lines carry the coeffect ordering of Theorem 63, and where each of them sits is what 
+makes the ordering hold. reload commits the resolved view at Line 14 and unload discards it 
+only after every inverse has run, so a fiber reads the same bindings for as long as it is loaded, its 
+own teardown included. refresh marks the fiber UNLOADING at Line 10 before the transition task 
+is created, which is the L-Leave step: the fiber stops providing, and the dependents recompute 
+against that before any of its inverses is scheduled. unload then waits at Line 25 for each notified 
+dependent to reach INACTIVE, which is the guard on L-Unload; notify admits a dependent only 
+when its declared key resolves to the same realm symbol as the provider’s, which is the runtime 
+form of the guard’s demand that the dependent see the key from this fiber rather than merely 
+declare it. The wait sits ahead of the whole recovery rather than inside one of the inverses being 
+waited on, since fiber.dispose initiates a fiber’s effects concurrently and a wait placed within 
+one of them would leave the rest unordered. Termination follows Theorem 66: a fiber only ever 
+waits on dependents that have already stopped being satisfiable, and a dependent that is itself 
+a provider waits the same way for its own, so the provider graph is traversed on demand rather 
+than analyzed in advance.
+5.1.4.  Context Access
+The coeffect operations of Section  5.1.2 form a reflective API: a coeffect is written with 
+ctx.set(key, value) and read with ctx.get(key), both keyed by name. Cordis layers a second, 
+more native way to extend and consume the context on top of this reflective API: property access. 
+A component can access a coeffect as the property ctx[key], as if it were native structure of 
+the context, rather than through a method call. In TypeScript, Cordis realizes this with a Proxy 
+whose get trap mediates every property access. Algorithm 6 shows how a context resolves such 
+an access to a coeffect, atop the primitive get of Section 5.1.2.
+Algorithm 6 Proxy-mediated context access
+1 function resolve(ctx, key)
+2 fiber ← ctx.fiber
+3 repeat
+4 if key ∈ fiber.committed then return fiber.committed[key]
+5 if key ∈ fiber.inject then throw INACTIVE_ACCESS
+6 if fiber = root then throw UNDECLARED_ACCESS
+7 fiber ← fiber.parent.fiber
+Algorithm  6 walks the fiber chain upward from the accessing context: at the first fiber 
+whose committed view binds key, the access is authorized and that binding is returned; if the 
+walk reaches a fiber that declares key without having committed it, the fiber is not loaded 
+and the access fails; and if it reaches the root without any declaration, the access is rejected as 
+undeclared. This is where the proxy differs from the bare ctx.get: ctx.get(key) is a lookup 
+against the store that returns the bound value or nothing and never fails, whereas the proxy 
+resolves against the accessing fiber’s own view and enforces the coeffect specification 𝑑 at the 
+point of use. Reading the view rather than the store is also what Theorem 63 rests on, since it 
+is what keeps a dependency readable to a component whose teardown was triggered by that 
+dependency going away.
+This rejection is a runtime check performed at the point of access. Because a component’s 
+coeffect specification 𝑑 is declared statically, the same violation is in principle detectable at 
+compile time, by resolving each ctx[key] against the declared 𝑑 before execution; Section 6.4 
+discusses how a host language’s type-level dependency declarations and compile-time 
+metaprogramming can carry out exactly this mediation.
+5.2.  Component Loader
+The core library equips component developers with imperative primitives for dynamic compo -
+sition, such as ctx.effect, ctx.use, and ctx.set. A separate concern arises for application 
+orchestrators, who assemble pre-existing components into a running system and adjust the 
+composition over its lifetime. The component loader addresses this concern by introducing a declarative configuration layer: the orchestrator specifies the desired composition as a persistent 
+data structure, and the loader translates changes to this specification into the corresponding 
+imperative fiber operations.
+5.2.1.  Declarative Configuration
+Section 4 decomposes a running system into fibers, each an instantiation of one component. 
+Everything an instantiation needs can be declared, so an orchestrator can describe a whole 
+system as a declarative configuration: a persistent record that the loader realizes as fibers and 
+keeps in step with them.
+Entries. A configuration consists of entries. Each entry specifies a fiber and manages it, and 
+the binding runs in both directions: the loader responds to a change in an entry’s fields by 
+adjusting the fiber, and a component that revises its own configuration or disables itself has the 
+change written back to its entry.
+Definition 74. An entry declares a single fiber, recording:
+• id — a stable identifier, used as the reconciliation key when its group’s child list changes;
+• url — the URL of the component module to instantiate;
+• isolate — an isolation annotation applied to the entry’s context;
+• intercept — an interception annotation applied to the entry’s context;
+• config — the configuration bound into the component to form its effect function apply;
+• disabled — whether the entry is administratively turned off.
+An entry can serve as a faithful specification because what supports a fiber is exactly what 
+an entry records. The support set of Definition 67 reads 𝜏, 𝜋, 𝑑, and 𝑝 and nothing else, and 
+an entry gives all four: disabled gives 𝜏, the entry’s parent in the tree gives 𝜋, and url selects 
+the component which declares 𝑑 and 𝑝. The fields the support set leaves unread are the fiber’s 
+runtime state, which an instantiation does not need either, and Lemma 70 identifies the support 
+set with the 𝖠𝖼𝗍𝗂𝗏𝖾 fibers of a quiescent state (Definition 49) as far as each component installs 
+every key it declares (Definition 69).
+These entries form a configuration tree that is the authoritative record of what the system 
+loads. An entry may be a leaf mapping to a single fiber, or its component may in turn load 
+further components, making the entry a branch node. Cordis provides components for such 
+grouped and nested loading: @cordisjs/group takes a list of child entries as its configuration 
+and loads them as a subgroup, and @cordisjs/include loads an external configuration file 
+(YAML or JSON) and grafts its entries in as a nested subtree. Both are ordinary components 
+resting on the registration primitive of Definition 47 (Algorithm 4), so a nested tree stays within 
+the calculus and the results below hold of it.
+Reconciliation. When an entry’s record changes, the loader reconciles incrementally rather 
+than tearing the fiber down and rebuilding it wholesale. Reconciling this way is sound for 
+reasons the metatheory supplies.
+• Theorem 73 makes the quiescent state a function of the final configuration alone: what -
+ever instantiations and retirements the loader performs on the way, and in whatever 
+order, the system quiesces where a load of the final configuration from scratch would 
+have left it. Which components end up loaded is read off the declarations only as far as 
+each of them installs every key it declares ( Definition 69); a component that declares a 
+key and installs it under some configurations alone is one the loader can still reconcile, 
+but the set of loaded components then answers to those configurations as well.
+• Theorem 66 proves that the system does quiesce, so a reconciliation is complete once its 
+instantiations and retirements have been issued.
+• Corollary 62 puts a departing fiber’s contribution to the state at nothing, so rebuilding 
+one entry withdraws what its fiber installed and leaves the fibers around it as they were.
+• Theorem 63 lets the entries be instantiated together, with no load order for the orches -
+trator to arrange: a fiber whose declared keys are not yet provided waits at its L-Begin, and 
+one whose provider leaves is deactivated ahead of it. A dependency therefore constrains 
+when a fiber activates rather than when its module is fetched and evaluated, so the loader 
+loads modules concurrently, where bringing up a large configuration spends its time.
+On top of the fiber that an entry declares, the loader dispatches on which of the entry’s 
+fields changed and applies the least disruptive operation for each.
+• id, url — rebuilds the entry, since its identity or its component has changed;
+• isolate — reassigns the entry’s realms (Algorithm 7);
+• intercept — updated in place, as interception metadata is consulted at read time and 
+needs no reload;
+• config — handed to the component, which decides how to apply the new payload, 
+typically by diffing it against the previous one and reloading only on a material change. 
+In particular, an @cordisjs/group entry’s config is its list of child entries, so it applies the 
+update as a keyed diff over child ids, creating, removing, or updating each child; since 
+updating a surviving child re-enters this same per-field dispatch, group reconciliation 
+and entry update recurse together down the tree;
+• disabled — unloads the fiber when set and reloads it when cleared.
+Managed realms. Isolation in the core derives a child context overriding the realm table 𝜌 
+at one key (Section 5.1.2), which suffices while the context tree stands still. An entry may be 
+moved between groups at runtime, so the loader manages realms of its own, and the isolate 
+field selects between two scoping rules per key. A value of true asks for a local realm, private 
+to the entry and tagged by its id, which the entry carries with it wherever it moves; a string 
+asks for a global realm shared by every entry naming that string, so moving such an entry 
+changes which entries it shares a binding with rather than which realm it belongs to. A realm 
+is discarded once no entry names it.
+Reassigning an entry’s realms turns on which keys changed realm, whether the entry is 
+itself the provider at a changed key, and which dependents to notify. The middle question is 
+the hard one, since a realm symbol may be shared by several fibers of which only one is the 
+provider. The loader answers it with delimiters: one symbol 𝛿𝑘 per key, under which each context 
+stores a tag of its own. A delimiter is written on a context and inherited by its descendants, so 
+the entry’s tag and the provider’s agree exactly when the two were derived within one isolate 
+scope for 𝑘, which is the case in which the binding at 𝑘 is the entry’s own and has to move 
+with it.
+Algorithm 7 Isolation realm reassignment
+1 function patch_isolation(entry, 𝜌′)
+2 𝜌 ← entry.ctx[@@isolate]
+3 store ← entry.ctx[@@store]
+4 Δ ← {𝑘 | 𝜌(𝑘) ≠ 𝜌′(𝑘)} ▷ keys whose realm changes
+5 for 𝑘 in Δ do
+6 entry.ctx[𝛿𝑘] ← fresh tag
+7 diff[𝑘] ← (𝜌(𝑘), 𝜌′(𝑘), entry.ctx[𝛿𝑘], store[𝜌(𝑘)].fiber.ctx[𝛿𝑘])
+8 entry.ctx[@@isolate] ← 𝜌′
+9 reload(entry.fiber)
+10 for 𝑘 in Δ do
+11 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘]
+12 if 𝑑1 = 𝑑2 and store[𝑠1] and not store[𝑠2] then ▷ the binding is the entry’s own
+13 store[𝑠2] ← store[𝑠1]
+14 delete store[𝑠1]
+15 function affected(fiber, 𝑘)
+16 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘]
+17 return fiber.ctx[@@isolate][𝑘] ∈ {𝑠1, 𝑠2} and (fiber.ctx[𝛿𝑘] = 𝑑1) ≠ (𝑑2 = 𝑑1)
+18 notify(entry.ctx, Δ, affected) ▷ in place of the realm test of Algorithm 3
+The test turns on one property of delimiters. The tag under 𝛿𝑘 is written on the entry’s 
+context and inherited by every context derived from it, and it is drawn afresh at each reassignment, so for a context 𝛾′
+𝛾′[𝛿𝑘] = 𝑑1 ⟺ 𝛾′ is derived from the entry's context (65)
+Write own(𝛾′) for that condition, of which 𝑑2 = 𝑑1 is the instance at the provider. The 
+reassignment moves the contexts satisfying own from 𝑠1 to 𝑠2 and leaves the others where they 
+are, and by the loop above it moves the binding to 𝑠2 exactly when the provider satisfies own. 
+A dependent sees the binding while its own realm at 𝑘 is the realm the binding sits in. Where 
+own agrees on the dependent and the provider, both move or neither does, so the dependent 
+sees the binding afterwards exactly when it saw it before. Where own separates them, one side 
+moves and the other stays, so the dependent gains or loses the binding. The inequality is that 
+separation, and the membership test drops the dependents resolving 𝑘 in neither realm, which 
+no part of the move reaches.
+5.2.2.  Hot Module Replacement
+Hot module replacement (HMR) applies the revertible-effect pattern at the module level: when 
+source files change, typically during development, the system replaces the affected modules 
+in-place without restarting the process. Because a fiber already bounds all of its component’s 
+effects and coeffects, a module that is itself a component can be replaced through fiber opera -
+tions alone: disposing the old fiber recovers everything the component installed, and a new 
+fiber instantiated from the reloaded module reinstalls it. HMR therefore needs no developerannotated acceptance boundaries, as opposed to Webpack [46] or Vite [47] HMR.
+The @cordisjs/hmr component provides the HMR engine, which operates in three phases.
+Phase 1: Module classification.  The engine takes two inputs: the stashed set (file URLs 
+whose contents have changed since the last reload) and the externals set (modules that cannot 
+be hot-replaced and instead trigger a full restart). Writing get_imports(url) for the modules 
+that url directly imports, it classifies the changes’ dependency subgraph, marking each module 
+accepted or declined:
+Algorithm 8 Module classification
+1 function classify(stashed, externals)
+2 accepted ← stashed
+3 declined ← externals
+4 pending ← ⌀
+5 for url in stashed do
+6 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined))
+7 repeat
+8 progress ← false
+9 for url in pending do
+10 if get_imports(url) ∩ accepted ≠ ⌀ then
+11 accepted ← accepted ∪ {url}
+12 pending ← pending ∖ {url}
+13 progress ← true
+14 else if get_imports(url) ⊆ declined then
+15 declined ← declined ∪ {url}
+16 pending ← pending ∖ {url}
+17 progress ← true
+18 else
+19 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined))
+20 until not progress
+21 declined ← declined ∪ pending
+22 return (accepted, declined)
+Seeded with the imports of the stashed files, the fixed point accepts a module once one of 
+its imports is accepted and declines one once all of its imports are declined; any module left 
+undecided, caught in an import cycle, defaults to declined.
+Phase 2: Stale-entry detection.  Using accepted and declined, the engine then filters the 
+component entries down to the stale ones, whose dependency tree reaches a changed module. It 
+walks each entry’s tree with get_dependencies, which collects the transitive imports of a module 
+while respecting declined as a boundary:
+Algorithm 9 Stale-entry detection
+1 function get_dependencies(root, declined)
+2 deps ← ⌀
+3 function traverse(url)
+4 if url ∈ deps or url ∈ declined then return
+5 deps ← deps ∪ {url}
+6 for child in get_imports(url) do traverse(child)
+7 traverse(root)
+8 return deps
+9 function detect(entries, accepted, declined)
+10 stale_entries ← ⌀
+11 for entry in entries do
+12 tree ← get_dependencies(entry.url, declined)
+13 if tree ∩ accepted ≠ ⌀ then
+14 accepted ← accepted ∪ tree
+15 stale_entries ← stale_entries ∪ {entry}
+16 return stale_entries
+An entry is stale exactly when its tree intersects accepted; that tree is then folded into 
+accepted, so every stale module along it is invalidated in the next phase.
+Phase 3: Transactional reload.  Finally, the engine reloads the stale entries. It invalidates 
+the accepted modules’ caches 3, backing up each removed module to enable rollback, then reimports each stale entry’s component module by its url and swaps in a fresh fiber:
+Algorithm 10 Transactional module reload
+1 function reload(ctx, accepted, stale_entries)
+2 backup ← invalidate_caches(accepted)
+3 try
+4 for entry in stale_entries do
+5 entry.fiber.dispose()
+6 entry.fiber ← ctx.use(import(entry.url), entry.config)
+7 catch error
+8 restore_caches(backup)
+9 for entry in stale_entries do
+10 entry.fiber.dispose()
+11 entry.fiber ← ctx.use(backup[entry.url], entry.config)
+12 throw error
+The transactional guarantee ensures that the system never enters a half-reloaded state: if 
+any module fails to import (e.g., due to a syntax error), the caches are restored and every 
+stale entry is rebuilt from backup[entry.url], the previous component whose cache was just 
+restored, undoing the swaps already made.
+5.3.  Case Study: Koishi
+Koishi is an open-source chatbot application framework built on Cordis 4. Over four years of 
+development, it has accumulated over 4000 community-contributed plugins 5, ranging from 
+instant-messaging (IM) adapters and database drivers to administrative consoles and enduser features. Its scale and diversity make it a representative validation of Cordis’s dynamic 
+composability in a production setting.
+Expressiveness and generality of the meta-framework.  Koishi runs as a server-side bot 
+whose every feature is realized as a plugin over the context primitives of Section 5.1; Koishi 
+itself contributes only the chatbot-domain vocabulary. The same model reappears in a wholly 
+different runtime: Koishi’s web console is a second, independent Cordis application whose 
+plugins compose the primitives of the browser and its user interface rather than those of the 
+server. The disparate settings above establish two properties of the model of Section 3. (1) It 
+is expressive: its primitives suffice to carry a complete production system, the host framework 
+supplying only domain vocabulary. (2) It is general: it fixes how effects and coeffects compose 
+while leaving their meaning to each application, and so presupposes neither a particular 
+domain nor a particular runtime.
+Temporal composability without cognitive overhead.  The plugin systems surveyed in 
+Section 1.2.1 cannot unload an individual extension’s effects without restarting the extension 
+3On Node.js, this means clearing the caches of both the ES module and CommonJS module systems, since a 
+module imported through the ES loader can appear in both.
+4Koishi currently uses Cordis v3. This paper presents Cordis v4, which refines the effect and coeffect semantics 
+and redesigns the loader; the core compositional model is shared across both versions.
+5Koishi uses the term plugin for the concept this paper formalizes as component.
+host. Koishi routinely performs this operation: an orchestrator disables a plugin from the 
+console and its effects are withdrawn in place; during development, the HMR engine re-applies 
+edited plugins on save while preserving cache state and live connections elsewhere in the 
+system. Cordis makes such removal not merely possible but effortless for the plugin author. 
+Because effects performed through the context are tracked and their inverses composed auto -
+matically (Section 3.1), even an inexperienced author obtains ordered cleanup for a plugin’s 
+context-mediated effects without writing an uninstall path. This achieves the locality of concern 
+whose absence Section 1.2.1 identifies: correctness that would otherwise rest on each author’s 
+diligence is instead discharged once, by the abstraction.
+Spatial composability across an open ecosystem.  In contrast to the plugin systems of 
+Section 1.2.1, where inter-plugin dependencies are largely absent, Koishi’s ecosystem exhibits 
+a genuine dependency topology: IM adapters provide access to each messaging platform, 
+database drivers provide persistent storage, and functional plugins declare these as coeffects 
+and access them. Reconfiguring a provider at runtime, such as switching the storage backend or 
+reconnecting an adapter, reactivates only the dependents whose resolved dependency changed 
+(Section 3.2); a plugin whose dependency is unavailable stays inactive until it appears, without 
+erroring. What the case study substantiates is that this composition holds across independently 
+authored code: a plugin and its dependencies are typically written by different authors who 
+coordinate on nothing beyond the coeffect that connects them, so reactive coeffects keep the 
+assembly consistent across an open ecosystem of independent contributors.
+Threats to validity. The evidence here is drawn from a single ecosystem in a single host language, so it cannot separate the merits of the paradigm from those of its TypeScript realization 
+or of Koishi’s particular domain, and it is observational rather than a controlled comparison 
+against an alternative architecture. What the case study establishes is thus an existence-andadoption result rather than a quantitative one; measuring the abstraction’s overhead and its 
+effect on developer productivity against a baseline remains future work.

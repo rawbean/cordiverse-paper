@@ -1,0 +1,142 @@
+[
+  {
+    "id": 910,
+    "zh": "读视图而非存储也是定理 63 所依赖者，因为它使因该依赖离去而触发拆除的组件仍可读该依赖。此种拒绝是在访问点执行的运行时检查。由于组件的共效应规约 𝑑 静态声明，原则上同一违规可在编译时检测，通过在执行前对照所声明的 𝑑 解析每个 ctx[key]；第 6.4 节讨论宿主语言的类型级依赖声明与编译时元编程如何恰好执行此种中介。"
+  },
+  {
+    "id": 911,
+    "zh": "5.1. 核心库"
+  },
+  {
+    "id": 912,
+    "zh": "表 2 总结理论构造与其运行时对应物之间的对应。特别地，我们在本节通篇使用下文引入的运行时名称，将理论符号保留给形式对应。我们亦以 @@name 记框架内部符号键，故 ctx[@@store] 中的方括号表示对上下文上不透明槽的符号键访问，而非对字符串键映射的索引。"
+  },
+  {
+    "id": 913,
+    "zh": "理论（第 3 节、第 4 节） 实现 Γ∞ ctx，第一类上下文 𝛾 ∈ Γ 上下文树连同运行系统所触及的一切 𝔈Γ、𝔈iter Γ 返回/给出逆的效应回调 effectΓ(𝑒) ctx.effect(callback) Σ、Σiso、Σinter ctx[@@store]、ctx[@@isolate]、ctx[@@intercept] get(𝑘)、set(𝑘, 𝑣) ctx.get(key)、ctx.set(key, value) isolate(𝑘, 𝑟) ctx.isolate(key, realm) intercept(𝑘, 𝜈) ctx.intercept(key, metadata) ⟨𝑑, 𝑝, 𝑒, 𝜋, 𝜎, 𝜏, 𝜃⟩ fiber，ℭΓ 中组件的实例化 dom(𝐹𝛾) 经 ctx.registry 枚举 𝑛 : 𝔑 fiber.uid 𝑑 : 𝔇Γ fiber.inject 𝑝 : 𝔓Γ 组件的 provide 𝑒 : 𝔈∗ Γ fiber.apply 𝜋 : 𝔑 fiber.parent.fiber.uid，拥有其实例化所在上下文的 fiber 导出实现（定义 27） fiber.ctx，fiber 所运行的子上下文 𝜃（定义 44） fiber.state，生命周期状态，其 LOADING 为 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀，其 FAILED 为 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉) recover、累加器 𝑔 fiber.dispose，累加器 𝜔（定义 44） fiber.committed，已提交视图 provider𝑘(𝛾) 提供者 fiber 为 ACTIVE 的 Impl target(𝛾, 𝑛) fiber.target，由 refresh（算法 5）重新计算，其中 ⊥ 为 INACTIVE 𝖥𝗎𝗍𝗎𝗋𝖾、惯性（第 4.3.3 节） fiber.inertia，飞行中转换的句柄 O-Insert、O-Retire（定义 47） ctx.use 及其回调的逆（算法 4） O-Remove 从运行时丢弃的 fiber，uid 已清除 L-Begin、L-Iter、L-Finish execute 的迭代循环（算法 1） L-Divert 在迭代边界失败的守卫（算法 1），或 reload 链入 unload L-Leave refresh 将 fiber 标记为 UNLOADING（第 10 行） L-Unload unload 及其惯性链式（算法 5） L-Unload 上的守卫 unload 等待被通知的依赖方（第 25 行） L-Raise 记录在 fiber 上的错误，其目标设为 ⊥ 表 2 | 理论到实现的对应 本节其余部分自底向上构建核心库。第 5.1.1 节实现可回退效应——变更上下文的唯一原语；第 5.1.2 节在其上实现反应式共效应；第 5.1.3 节将二者复合为组件生命周期；第 5.1.4 节暴露建立在它们之上的上下文级操作。"
+  },
+  {
+    "id": 914,
+    "zh": "5.1. 核心库"
+  },
+  {
+    "id": 915,
+    "zh": "表 2 总结理论构造与其运行时对应物之间的对应。特别地，我们在本节通篇使用下文引入的运行时名称，将理论符号保留给形式对应。我们亦以 @@name 记框架内部符号键，故 ctx[@@store] 中的方括号表示对上下文上不透明槽的符号键访问，而非对字符串键映射的索引。"
+  },
+  {
+    "id": 916,
+    "zh": "理论（第 3 节、第 4 节） 实现 Γ∞ ctx，第一类上下文 𝛾 ∈ Γ 上下文树连同运行系统所触及的一切 𝔈Γ、𝔈iter Γ 返回/给出逆的效应回调 effectΓ(𝑒) ctx.effect(callback) Σ、Σiso、Σinter ctx[@@store]、ctx[@@isolate]、ctx[@@intercept] get(𝑘)、set(𝑘, 𝑣) ctx.get(key)、ctx.set(key, value) isolate(𝑘, 𝑟) ctx.isolate(key, realm) intercept(𝑘, 𝜈) ctx.intercept(key, metadata) ⟨𝑑, 𝑝, 𝑒, 𝜋, 𝜎, 𝜏, 𝜃⟩ fiber，ℭΓ 中组件的实例化 dom(𝐹𝛾) 经 ctx.registry 枚举 𝑛 : 𝔑 fiber.uid 𝑑 : 𝔇Γ fiber.inject 𝑝 : 𝔓Γ 组件的 provide 𝑒 : 𝔈∗ Γ fiber.apply 𝜋 : 𝔑 fiber.parent.fiber.uid，拥有其实例化所在上下文的 fiber 导出实现（定义 27） fiber.ctx，fiber 所运行的子上下文 𝜃（定义 44） fiber.state，生命周期状态，其 LOADING 为 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀，其 FAILED 为 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉) recover、累加器 𝑔 fiber.dispose，累加器 𝜔（定义 44） fiber.committed，已提交视图 provider𝑘(𝛾) 提供者 fiber 为 ACTIVE 的 Impl target(𝛾, 𝑛) fiber.target，由 refresh（算法 5）重新计算，其中 ⊥ 为 INACTIVE 𝖥𝗎𝗍𝗎𝗋𝖾、惯性（第 4.3.3 节） fiber.inertia，飞行中转换的句柄 O-Insert、O-Retire（定义 47） ctx.use 及其回调的逆（算法 4） O-Remove 从运行时丢弃的 fiber，uid 已清除 L-Begin、L-Iter、L-Finish execute 的迭代循环（算法 1） L-Divert 在迭代边界失败的守卫（算法 1），或 reload 链入 unload L-Leave refresh 将 fiber 标记为 UNLOADING（第 10 行） L-Unload unload 及其惯性链式（算法 5） L-Unload 上的守卫 unload 等待被通知的依赖方（第 25 行） L-Raise 记录在 fiber 上的错误，其目标设为 ⊥ 表 2 | 理论到实现的对应 本节其余部分自底向上构建核心库。第 5.1.1 节实现可回退效应——变更上下文的唯一原语；第 5.1.2 节在其上实现反应式共效应；第 5.1.3 节将二者复合为组件生命周期；第 5.1.4 节暴露建立在它们之上的上下文级操作。"
+  },
+  {
+    "id": 917,
+    "zh": "5.1.1. 效应追踪"
+  },
+  {
+    "id": 918,
+    "zh": "本节实现可回退效应（第 3.1 节）。Cordis 中每一次上下文变更都经由单一原语 ctx.effect：共效应提供、组件实例化以及每一其他变更上下文的操作都归约为 ctx.effect 调用，故经由上下文执行的任何操作在组件卸载时都被自动追踪并恢复。操作上，ctx.effect 是 effectiter Γ（定义 52）的实现：它接受类型为 𝔈iter Γ 的回调并将其提升到 𝔈iter 𝜕Γ，给出在调用时恢复效应的 dispose 闭包。Cordis 经这一操作接纳 𝔈Γ 与 𝔈iter Γ（特设多态）；我们以迭代器形式为代表，因为普通效应函数是给出单一逆的退化迭代器。"
+  },
+  {
+    "id": 919,
+    "zh": "该操作不检查 𝔈∗ Γ 所携带的见证：回调提供逆，而逆恢复其所伴随的效应是组件作者的义务而非运行时所验证的性质。定理 61 是演算诉诸它之处，第 6.1 节划定该义务。算法 1 展示 ctx.effect 的构造。我们以 𝑓 ∘ 𝑔 记在 𝑔 之后运行 𝑓 的处置器，以 id 记空操作；因此每次将新逆前置都给出 LIFO 恢复。"
+  },
+  {
+    "id": 920,
+    "zh": "算法 1 效应追踪 1 async function execute(callback, guard) 2 iter ← callback() 3 inverse ← id 4 while guard() 5 (value, done) ← await iter.next() 6 if value then inverse ← value ∘ inverse 7 if done then break 8 return inverse 9 function effect(ctx, callback) 10 armed ← true 11 task ← execute(callback, () ↦ armed) 12 async function dispose() 13 if not armed then return 14 armed ← false 15 recover ← await task 16 recover() 17 ctx.dispose ← dispose ∘ ctx.dispose 18 return dispose 引擎 execute 将回调作为效应迭代器驱动（𝔈iter Γ，定义 51），并将每一步给出的逆折叠为单一复合。在每一步之前它咨询调用方提供的守卫；一旦守卫触发，迭代停止，仅留下至此累加的逆。这是第 4.3.2 节的步边界中断：𝖬𝖺𝗒𝖻𝖾(𝔈iter) 延续由迭代器的 done 标志连同 guard 实现。"
+  },
+  {
+    "id": 921,
+    "zh": "ctx.effect 是 execute 上的薄包装，添加两件事。第一，自处置：守卫报告 armed 标志，返回的 dispose 将 armed 翻为 false，这同时中止任何飞行中的迭代并使恢复至多触发一次。触发两次会在没有任何效应应用所产生的状态上应用逆，那里没有任何东西约束它回退任何内容。第二，父复合：dispose 被前置到封闭上下文的累加逆 ctx.dispose，故子效应的逆本身是父上的效应，这正是 𝜕2Γ 的递归结构。组件层（第 5.1.3 节）以检验 fiber.target 稳定性而非 armed 的守卫重用同一 execute。"
+  },
+  {
+    "id": 922,
+    "zh": "5.1.2. 共效应操作"
+  },
+  {
+    "id": 923,
+    "zh": "本节实现反应式共效应（第 3.2 节）。所有共效应操作作用于每个上下文所携带的三个符号键槽："
+  },
+  {
+    "id": 924,
+    "zh": "• @@store：值存储 𝜎 : (𝑟 : 𝑅) ⇀ 𝒱︀𝑟，从 realm 符号到有类型的值；"
+  },
+  {
+    "id": 925,
+    "zh": "• @@isolate：realm 表 𝜌 : Map(𝐾, 𝑅)，从共效应键到 realm 符号；"
+  },
+  {
+    "id": 926,
+    "zh": "• @@intercept：拦截表 𝜄 : (𝑘 : 𝐾) → ℳ︀𝑘，为每个键赋以其元数据。前二者合成为两层解析 𝑘 → 𝜌(𝑘) → 𝜎(𝜌(𝑘))：ctx.get(key)（算法 2）从 @@isolate 读取 realm 符号 𝜌(𝑘)，再从 @@store 读取绑定值 𝜎(𝜌(𝑘))。𝜌 间接使隔离能将键重定向到独立绑定，而 @@intercept 仅在访问绑定时被咨询，调整其使用方式而非其解析到什么。我们分两部分实现这些操作：(1) 提供与通知，安装或撤回绑定并将变更传播到依赖方；(2) 隔离与拦截，重塑键如何解析。提供与通知。由于 set(𝑘, 𝑣) 具有类型 𝔈Σ（第 3.1 节），共效应提供是 ctx.effect 调用并继承其自动追踪与恢复。"
+  },
+  {
+    "id": 927,
+    "zh": "算法 2 实现 ctx.set(key, value)，即具体的 set(𝑘, 𝑣)：回调在 realm 符号 𝜌(𝑘) 下将值绑定到存储，返回的 dispose 函数移除它。安装与移除都调用 notify 将变更传播到依赖组件。算法 2 共效应操作 1 function get(ctx, key) 2 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘) 3 return ctx[@@store][realm] ▷ 𝜎(𝜌(𝑘)) 4 function set(ctx, key, value) 5 function callback() 6 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘) 7 ctx[@@store][realm] ← value ▷ 𝜎[𝜌(𝑘) ↦ 𝑣] 8 notify(ctx, [key]) 9 return function() 10 delete ctx[@@store][realm] ▷ 𝜎 ∖ 𝜌(𝑘) 11 notify(ctx, [key]) 12 return ctx.effect(callback) 算法 3 通过对每个存活 fiber 检验变更键是否出现在其 fiber.inject 中并解析到同一 realm，将每次绑定变更传播到依赖方；"
+  },
+  {
+    "id": 928,
+    "zh": "若是，它调用 refresh（第 5.1.3 节）对照新状态重新求值该 fiber，并返回它所重新求值的 fiber 以便调用方可等待它们。这是定义 26 的反应式分类：翻转满足性的变更激活或停用 fiber，而 refresh 的幂等使中性变更无害。此种重新求值与多样控制流的交互在第 5.1.3 节展开。算法 3 反应式通知 1 function notify(ctx, keys) 2 affected ← ⌀ 3 for fiber in all_fibers do 4 for key in keys do 5 if key ∈ fiber.inject and fiber.ctx[@@isolate][key] = ctx[@@isolate][key] then 6 refresh(fiber) 7 affected ← affected ∪ {fiber} 8 break 9 return affected 绑定仅在安装它的 fiber 为 ACTIVE 时对依赖方可用，故 refresh 对照活跃提供者而非仅对照存储解析每个所声明的键。"
+  },
+  {
+    "id": 929,
+    "zh": "这是定义 46 的“由……提供”关系，正是它使撤回在发生前一步对依赖方可见：已进入 UNLOADING 的提供者已停止提供，故其依赖方重新计算未满足的目标视图并在其绑定仍全部就位时开始自有拆除。隔离与拦截。两个操作在结构上做同一件事：各自导出为 key 调整一张继承表的子上下文，留下父不动，故恢复是隐式的：丢弃子上下文即可，无需运行显式逆。ctx.isolate(key, realm) 以 realm（或默认新生成的符号）覆盖 realm 映射 𝜌（实现 isolate，定义 29），故为同一键赋不同符号的两个上下文解析到独立绑定。ctx.intercept(key, metadata) 将 metadata 合并进拦截表 𝜄（实现 intercept，定义 31）：按该定义，新元数据与上下文对该 key 已携带者结合并优先于它。"
+  },
+  {
+    "id": 930,
+    "zh": "5.1.3. 组件生命周期"
+  },
+  {
+    "id": 931,
+    "zh": "组件由 ctx.use 实例化为 fiber。本节将 fiber（第 5.1 节引入）赋予第 4.3.3 节惯性状态机的操作意义。两个字段驱动下述算法：fiber.parent——形成组件层次的 fiber.ctx 的父上下文（Γ∞ 的递归结构，第 3.3.1 节）；以及 fiber.inertia——飞行中异步转换的句柄（空闲时为 null）。算法 4 展示组件实例化。组件将共效应规约 component.inject（𝑑）与效应函数 component.apply 配对；实例化将组件的 config 绑定到 fiber.apply（第 9 行），即生命周期随后运行的已应用配置的效应函数（𝑒）。回调函数（第 2 行）是在父 fiber 中追踪的效应：执行时，它通过调用 refresh（算法 5）启动子的生命周期；恢复时，它将子的目标强制为 ⊥ 并触发 unload。这是定义 47 的注册原语，"
+  },
+  {
+    "id": 932,
+    "zh": "以 callback 为其 O-Insert，以 callback 所返回的闭包为其 O-Retire："
+  },
+  {
+    "id": 933,
+    "zh": "实例化是父的普通被追踪效应，故卸载父会级联到其子。算法 4 组件实例化 1 function use(ctx, component, config) 2 function callback() 3 refresh(fiber) 4 return function() 5 fiber.target ← ⊥ 6 unload(fiber) 7 fiber ← Fiber(parent: ctx, inject: component.inject) 8 fiber.ctx ← ctx[fiber ↦ fiber] 9 fiber.apply ← () ↦ component.apply(fiber.ctx, config) 10 ctx.effect(callback) 11 return fiber 算法 5 实现第 4.3.3 节的惯性状态机，其中 reload 与 unload 是惯性的：一旦进入，转换运行到完成，系统才响应目标状态变更。它使用共效应存储上的两个辅助查找：resolve(inject) 返回所声明键当前解析到的绑定，provided(fiber) 返回本 fiber 所安装绑定的键。"
+  },
+  {
+    "id": 934,
+    "zh": "refresh 函数从共效应存储重新计算 fiber.target，若 fiber 尚未处于转换中，则启动 reload 或 unload 任务。reload 函数记录当前目标并执行组件的效应函数 apply。完成后，它检查目标是否仍匹配：若是，fiber 进入 ACTIVE；若否（不论新目标是 ⊥ 还是不同的提供者集合），它链入 unload。对称地，unload 按 LIFO 顺序恢复所有被追踪效应，然后要么进入 INACTIVE，要么链入 reload。这一相互递归实现惯性性质：一旦转换开始，它在任何新转换可开始之前完成。"
+  },
+  {
+    "id": 935,
+    "zh": "算法 5 组件生命周期 1 function refresh(fiber) 2 target ← target(𝛾, 𝑛) 3 if target = fiber.target then return 4 fiber.target ← target 5 if fiber.inertia then return 6 if target ≠ ⊥ then 7 fiber.state ← LOADING 8 fiber.inertia ← create_task(reload(fiber)) 9 else 10 fiber.state ← UNLOADING ▷ 在调度任何逆之前退出服务 11 fiber.inertia ← create_task(unload(fiber)) 12 async function reload(fiber) 13 target0 ← fiber.target 14 fiber.committed ← resolve(fiber.inject) ▷ 提交视图 15 recover ← await execute(fiber.apply, () ↦ fiber.target = target0) 16 fiber.dispose ← recover ∘ fiber.dispose 17 if fiber.target = target0 then 18 fiber.state ← ACTIVE 2create_task 调度异步函数并发运行并返回其句柄（存于 fiber.inertia）。"
+  },
+  {
+    "id": 936,
+    "zh": "我们显式写出它以保持语言无关：在急切调度（如 TypeScript promise）下，调用是隐式的，返回的 promise 即是句柄；而在惰性调度（如 Python 协程、Rust future）下，宿主必须生成任务才能进展。19 notify(fiber.ctx, provided(fiber)) 20 fiber.inertia ← null 21 else 22 fiber.state ← UNLOADING 23 fiber.inertia ← create_task(unload(fiber)) 24 async function unload(fiber) 25 await all(notify(fiber.ctx, provided(fiber)).map(f ↦ f.await())) ▷ 排空依赖方 26 await fiber.dispose() 27 fiber.dispose ← id 28 fiber.committed ← ⊥ 29 if fiber.target = ⊥ then 30 fiber.state ← INACTIVE 31 fiber.inertia ← null 32 else 33 fiber.state ← LOADING 34 fiber.inertia ← create_task(reload(fiber)) fiber.target 通过对照当前共效应存储解析每个所声明的键并元组化提供它的 fiber 的 uid 来计算，因而是 target(𝛾, 𝑛) 的摘要（定义 46）。"
+  },
+  {
+    "id": 937,
+    "zh": "以提供者而非值识别绑定，正使与已记录目标的单次比较足够：uid 新鲜取出且从不重用，故被替换的提供者即使提供相等值也不能被误认为其所替换者。由于 notify（第 5.1.2 节）在每次共效应变更时重新计算目标，fiber 恰好在其所声明键之一改由不同 fiber 提供时重载。因此就地覆盖自有绑定的提供者不被观察；希望其替换传播的组件撤回绑定并重新安装。算法在两个互补层次上运作。在转换层，reload 与 unload 在完成时检查目标，实现跨转换的惯性链式。在每次转换内的迭代层，效应执行（算法 1）在每个迭代边界检查目标，实现单次转换内的部分回滚。"
+  },
+  {
+    "id": 938,
+    "zh": "这两种机制对应于第 4.3.3 节的转换间链式以及定理 64 所依赖的转换内陈旧性检查。三行承载定理 63 的共效应排序，它们各自所在之处使该排序成立。reload 在第 14 行提交已解析视图，unload 仅在每个逆都已运行之后才丢弃它，故 fiber 在已加载期间——包括其自有拆除——读取相同绑定。refresh 在第 10 行于创建转换任务之前将 fiber 标记为 UNLOADING，这是 L-Leave 步：fiber 停止提供，依赖方在调度其任何逆之前对照此重新计算。unload 随后在第 25 行等待每个被通知的依赖方到达 INACTIVE，这是 L-Unload 上的守卫；"
+  },
+  {
+    "id": 939,
+    "zh": "notify 仅当依赖方所声明键解析到与提供者相同的 realm 符号时才接纳该依赖方，这是守卫要求依赖方从本 fiber 看到该键而非仅声明它的运行时形式。等待位于整个恢复之前而非位于被等待的某个逆之内，因为 fiber.dispose 并发启动 fiber 的效应，将等待放在其中一个之内会使其余无序。终止遵循定理 66：fiber 只等待已停止可满足的依赖方，而本身是提供者的依赖方对其自有依赖方同样等待，故提供者图按需遍历而非预先分析。"
+  },
+  {
+    "id": 940,
+    "zh": "5.1.4. 上下文访问"
+  },
+  {
+    "id": 941,
+    "zh": "第 5.1.2 节的共效应操作形成反射式 API：共效应以 ctx.set(key, value) 写入并以 ctx.get(key) 读取，二者都以名为键。Cordis 在此反射式 API 之上再叠一层更原生的扩展与消费上下文的方式：属性访问。组件可将共效应作为属性 ctx[key] 访问，仿佛它是上下文的原生结构，而非通过方法调用。在 TypeScript 中，Cordis 以 Proxy 实现之，其 get 陷阱中介每一次属性访问。算法 6 展示上下文如何在第 5.1.2 节的原语 get 之上将此种访问解析为共效应。"
+  },
+  {
+    "id": 942,
+    "zh": "算法 6 经 Proxy 中介的上下文访问 1 function resolve(ctx, key) 2 fiber ← ctx.fiber 3 repeat 4 if key ∈ fiber.committed then return fiber.committed[key] 5 if key ∈ fiber.inject then throw INACTIVE_ACCESS 6 if fiber = root then throw UNDECLARED_ACCESS 7 fiber ← fiber.parent.fiber 算法 6 从访问上下文向上走 fiber 链：在第一个其已提交视图绑定 key 的 fiber 处，访问被授权并返回该绑定；若走到声明了 key 但尚未提交它的 fiber，则 fiber 未加载且访问失败；若走到根而没有任何声明，则访问被拒绝为未声明。这正是 proxy 与裸 ctx.get 的不同：ctx.get(key) 是对照存储的查找，返回绑定值或无，永不失败；而 proxy 对照访问 fiber 自有视图解析，并在使用点强制共效应规约 𝑑。"
+  },
+  {
+    "id": 943,
+    "zh": "读视图而非存储也是定理 63 所依赖者，因为它使因该依赖离去而触发拆除的组件仍可读该依赖。此种拒绝是在访问点执行的运行时检查。由于组件的共效应规约 𝑑 静态声明，原则上同一违规可在编译时检测，通过在执行前对照所声明的 𝑑 解析每个 ctx[key]；第 6.4 节讨论宿主语言的类型级依赖声明与编译时元编程如何恰好执行此种中介。"
+  },
+  {
+    "id": 944,
+    "zh": "5.2.1. 声明式配置"
+  }
+]

@@ -1,0 +1,91 @@
+3.1.1.  Effect Context
+Given any impure function 𝑓impure : 𝑋 → 𝑌 , we transform it into a pure form 𝑓 : Γ × 𝑋 → Γ ×
+𝑌 , where Γ is the context and all possible side effects can be represented as transformations 
+on Γ. For any fixed input 𝑥 : 𝑋, the induced map 𝛾 ↦ pr1(𝑓(𝛾, 𝑥)) captures the side effect of 𝑓 
+independently of the return value. Effects on Γ therefore live in the monoid of transformations 
+Γ → Γ under composition ∘, where each monoid axiom has a direct reading as a property of 
+effects:
+• Closure: the sequential composition of two effects is again an effect;
+• Associativity: a composite effect is independent of how it is bracketed;
+• Identity: idΓ, the identity function on Γ, acts as the unit of composition.
+To model effects that can be undone, we pair each transformation 𝑓 with another transformation 𝑔 that undoes 𝑓, and call 𝑔 a left inverse of 𝑓, abbreviated to inverse throughout the paper. 
+Undoing is one-sided: what an inverse is held to is 𝑔 ∘ 𝑓 and never 𝑓 ∘ 𝑔. Pairs of transformations 
+carry a multiplication of their own:
+Definition 1. Define the twisted composition of pairs of context transformations by
+(𝑓1, 𝑔1) ∘ (𝑓2, 𝑔2) ≔ (𝑓1 ∘ 𝑓2, 𝑔2 ∘ 𝑔1) (4)
+As for ∘ itself, the left operand acts after the right, and the inverses accumulate in the opposite 
+order. It makes (Γ → Γ) × (Γ → Γ) a monoid with unit (idΓ, idΓ), the product of the monoid of 
+transformations with its opposite, which we call the twisted composition monoid 𝔗Γ over Γ.
+To track effects within the context itself, we introduce the following definition:
+Definition 2. Given a context Γ, define its effect context as:
+𝜕Γ ≔ Γ × (Γ → Γ) (5)
+It can be understood as a pair (𝛾, 𝜑), where:
+• 𝛾 : Γ is the current context state;
+• 𝜑 : Γ → Γ is the accumulator, the composite of the inverses of the effects performed so far, 
+and the function that recovers the context to its initial state.
+In particular, the initial effect context can be represented as (𝛾0, idΓ).
+We also write 𝜕2Γ = 𝜕Γ × (𝜕Γ → 𝜕Γ), and so on up the tower.
+Given the presence of the accumulator 𝜑, all effects performed on 𝜕Γ can be tracked and 
+recovered. We now give the concrete constructions for tracking and recovery.
+Definition 3. Define the transformation trackΓ on pairs of context functions:
+trackΓ : (Γ → Γ) × (Γ → Γ) → 𝜕Γ → 𝜕Γ
+trackΓ = (𝑓, 𝑔) ↦ (𝛾, 𝜑) ↦ (𝑓(𝛾), 𝜑 ∘ 𝑔)
+(6)
+This transformation converts a forward function 𝑓 together with a candidate inverse 𝑔 into 
+a transformation of the effect context 𝜕Γ. Applying trackΓ(𝑓, 𝑔) to a state (𝛾, 𝜑) transforms 𝛾 
+by 𝑓 and composes the inverse 𝑔 onto 𝜑, thereby tracking the effect of 𝑓 in the context.
+Theorem 4. For every (𝑓, 𝑔) ∈ (Γ → Γ) × (Γ → Γ) the following diagram commutes, that is,
+pr1 ∘ trackΓ(𝑓, 𝑔) = 𝑓 ∘ pr1 (7)
+𝑓
+𝑓′
+pr1 pr1track
+Γ Γ
+𝜕Γ 𝜕Γ
+Proof. For all (𝛾, 𝜑) ∈ 𝜕Γ:
+(pr1 ∘ trackΓ(𝑓, 𝑔))(𝛾, 𝜑) = pr1(𝑓(𝛾), 𝜑 ∘ 𝑔)
+= 𝑓(𝛾)
+= (𝑓 ∘ pr1)(𝛾, 𝜑) □
+Theorem 5. trackΓ is a monoid homomorphism from 𝔗Γ into 𝜕Γ → 𝜕Γ. That is,
+1. trackΓ(idΓ, idΓ) = id𝜕Γ;
+2. for all (𝑓1, 𝑔1), (𝑓2, 𝑔2) ∈ 𝔗Γ,
+trackΓ((𝑓1, 𝑔1) ∘ (𝑓2, 𝑔2)) = trackΓ(𝑓1, 𝑔1) ∘ trackΓ(𝑓2, 𝑔2) (8)
+Proof.
+1. The unit is carried to the unit, since trackΓ(idΓ, idΓ)(𝛾, 𝜑) = (𝛾, 𝜑 ∘ idΓ) = (𝛾, 𝜑).
+2. For the multiplication, take any (𝛾, 𝜑) ∈ 𝜕Γ:
+(trackΓ(𝑓1, 𝑔1) ∘ trackΓ(𝑓2, 𝑔2))(𝛾, 𝜑) = trackΓ(𝑓1, 𝑔1)(𝑓2(𝛾), 𝜑 ∘ 𝑔2)
+= (𝑓1(𝑓2(𝛾)), 𝜑 ∘ 𝑔2 ∘ 𝑔1)
+= trackΓ(𝑓1 ∘ 𝑓2, 𝑔2 ∘ 𝑔1)(𝛾, 𝜑) □
+Definition 6. Define the transformation recoverΓ on 𝜕Γ:
+recoverΓ : 𝜕Γ → 𝜕Γ
+recoverΓ = (𝛾, 𝜑) ↦ (𝜑(𝛾), idΓ)
+(9)
+This transformation applies the recovery function 𝜑 to the current state 𝛾 and resets 𝜑 to the 
+identity. The following diagram illustrates how recover recovers the context to its initial state 
+after a sequence of effects track(𝑓1, 𝑔1), ⋯, track(𝑓𝑛, 𝑔𝑛) has been applied to 𝜕Γ:
+𝑓1 𝑓𝑛
+𝑓′
+1 𝑓′
+𝑛
+track track track
+recover
+Γ Γ Γ Γ
+𝜕Γ 𝜕Γ 𝜕Γ 𝜕Γ
+The diagram shows that the tracked effects followed by recover carry the initial effect context 
+back to itself. What each tracking step preserves is the result of recovery itself, from whatever 
+state it is taken:
+Theorem 7. For every (𝛾, 𝜑) ∈ 𝜕Γ and every pair (𝑓, 𝑔) with 𝑔(𝑓(𝛾)) = 𝛾,
+recoverΓ(trackΓ(𝑓, 𝑔)(𝛾, 𝜑)) = recoverΓ(𝛾, 𝜑) (10)
+Proof.
+recoverΓ(trackΓ(𝑓, 𝑔)(𝛾, 𝜑)) = recoverΓ(𝑓(𝛾), 𝜑 ∘ 𝑔)
+= (𝜑(𝑔(𝑓(𝛾))), idΓ)
+= (𝜑(𝛾), idΓ) = recoverΓ(𝛾, 𝜑) □
+A sequence of pairs needs no separate argument. Let (𝑓1, 𝑔1), ⋯, (𝑓𝑛, 𝑔𝑛) be applied in order 
+from (𝛾, 𝜑), and write 𝛿0 = 𝛾 and 𝛿𝑖 = 𝑓𝑖(𝛿𝑖−1). By Theorem 5 the composite trackΓ(𝑓𝑛, 𝑔𝑛) ∘ ⋯ ∘
+trackΓ(𝑓1, 𝑔1) is trackΓ of the twisted composite (𝑓𝑛 ∘ ⋯ ∘ 𝑓1, 𝑔1 ∘ ⋯ ∘ 𝑔𝑛), and if 𝑔𝑖(𝛿𝑖) = 𝛿𝑖−1 for 
+every 𝑖 then (𝑔1 ∘ ⋯ ∘ 𝑔𝑛)(𝛿𝑛) = 𝛿0 = 𝛾. That pair therefore meets the hypothesis of Theorem 7 
+at 𝛾, and one application of the theorem gives
+recoverΓ((trackΓ(𝑓𝑛, 𝑔𝑛) ∘ ⋯ ∘ trackΓ(𝑓1, 𝑔1))(𝛾, 𝜑)) = recoverΓ(𝛾, 𝜑) (11)
+Taking (𝛾, 𝜑) = (𝛾0, idΓ), recovery carries every state reached this way back to (𝛾0, idΓ). A 
+pair with 𝑔 ∘ 𝑓 = idΓ meets the hypothesis at every state.
+Recovery reads a state through the quantity 𝜑(𝛾), and we refer to 𝜑(𝛾) = 𝛾0 as the soundness 
+invariant of a state in 𝜕Γ.

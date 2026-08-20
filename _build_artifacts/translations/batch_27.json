@@ -1,0 +1,142 @@
+[
+  {
+    "id": 945,
+    "zh": "第 4 节将运行系统分解为 fiber，每个是一个组件的实例化。实例化所需的一切都可声明，故编排器可将整个系统描述为声明式配置：加载器将其实现为 fiber 并与之保持同步的持久记录。条目。配置由条目组成。每个条目规约一个 fiber 并管理它，绑定双向运行：加载器通过调整 fiber 响应条目字段的变更，而修订自有配置或禁用自身的组件将变更写回其条目。"
+  },
+  {
+    "id": 946,
+    "zh": "定义 74. 条目声明单个 fiber，记录："
+  },
+  {
+    "id": 947,
+    "zh": "• id — 稳定标识符，在其组的子列表变更时用作调和键；"
+  },
+  {
+    "id": 948,
+    "zh": "• url — 要实例化的组件模块的 URL；"
+  },
+  {
+    "id": 949,
+    "zh": "• isolate — 应用于条目上下文的隔离注解；"
+  },
+  {
+    "id": 950,
+    "zh": "• intercept — 应用于条目上下文的拦截注解；"
+  },
+  {
+    "id": 951,
+    "zh": "• config — 绑定到组件以形成其效应函数 apply 的配置；"
+  },
+  {
+    "id": 952,
+    "zh": "• disabled — 条目是否被管理性关闭。条目能作为忠实规约，因为支撑 fiber 的恰是条目所记录者。定义 67 的支持集只读 𝜏、𝜋、𝑑 与 𝑝，而条目给出全部四者：disabled 给出 𝜏，树中条目的父给出 𝜋，url 选择声明 𝑑 与 𝑝 的组件。支持集未读的字段是 fiber 的运行时状态，实例化也不需要它们；引理 70 在每个组件安装其所声明的每个键的范围内（定义 69）将支持集与静止状态（定义 49）的 𝖠𝖼𝗍𝗂𝗏𝖾 fiber 等同。这些条目形成配置树，是系统加载什么的权威记录。条目可以是映射到单个 fiber 的叶，或其组件又可加载更多组件，使条目成为分支节点。"
+  },
+  {
+    "id": 953,
+    "zh": "Cordis 为这种分组与嵌套加载提供组件：@cordisjs/group 以其配置接受子条目列表并将它们加载为子组，@cordisjs/include 加载外部配置文件（YAML 或 JSON）并将其条目嫁接为嵌套子树。二者都是建立在定义 47（算法 4）的注册原语上的普通组件，故嵌套树留在演算之内，下文结果对它成立。调和。当条目的记录变更时，加载器增量调和，而非整体拆除并重建 fiber。如此调和的可靠性由元理论提供的理由保证。"
+  },
+  {
+    "id": 954,
+    "zh": "• 定理 73 使静止状态仅为最终配置的函数：无论加载器途中执行何种实例化与退役、以何种顺序，系统都静止于从零加载最终配置所会留下之处。最终加载哪些组件仅从声明读出，只要它们各自安装其所声明的每个键（定义 69）；在某些配置下才安装其所声明键的组件，加载器仍可调和，但已加载组件集合也回答那些配置。"
+  },
+  {
+    "id": 955,
+    "zh": "• 定理 66 证明系统确实静止，故一旦其实例化与退役已发出，调和即完成。"
+  },
+  {
+    "id": 956,
+    "zh": "• 推论 62 将离去 fiber 对状态的贡献置于无，故重建一个条目撤回其 fiber 所安装者，并留下周围 fiber 原样。"
+  },
+  {
+    "id": 957,
+    "zh": "• 定理 63 允许条目一同实例化，编排器无需安排加载顺序：其所声明键尚未被提供的 fiber 在其 L-Begin 处等待，而其提供者离去的 fiber 先于它被停用。因此依赖约束的是 fiber 何时激活，而非其模块何时被获取与求值，故加载器并发加载模块——大型配置启动所花费的时间正在于此。在条目所声明的 fiber 之上，加载器按条目哪个字段变更分派，并对每个应用破坏性最小的操作。"
+  },
+  {
+    "id": 958,
+    "zh": "• id、url — 重建条目，因其身份或其组件已变；"
+  },
+  {
+    "id": 959,
+    "zh": "• isolate — 重新分配条目的 realm（算法 7）；"
+  },
+  {
+    "id": 960,
+    "zh": "• intercept — 就地更新，因为拦截元数据在读取时被咨询，无需重载；"
+  },
+  {
+    "id": 961,
+    "zh": "• config — 交给组件，由组件决定如何应用新载荷，通常通过对照先前者求差并仅在实质变更时重载。特别地，@cordisjs/group 条目的 config 是其子条目列表，故它将更新应用为按子 id 的有键求差，创建、移除或更新每个子；由于更新幸存子会重新进入同一按字段分派，组调和与条目更新一同沿树递归；"
+  },
+  {
+    "id": 962,
+    "zh": "• disabled — 设置时卸载 fiber，清除时重载它。受管 realm。核心中的隔离导出在一个键处覆盖 realm 表 𝜌 的子上下文（第 5.1.2 节），这在上下文树静止时足够。条目可在运行时在组之间移动，故加载器管理自有 realm，isolate 字段按键在两种作用域规则间选择。值为 true 请求局部 realm，私有于条目并由其 id 标记，条目无论移到何处都携带它；字符串请求每个命名该字符串的条目所共享的全局 realm，故移动此种条目改变的是它与哪些条目共享绑定，而非它属于哪个 realm。一旦没有条目命名某个 realm，该 realm 被丢弃。重新分配条目的 realm 取决于哪些键变更了 realm、条目本身是否是变更键处的提供者，以及通知哪些依赖方。"
+  },
+  {
+    "id": 963,
+    "zh": "中间问题是困难的，因为 realm 符号可能被若干 fiber 共享，其中只有一个是提供者。加载器以定界符作答：每个键一个符号 𝛿𝑘，每个上下文在其下存储自有标签。定界符写在上下文上并由其后代继承，故条目的标签与提供者的标签恰好当二者在 𝑘 的同一 isolate 作用域内导出时一致，而这正是 𝑘 处的绑定是条目自有且必须随其移动的情形。"
+  },
+  {
+    "id": 964,
+    "zh": "算法 7 隔离 realm 重新分配 1 function patch_isolation(entry, 𝜌′) 2 𝜌 ← entry.ctx[@@isolate] 3 store ← entry.ctx[@@store] 4 Δ ← {𝑘 | 𝜌(𝑘) ≠ 𝜌′(𝑘)} ▷ realm 变更的键 5 for 𝑘 in Δ do 6 entry.ctx[𝛿𝑘] ← fresh tag 7 diff[𝑘] ← (𝜌(𝑘), 𝜌′(𝑘), entry.ctx[𝛿𝑘], store[𝜌(𝑘)].fiber.ctx[𝛿𝑘]) 8 entry.ctx[@@isolate] ← 𝜌′ 9 reload(entry.fiber) 10 for 𝑘 in Δ do 11 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘] 12 if 𝑑1 = 𝑑2 and store[𝑠1] and not store[𝑠2] then ▷ 绑定是条目自有的 13 store[𝑠2] ← store[𝑠1] 14 delete store[𝑠1] 15 function affected(fiber, 𝑘) 16 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘] 17 return fiber.ctx[@@isolate][𝑘] ∈ {𝑠1, 𝑠2} and (fiber.ctx[𝛿𝑘] = 𝑑1) ≠ (𝑑2 = 𝑑1) 18 notify(entry.ctx, Δ, affected) ▷ 代替算法 3 的 realm 检验 该检验依赖定界符的一个性质。"
+  },
+  {
+    "id": 965,
+    "zh": "𝛿𝑘 下的标签写在条目的上下文上并由从它导出的每个上下文继承，且在每次重新分配时新鲜取出，故对上下文 𝛾′ 有 𝛾′[𝛿𝑘] = 𝑑1 ⟺ 𝛾′ 从条目的上下文导出 (65) 以 own(𝛾′) 记该条件，其中 𝑑2 = 𝑑1 是在提供者处的实例。重新分配将满足 own 的上下文从 𝑠1 移到 𝑠2，并留下其余原样；由上述循环，它恰好当提供者满足 own 时将绑定移到 𝑠2。依赖方在其在 𝑘 处的自有 realm 是绑定所在 realm 时看到绑定。当 own 在依赖方与提供者上一致时，二者都移动或都不移动，故依赖方在之后看到绑定当且仅当它在之前看到。当 own 分离它们时，一方移动另一方留下，故依赖方获得或失去绑定。不等式即是该分离，而成员检验丢掉在两个 realm 都不解析 𝑘 的依赖方，移动的任何部分都达不到它们。"
+  },
+  {
+    "id": 966,
+    "zh": "5.2.2. 热模块替换"
+  },
+  {
+    "id": 967,
+    "zh": "热模块替换（HMR）在模块级应用可回退效应模式：当源文件变更时——通常在开发期间——系统就地替换受影响模块而不重启进程。因为 fiber 已界定其组件的全部效应与共效应，本身是组件的模块可仅通过 fiber 操作替换：处置旧 fiber 恢复组件所安装的一切，从重载模块实例化的新 fiber 重新安装之。因此 HMR 无需开发者注解的接受边界，这与 Webpack [46] 或 Vite [47] HMR 相对。@cordisjs/hmr 组件提供 HMR 引擎，分三阶段运作。阶段 1：模块分类。引擎取两个输入：暂存集（自上次重载以来内容已变的文件 URL）与外部集（不能热替换而触发完全重启的模块）。"
+  },
+  {
+    "id": 968,
+    "zh": "以 get_imports(url) 记 url 直接导入的模块，它分类变更的依赖子图，将每个模块标记为接受或拒绝：算法 8 模块分类 1 function classify(stashed, externals) 2 accepted ← stashed 3 declined ← externals 4 pending ← ⌀ 5 for url in stashed do 6 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined)) 7 repeat 8 progress ← false 9 for url in pending do 10 if get_imports(url) ∩ accepted ≠ ⌀ then 11 accepted ← accepted ∪ {url} 12 pending ← pending ∖ {url} 13 progress ← true 14 else if get_imports(url) ⊆ declined then 15 declined ← declined ∪ {url} 16 pending ← pending ∖ {url} 17 progress ← true 18 else 19 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined)) 20 until not progress 21 declined ← declined ∪ pending 22 return (accepted, declined) 以暂存文件的导入为种子，不动点在其某个导入被接受时接受模块，在其全部导入被拒绝时拒绝模块；任何因导入环而悬而未决的模块默认为拒绝。阶段 2：陈旧条目检测。使用 accepted 与 declined，引擎随后将组件条目过滤到其依赖树到达变更模块的陈旧者。它以 get_dependencies 走每个条目的树，在尊重 declined 为边界的同时收集模块的传递导入：算法 9 陈旧条目检测 1 function get_dependencies(root, declined) 2 deps ← ⌀ 3 function traverse(url) 4 if url ∈ deps or url ∈ declined then return 5 deps ← deps ∪ {url} 6 for child in get_imports(url) do traverse(child) 7 traverse(root) 8 return deps 9 function detect(entries, accepted, declined) 10 stale_entries ← ⌀ 11 for entry in entries do 12 tree ← get_dependencies(entry.url, declined) 13 if tree ∩ accepted ≠ ⌀ then 14 accepted ← accepted ∪ tree 15 stale_entries ← stale_entries ∪ {entry} 16 return stale_entries 条目陈旧当且仅当其树与 accepted 相交；该树随后折入 accepted，故沿它的每个陈旧模块在下一阶段失效。阶段 3：事务性重载。最后，引擎重载陈旧条目。它使 accepted 模块的缓存失效，备份每个被移除模块以支持回滚，然后按 url 重新导入每个陈旧条目的组件模块并换入新鲜 fiber：算法 10 事务性模块重载 1 function reload(ctx, accepted, stale_entries) 2 backup ← invalidate_caches(accepted) 3 try 4 for entry in stale_entries do 5 entry.fiber.dispose() 6 entry.fiber ← ctx.use(import(entry.url), entry.config) 7 catch error 8 restore_caches(backup) 9 for entry in stale_entries do 10 entry.fiber.dispose() 11 entry.fiber ← ctx.use(backup[entry.url], entry.config) 12 throw error 事务性保证确保系统永不进入半重载状态：若任何模块导入失败（例如因语法错误），缓存被恢复，每个陈旧条目从 backup[entry.url]——刚恢复缓存的先前组件——重建，撤销已作的交换。"
+  },
+  {
+    "id": 969,
+    "zh": "5.2. 组件加载器"
+  },
+  {
+    "id": 970,
+    "zh": "核心库为组件开发者配备动态复合的命令式原语，如 ctx.effect、ctx.use 与 ctx.set。对组装既有组件为运行系统并在其生命周期中调整复合的应用编排器，另有一关注点。组件加载器通过引入声明式配置层应对该关注点：编排器将期望复合规约为持久数据结构，加载器将该规约的变更翻译为相应的命令式 fiber 操作。"
+  },
+  {
+    "id": 971,
+    "zh": "5.2. 组件加载器"
+  },
+  {
+    "id": 972,
+    "zh": "核心库为组件开发者配备动态复合的命令式原语，如 ctx.effect、ctx.use 与 ctx.set。对组装既有组件为运行系统并在其生命周期中调整复合的应用编排器，另有一关注点。组件加载器通过引入声明式配置层应对该关注点：编排器将期望复合规约为持久数据结构，加载器将该规约的变更翻译为相应的命令式 fiber 操作。"
+  },
+  {
+    "id": 973,
+    "zh": "5.2.1. 声明式配置"
+  },
+  {
+    "id": 974,
+    "zh": "第 4 节将运行系统分解为 fiber，每个是一个组件的实例化。实例化所需的一切都可声明，故编排器可将整个系统描述为声明式配置：加载器将其实现为 fiber 并与之保持同步的持久记录。条目。配置由条目组成。每个条目规约一个 fiber 并管理它，绑定双向运行：加载器通过调整 fiber 响应条目字段的变更，而修订自有配置或禁用自身的组件将变更写回其条目。"
+  },
+  {
+    "id": 975,
+    "zh": "定义 74. 条目声明单个 fiber，记录："
+  },
+  {
+    "id": 976,
+    "zh": "• id — 稳定标识符，在其组的子列表变更时用作调和键；"
+  },
+  {
+    "id": 977,
+    "zh": "• url — 要实例化的组件模块的 URL；"
+  },
+  {
+    "id": 978,
+    "zh": "• isolate — 应用于条目上下文的隔离注解；"
+  },
+  {
+    "id": 979,
+    "zh": "• intercept — 应用于条目上下文的拦截注解；"
+  }
+]

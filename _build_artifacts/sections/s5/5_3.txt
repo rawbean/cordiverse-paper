@@ -1,0 +1,46 @@
+5.3.  Case Study: Koishi
+Koishi is an open-source chatbot application framework built on Cordis 4. Over four years of 
+development, it has accumulated over 4000 community-contributed plugins 5, ranging from 
+instant-messaging (IM) adapters and database drivers to administrative consoles and enduser features. Its scale and diversity make it a representative validation of Cordis’s dynamic 
+composability in a production setting.
+Expressiveness and generality of the meta-framework.  Koishi runs as a server-side bot 
+whose every feature is realized as a plugin over the context primitives of Section 5.1; Koishi 
+itself contributes only the chatbot-domain vocabulary. The same model reappears in a wholly 
+different runtime: Koishi’s web console is a second, independent Cordis application whose 
+plugins compose the primitives of the browser and its user interface rather than those of the 
+server. The disparate settings above establish two properties of the model of Section 3. (1) It 
+is expressive: its primitives suffice to carry a complete production system, the host framework 
+supplying only domain vocabulary. (2) It is general: it fixes how effects and coeffects compose 
+while leaving their meaning to each application, and so presupposes neither a particular 
+domain nor a particular runtime.
+Temporal composability without cognitive overhead.  The plugin systems surveyed in 
+Section 1.2.1 cannot unload an individual extension’s effects without restarting the extension 
+3On Node.js, this means clearing the caches of both the ES module and CommonJS module systems, since a 
+module imported through the ES loader can appear in both.
+4Koishi currently uses Cordis v3. This paper presents Cordis v4, which refines the effect and coeffect semantics 
+and redesigns the loader; the core compositional model is shared across both versions.
+5Koishi uses the term plugin for the concept this paper formalizes as component.
+host. Koishi routinely performs this operation: an orchestrator disables a plugin from the 
+console and its effects are withdrawn in place; during development, the HMR engine re-applies 
+edited plugins on save while preserving cache state and live connections elsewhere in the 
+system. Cordis makes such removal not merely possible but effortless for the plugin author. 
+Because effects performed through the context are tracked and their inverses composed auto -
+matically (Section 3.1), even an inexperienced author obtains ordered cleanup for a plugin’s 
+context-mediated effects without writing an uninstall path. This achieves the locality of concern 
+whose absence Section 1.2.1 identifies: correctness that would otherwise rest on each author’s 
+diligence is instead discharged once, by the abstraction.
+Spatial composability across an open ecosystem.  In contrast to the plugin systems of 
+Section 1.2.1, where inter-plugin dependencies are largely absent, Koishi’s ecosystem exhibits 
+a genuine dependency topology: IM adapters provide access to each messaging platform, 
+database drivers provide persistent storage, and functional plugins declare these as coeffects 
+and access them. Reconfiguring a provider at runtime, such as switching the storage backend or 
+reconnecting an adapter, reactivates only the dependents whose resolved dependency changed 
+(Section 3.2); a plugin whose dependency is unavailable stays inactive until it appears, without 
+erroring. What the case study substantiates is that this composition holds across independently 
+authored code: a plugin and its dependencies are typically written by different authors who 
+coordinate on nothing beyond the coeffect that connects them, so reactive coeffects keep the 
+assembly consistent across an open ecosystem of independent contributors.
+Threats to validity. The evidence here is drawn from a single ecosystem in a single host language, so it cannot separate the merits of the paradigm from those of its TypeScript realization 
+or of Koishi’s particular domain, and it is observational rather than a controlled comparison 
+against an alternative architecture. What the case study establishes is thus an existence-andadoption result rather than a quantitative one; measuring the abstraction’s overhead and its 
+effect on developer productivity against a baseline remains future work.

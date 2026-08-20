@@ -1,0 +1,36 @@
+4.3.4.  Failure
+Every rule so far assumes the effect it runs succeeds, and a runtime cannot. The effects a 
+component installs reach outside the context that tracks them, and what they reach may refuse: 
+a port already bound, a file that is not there, a peer that does not answer. A failing transition 
+must still leave the fiber’s effects recovered rather than stranded.
+Let Ξ be a set of errors and refine the effect iterator of Definition 51 so that an iteration may 
+raise in place of yielding a triple:
+𝔈fail
+Γ ≔ 𝜇ℑ. Γ → 𝖤𝗂𝗍𝗁𝖾𝗋(Ξ, Γ × (Γ → Γ) × 𝖬𝖺𝗒𝖻𝖾(ℑ))
+𝔈fail∗
+Γ ≔ 𝜇ℑ. (𝑒 : Γ → 𝖤𝗂𝗍𝗁𝖾𝗋(Ξ, Γ × (Γ → Γ) × 𝖬𝖺𝗒𝖻𝖾(ℑ)))
+× ((𝛾 : Γ) → (𝐥𝐞𝐭 𝖱𝗂𝗀𝗁𝗍(𝛿, 𝑔, 𝑜) = 𝑒(𝛾) 𝐢𝐧 𝑔(𝛿) ≃ 𝛾))
+(49)
+The witness constrains the 𝖱𝗂𝗀𝗁𝗍 case alone, being vacuous where the pattern does not 
+match, a raise having nothing to undo, and the 𝑖 that 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 carries is read at 𝔈fail∗
+Γ  from here 
+on. The lift of Definition 52 carries over with a raise propagated in place of a triple, so a raising 
+iterator is usable wherever an effect is, as an ordinary one is. The layer adds one rule and puts 
+the second outcome of Definition 49 to use, O-Remove needing no widening to admit it. The 
+premises of L-Iter, L-Finish, and L-Divert are read with 𝖱𝗂𝗀𝗁𝗍 around the triple they match. A 
+raise is something an iteration does, so the rule is an exit from 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀.
+𝜃𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(𝑖, 𝑔, 𝜔) 𝑖(𝛾) = 𝖫𝖾𝖿𝗍(𝜉)
+𝛾 ⟶ 𝛾[𝜃𝑛 ↦ 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀(𝑔, 𝜔, 𝜉)]
+L-Raise
+L-Raise recovers before it records. The fiber routes into 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 carrying the error as 
+its outcome, the accumulator built up to the failing iteration is applied there, and the fiber 
+arrives at 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉) having installed nothing, at a state differing from the one an aborting LDivert would have produced only in the outcome the fiber carries. Routing a failure like every 
+other deactivation is what makes every outcome reachable only through L-Unload, which is 
+the single fact Theorem 59 turns on. L-Begin has 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) as a premise, so the lifecycle is 
+not re-entered from an error outcome; this is the substance of the outcome, which withholds 
+a fiber whose effect function has shown itself to be unsound in the state it ran against rather 
+than retrying it against an unchanged environment. A failed fiber also obstructs nothing: it is 
+𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾, so it carries no committed view and cannot make relied hold.
+A failure is recorded on the fiber rather than propagated to its parent, so a component whose 
+transition fails leaves its siblings running, which is the behavior a plugin host wants and the 
+reason the outcome is per-fiber rather than a property of the whole state.

@@ -1,0 +1,9 @@
+5.  Implementation and Case Study
+This section presents Cordis, which realizes the formal models of Section  3 as a practical 
+programming abstraction. Cordis is a meta-framework of spatiotemporal composability: unlike 
+application frameworks that target a specific domain (e.g., web routing, ORM, UI rendering), it 
+prescribes no concrete scenario; its sole responsibility is to supply universal dynamic compo -
+sition semantics. The implementation is layered into three tiers: (1) the core library (Section 5.1) 
+implements the effect and coeffect systems directly; (2) the component loader  ( Section  5.2) 
+extends the core with configuration reconciliation and hot module replacement; and (3) application frameworks such as Koishi (Section 5.3) build domain-specific functionality on top of 
+the former two tiers.

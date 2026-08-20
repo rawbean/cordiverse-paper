@@ -1,0 +1,35 @@
+6.2.  Service Multiplexing
+Dynamic component platforms such as OSGi [50] organize composition around services: units 
+of functionality that a provider publishes under an interface and a consumer binds to. The 
+Cordis coeffect model echoes this notion, with a service corresponding to the interface behind 
+a key. Components that provide a service are its providers, and components that inject a 
+service are its consumers. A single service may be implemented by multiple providers, and this 
+multiplicity can be realized in two forms. (1) Exclusive binding: several implementations share 
+one interface but at most one is bound at a time; the orchestrator selects which implementation 
+is bound, and switching between them requires unloading one provider and loading another, 
+momentarily perturbing every consumer’s dependency. (2) Service broker : a central service 
+that acts as the entrypoint for the interface is injected by both the backing providers and the 
+consumers, so that multiple providers coexist and the broker dispatches each request among 
+them. Compared to exclusive binding, the broker absorbs this perturbation: updating a backing 
+provider leaves the broker in place, so consumers see no change to their dependency and no 
+reload is triggered.
+The service broker underlies three capabilities: load balancing, rolling updates, and crossprocess invocation.
+Load balancing. When several providers coexist, the broker distributes requests among 
+them according to a configurable policy (e.g., round-robin, least-loaded, latency-weighted) or 
+an explicit target named by the consumer. Because providers are ordinary components, they 
+can be added or removed to scale capacity up or down; each provider registers with the broker 
+through a revertible effect, so unloading it reverts the registration and drops it from the broker’s 
+routing set automatically.
+Rolling updates. Upgrading a service implementation at runtime reduces to a controlled 
+provider transition [51, 52]. To carry out the transition, the new provider is loaded as an 
+additional fiber and registers with the broker; once it becomes ACTIVE, traffic is gradually 
+shifted from the old providers to the new one (e.g., by adjusting selection weights), and the old 
+providers are unloaded once they no longer carry in-flight requests. This provider transition 
+turns what is traditionally an infrastructure-level operation (e.g., container orchestration, bluegreen deployment) into an application-level composition pattern.
+Cross-process invocation. The service broker can also be applied across process boundaries 
+[53]. Each process hosts its own Cordis context with local providers; a coordinating compo -
+nent links them, treating each as a remote provider. Cross-process service access is mediated 
+by an RPC mechanism that preserves the interface, making the distribution transparent to 
+consumers. One caveat is that a cross-process call incurs latency and may fail mid-flight, so 
+exposing it synchronously would block the caller. An interface intended to be exposed across 
+processes must therefore be designed against an asynchronous contract.

@@ -1,0 +1,4 @@
+{
+ "page": 55,
+ "plain": "本页是理论符号与运行时字段对照表：ctx、fiber、inject/provide、committed、inertia、use/execute/refresh/unload 等一一对应。读起来像实现说明书的索引。重要在于：后面算法都能对照回第3、4节定义，讨论实现时不再在符号和字段名之间来回猜。"
+}

@@ -1,0 +1,177 @@
+[
+ {
+  "id": 105,
+  "section": "3",
+  "en": "Theorem 13. effect preserves the ⋄ operation. That is, ∀𝑓, 𝑔 ∈ 𝔈Γ:"
+ },
+ {
+  "id": 106,
+  "section": "3",
+  "en": "effectΓ(𝑓) ⋄ effectΓ(𝑔) = effectΓ(𝑓 ⋄ 𝑔) (15)"
+ },
+ {
+  "id": 107,
+  "section": "3",
+  "en": "Proof. Take any (𝛾, 𝜑) ∈ 𝜕Γ, and let (𝛿, 𝑠) = 𝑔(𝛾) and (𝜀, 𝑡) = 𝑓(𝛿), so that (𝑓 ⋄ 𝑔)(𝛾) = (𝜀, 𝑠 ∘ 𝑡) and pr1 ∘ (𝑓 ⋄ 𝑔) = (pr1 ∘ 𝑓) ∘ (pr1 ∘ 𝑔). Then (effectΓ(𝑓) ⋄ effectΓ(𝑔))(𝛾, 𝜑) = ((𝜀, 𝜑 ∘ 𝑠 ∘ 𝑡), trackΓ(𝑠, pr1 ∘ 𝑔) ∘ trackΓ(𝑡, pr1 ∘ 𝑓)) = ((𝜀, 𝜑 ∘ 𝑠 ∘ 𝑡), trackΓ(𝑠 ∘ 𝑡, (pr1 ∘ 𝑓) ∘ (pr1 ∘ 𝑔))) = effectΓ(𝑓 ⋄ 𝑔)(𝛾, 𝜑) where the first step unfolds Definition 12 at (𝛾, 𝜑) and at (𝛿, 𝜑 ∘ 𝑠), the second is Theorem 5, and the third folds Definition 12. □ How the two levels relate is what the following diagram shows. Its upper triangle is the witness condition of 𝑒, according to Definition  8, and its lower triangle is the question of whether 𝑒′ is witnessed the way 𝑒 is. 𝑓 𝑓′ 𝑔 𝑔′ 𝑒 𝑒′ pr1 pr1 pr2 pr2 effect Γ Γ 𝜕Γ 𝜕Γ 𝜕2Γ Between the levels, the projection pr1 relates each lifted map to the map it lifts, as it does for trackΓ in Theorem 4."
+ },
+ {
+  "id": 108,
+  "section": "3",
+  "en": "Theorem 14. Let 𝑒 ∈ 𝔈Γ, write 𝑓 ≔ pr1 ∘ 𝑒, and let 𝑒′ ≔ effectΓ(𝑒) with forward map 𝑓′ ≔ pr1 ∘"
+ },
+ {
+  "id": 109,
+  "section": "3",
+  "en": "𝑒′. Then"
+ },
+ {
+  "id": 110,
+  "section": "3",
+  "en": "1. pr1 ∘ 𝑓′ = 𝑓 ∘ pr1;"
+ },
+ {
+  "id": 111,
+  "section": "3",
+  "en": "2. for each (𝛾, 𝜑) ∈ 𝜕Γ, the lifted inverse 𝑔′ ≔ pr2(𝑒′(𝛾, 𝜑)) and the inverse 𝑔 ≔ pr2(𝑒(𝛾))"
+ },
+ {
+  "id": 112,
+  "section": "3",
+  "en": "witnessed there satisfy pr1 ∘ 𝑔′ = 𝑔 ∘ pr1."
+ },
+ {
+  "id": 113,
+  "section": "3",
+  "en": "Proof."
+ },
+ {
+  "id": 114,
+  "section": "3",
+  "en": "1. By Definition 12, 𝑓′(𝛾, 𝜑) = (𝑓(𝛾), 𝜑 ∘ 𝑔), whose state is 𝑓(𝛾) = (𝑓 ∘ pr1)(𝛾, 𝜑)."
+ },
+ {
+  "id": 115,
+  "section": "3",
+  "en": "2. This is Theorem 4 applied to 𝑔′ = trackΓ(𝑔, 𝑓). □"
+ },
+ {
+  "id": 116,
+  "section": "3",
+  "en": "Whether the lower triangle closes is settled by computing what the lifted inverse returns:"
+ },
+ {
+  "id": 117,
+  "section": "3",
+  "en": "Theorem 15. Let 𝑒 ∈ 𝔈∗"
+ },
+ {
+  "id": 118,
+  "section": "3",
+  "en": "Γ and write 𝑓 ≔ pr1 ∘ 𝑒. Fix (𝛾, 𝜑) ∈ 𝜕Γ, let (𝛿, 𝑔) = 𝑒(𝛾), and write (Δ, 𝑔′) for the value of effectΓ(𝑒) at (𝛾, 𝜑). Then 𝑔′(Δ) = (𝛾, 𝜑 ∘ 𝑔 ∘ 𝑓) (16) The state is recovered exactly. The accumulator is restored as well, equivalently effectΓ(𝑒) ∈ 𝔈∗ 𝜕Γ, if and only if 𝑔 ∘ 𝑓 = idΓ; and in every case (𝜑 ∘ 𝑔 ∘ 𝑓)(𝛾) = 𝜑(𝛾), so the soundness invariant is preserved."
+ },
+ {
+  "id": 119,
+  "section": "3",
+  "en": "Proof. By Definition 12, Δ = (𝛿, 𝜑 ∘ 𝑔) and 𝑔′ = trackΓ(𝑔, 𝑓), so 𝑔′(Δ) = (𝑔(𝛿), 𝜑 ∘ 𝑔 ∘ 𝑓) = (𝛾, 𝜑 ∘ 𝑔 ∘ 𝑓) using 𝑔(𝛿) = 𝛾. Membership in 𝔈∗ 𝜕Γ requires this to equal (𝛾, 𝜑) at every input; taking 𝜑 = idΓ turns the equality of accumulators into 𝑔 ∘ 𝑓 = idΓ, and that condition conversely gives the equality of accumulators for every 𝜑. Finally (𝜑 ∘ 𝑔 ∘ 𝑓)(𝛾) = 𝜑(𝑔(𝛿)) = 𝜑(𝛾). □ The lower triangle therefore closes only when the inverse witnessed at 𝛾 reverts 𝑓 at every state, so effectΓ does not carry 𝔈∗ Γ into 𝔈∗ 𝜕Γ. What holds in every case is agreement at 𝛾: recoverΓ(𝑔′(Δ)) = recoverΓ(𝛾, 𝜑), which is the whole of what Theorem 7 assumes of an accumulator, so reverting leaves the recovery target untouched. Reverting effects in the reverse of the order in which they were applied requires nothing further, because each inverse then meets the state its own application produced:"
+ },
+ {
+  "id": 120,
+  "section": "3",
+  "en": "Theorem 16. Let 𝑒1, ⋯, 𝑒𝑛 ∈ 𝔈∗"
+ },
+ {
+  "id": 121,
+  "section": "3",
+  "en": "Γ be applied in order from (𝛾0, idΓ) and reverted in the reverse order. Then"
+ },
+ {
+  "id": 122,
+  "section": "3",
+  "en": "1. each revert recovers the context state its application ran against;"
+ },
+ {
+  "id": 123,
+  "section": "3",
+  "en": "2. every intermediate state satisfies the soundness invariant."
+ },
+ {
+  "id": 124,
+  "section": "3",
+  "en": "Proof. Each step is an application or a revert. An application carries (𝛾, 𝜑) to (𝛿, 𝜑 ∘ 𝑔) with 𝑔(𝛿) = 𝛾, so it preserves 𝜑(𝛾) by Theorem 7, whose hypothesis is exactly the witness of 𝔈∗ Γ. Reverting in the reverse order hands each inverse the state its own application produced, so by"
+ },
+ {
+  "id": 125,
+  "section": "3",
+  "en": "Theorem 15 that revert recovers the preceding state exactly and preserves 𝜑(𝛾) as well; neither"
+ },
+ {
+  "id": 126,
+  "section": "3",
+  "en": "conclusion depends on the accumulator the inverse receives. □"
+ },
+ {
+  "id": 127,
+  "section": "3",
+  "en": "3.1.3. Independence of Effects"
+ },
+ {
+  "id": 128,
+  "section": "3",
+  "en": "Reverting an effect at the state its own application produced is what Theorem  16 covers; reverting one at any other state is what this subsection covers. Two situations call for the latter. An inverse may be run while later effects are still in place, which is what withdrawing one component from a running system amounts to; and one sequence may interleave the effects of several components, each keeping the inverses of its own, so that the inverses of one component are separated by the applications of another. In both an inverse meets a state that foreign effects have moved, and whether it still reverts what it was built to revert is a question of commutation: what has to commute is every transformation one effect can perform with every transformation the other can perform, forward map and yielded inverse alike. A single accumulator settles neither situation, 𝜑 being a composite that runs every inverse it holds in one order and all at once."
+ },
+ {
+  "id": 129,
+  "section": "3",
+  "en": "Definition 17. For an effect function 𝑒 ∈ 𝔈Γ, the transformation monoid 𝔐(𝑒) is the submonoid of"
+ },
+ {
+  "id": 130,
+  "section": "3",
+  "en": "Γ → Γ generated by the forward map of 𝑒 together with every inverse 𝑒 yields, and the generators of 𝔐(𝑒) are the elements of that generating set: 𝔐(𝑒) ≔ ⟨{pr1 ∘ 𝑒} ∪ {pr2(𝑒(𝛾)) | 𝛾 ∈ Γ}⟩ (17) An effect induced by a pair (𝑓, 𝑔) ∈ 𝔗Γ has 𝑓 and 𝑔 for its generators, the inverse it yields being 𝑔 at every state."
+ },
+ {
+  "id": 131,
+  "section": "3",
+  "en": "Lemma 18. Commutation is settled on the generators, and ⋄ enlarges no transformation"
+ },
+ {
+  "id": 132,
+  "section": "3",
+  "en": "monoid. That is,"
+ },
+ {
+  "id": 133,
+  "section": "3",
+  "en": "1. if every generator of 𝔐(𝑒1) commutes with every generator of 𝔐(𝑒2), then every element"
+ },
+ {
+  "id": 134,
+  "section": "3",
+  "en": "of 𝔐(𝑒1) commutes with every element of 𝔐(𝑒2);"
+ },
+ {
+  "id": 135,
+  "section": "3",
+  "en": "2. 𝔐(𝑒1 ⋄ 𝑒2) ⊆ ⟨𝔐(𝑒1) ∪ 𝔐(𝑒2)⟩."
+ },
+ {
+  "id": 136,
+  "section": "3",
+  "en": "Proof."
+ },
+ {
+  "id": 137,
+  "section": "3",
+  "en": "1. The maps commuting with every generator of 𝔐(𝑒2) form a submonoid of Γ → Γ, since"
+ },
+ {
+  "id": 138,
+  "section": "3",
+  "en": "idΓ lies in it and 𝑓 ∘ 𝑓′ does where 𝑓 and 𝑓′ do. That submonoid contains the generators of 𝔐(𝑒1) by hypothesis and hence contains 𝔐(𝑒1). Fixing 𝑓 ∈ 𝔐(𝑒1), the maps commuting with 𝑓 likewise form a submonoid containing the generators of 𝔐(𝑒2) and hence 𝔐(𝑒2)."
+ },
+ {
+  "id": 139,
+  "section": "3",
+  "en": "2. By Definition 9 the forward map of 𝑒1 ⋄ 𝑒2 is (pr1 ∘ 𝑒1) ∘ (pr1 ∘ 𝑒2) and the inverse it yields"
+ }
+]

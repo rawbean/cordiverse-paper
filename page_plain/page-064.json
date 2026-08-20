@@ -1,0 +1,4 @@
+{
+ "page": 64,
+ "plain": "本页补完 isolation 迁移：自己的绑定跟着 realm 搬家，依赖方按 delimiter 决定得失；然后进入 HMR——源文件变了就在进程内换模块，靠 fiber dispose 再 use，无需 Webpack 式 accept 边界。工程直觉：可撤销效应把热更新收成普通生命周期操作。"
+}

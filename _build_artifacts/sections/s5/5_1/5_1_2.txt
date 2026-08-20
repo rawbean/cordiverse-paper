@@ -1,0 +1,62 @@
+5.1.2.  Coeffect Operations
+This section realizes reactive coeffects (Section 3.2). All coeffect operations act on three symbolkeyed slots that each context carries:
+• @@store: the value store 𝜎 : (𝑟 : 𝑅) ⇀ 𝒱︀𝑟 from realm symbols to typed values;
+• @@isolate: the realm table 𝜌 : Map(𝐾, 𝑅) from coeffect keys to realm symbols;
+• @@intercept: the interception table 𝜄 : (𝑘 : 𝐾) → ℳ︀𝑘 assigning each key its metadata.
+The first two compose into the two-layer resolution 𝑘 → 𝜌(𝑘) → 𝜎(𝜌(𝑘)): ctx.get(key) 
+(Algorithm 2) reads the realm symbol 𝜌(𝑘) from @@isolate, then the bound value 𝜎(𝜌(𝑘)) from 
+@@store. The 𝜌 indirection lets isolation redirect a key to an independent binding, whereas 
+@@intercept is consulted only when a binding is accessed, adjusting how it is used rather 
+than what it resolves to. We realize these operations in two parts: (1) provision and notification, 
+which install or retract bindings and propagate the change to dependents; and (2) isolation and 
+interception, which reshape how a key resolves.
+Provision and notification. Since set(𝑘, 𝑣) has type 𝔈Σ (Section 3.1), coeffect provision is 
+a ctx.effect call and inherits its automatic tracking and recovery. Algorithm 2 implements 
+ctx.set(key, value), the concrete set(𝑘, 𝑣): the callback binds a value into the store under the 
+realm symbol 𝜌(𝑘), and the returned dispose function removes it. Both installation and removal 
+invoke notify to propagate the change to dependent components.
+Algorithm 2 Coeffect operations
+1 function get(ctx, key)
+2 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘)
+3 return ctx[@@store][realm] ▷ 𝜎(𝜌(𝑘))
+4 function set(ctx, key, value)
+5 function callback()
+6 realm ← ctx[@@isolate][key] ▷ 𝜌(𝑘)
+7 ctx[@@store][realm] ← value ▷ 𝜎[𝜌(𝑘) ↦ 𝑣]
+8 notify(ctx, [key])
+9 return function()
+10 delete ctx[@@store][realm] ▷ 𝜎 ∖ 𝜌(𝑘)
+11 notify(ctx, [key])
+12 return ctx.effect(callback)
+Algorithm 3 propagates each binding change to dependents by testing, for each live fiber, 
+whether a changed key appears in its fiber.inject and resolves to the same realm; if so, it calls 
+refresh (Section 5.1.3) to re-evaluate that fiber against the new state, and it returns the fibers it 
+re-evaluated so that a caller can wait for them. This is the reactive classification of Definition 26: 
+a change that flips satisfaction activates or deactivates the fiber, and refresh’s idempotence 
+renders a neutral change harmless. The interaction of this re-evaluation with diverse control 
+flows is developed in Section 5.1.3.
+Algorithm 3 Reactive notification
+1 function notify(ctx, keys)
+2 affected ← ⌀
+3 for fiber in all_fibers do
+4 for key in keys do
+5 if key ∈ fiber.inject and fiber.ctx[@@isolate][key] = ctx[@@isolate][key] then
+6 refresh(fiber)
+7 affected ← affected ∪ {fiber}
+8 break
+9 return affected
+A binding counts as available to a dependent only while the fiber that installed it is ACTIVE, 
+so refresh resolves each declared key against an active provider rather than against the store 
+alone. This is the provided by  relation of Definition  46, and it is what makes a withdrawal 
+visible to dependents one step before it happens: a provider that has entered UNLOADING has 
+stopped providing, so its dependents recompute an unsatisfied target view and begin their 
+own teardown while its bindings are all still in place.
+Isolation and interception.  The two operations do structurally the same thing: each 
+derives a child context that adjusts one inherited table for key, leaving the parent untouched, 
+so recovery is implicit: discarding the child context suffices, with no explicit inverse to run. 
+ctx.isolate(key, realm) overrides the realm mapping 𝜌 with realm, or a freshly generated 
+symbol by default (realizing isolate, Definition  29), so two contexts that assign different 
+symbols to the same key resolve to independent bindings. ctx.intercept(key, metadata)  
+merges metadata into the interception table 𝜄 (realizing intercept, Definition 31): following that 
+definition, the new metadata is combined with whatever the context already carries for key and 
+takes priority over it.

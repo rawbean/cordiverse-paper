@@ -1,0 +1,216 @@
+7.  Related Work
+Dynamic composability intersects several established research areas. We survey the most 
+relevant lines of work and distinguish our contribution from each of them.
+7.1.  Effect and Coeffect Systems
+Section  2 reviewed effects and coeffects as the theoretical pillars underlying our work. We 
+first situate the monadic effect systems now common in industrial practice, then survey three 
+research lines that extend effects and coeffects in directions relevant to Cordis: recasting 
+algebraic effects as capabilities, giving effects a reversible semantics, and unifying effects and 
+coeffects under a single graded discipline.
+Monadic effect systems.  One family of libraries encodes effects in the type systems of 
+existing general-purpose languages, representing them as monadic values that a runtime executes. ZIO in Scala [82] models a computation as ZIO[R,E,A] and Effect-TS in TypeScript [83] 
+as Effect<A,E,R>, a generic type whose parameters describe its result, its typed errors, and the 
+services its context must supply; the fp-ts library [84] encodes the same error and requirement 
+channels through Reader-based monad transformers. Two traits separate these systems from 
+Cordis. First, the tracking is bought with a monadic embedding: a program obtains it only by 
+being written inside the effect type, whereas Cordis tracks effects as an overlay over ordinary 
+host code. Second, a requirement is discharged by interpretation, an installed service that 
+supplies its operations, and when that service is withdrawn what its operations performed 
+remains in place; Cordis instead pairs each effect with an inverse and re-resolves requirements 
+as providers come and go (Section 3.1, Section 3.2).
+Algebraic effects as capabilities. Algebraic effects (Section 2.1) make effect operations visible to the type system. The extension closest to our work is Brachthäuser et al.‘s Effekt language, 
+which reinterprets effect types as capabilities [85, 86]: an effect type expresses what a compu -
+tation requires from its context rather than what side effects it may produce. This perspective, 
+like ours, treats the context as a mediator of capabilities. Cordis and Effekt differ in two respects. 
+(1) In purpose, algebraic effects make effects visible to enable modular interpretation, giving one 
+operation many handler semantics, whereas Cordis makes them visible to enable tracking and 
+reversion, pairing every context transformation with an inverse. (2) In setting, Effekt disciplines 
+effects statically at the type level, defaulting to scope-based reasoning in which capabilities are 
+second-class and confined to their lexical scope, and recovering first-class use through boxing, 
+which lifts that restriction by tracking captured capabilities in types; Cordis instead disciplines 
+effects at runtime, aiming at complete resource recovery on component removal; Section 6.7 
+takes up what a language that made the context second class in this sense would offer.
+Reversible effect semantics. A parallel line gives effects a reversible semantics rather than 
+an interpretive one. Heunen et al. [87] model side effects in a reversible setting by adapting 
+Hughes’ arrows to dagger arrows and inverse arrows, capturing effects such as serialization 
+and mutable store whose operations admit inverses. This is the formal account closest to our 
+revertible effects: both pair each effect with the means to undo it rather than discharging it 
+through a handler. The two differ in where reversibility resides, and in how much of it they 
+demand. Heunen et al. work in a denotational, categorical setting where reversibility is a global 
+property, guaranteed by construction since every computation is invertible, and the inverse is 
+two-sided and recovered from the categorical structure. Cordis tracks inverses at runtime and 
+requires less of them: not that the whole computation be reversible, but that each atomic effect 
+admit a one-sided inverse, supplied by the caller at the point of application rather than derived, 
+from which the inverse of any composite follows by composition (Section 3.1).
+Graded types as unified effects and coeffects.  Orchard et al. [88] proposed graded modal 
+types as an umbrella notion encompassing both effect reasoning (via graded monads) and co -
+effect reasoning (via graded comonads), realized in the Granule language, demonstrating that 
+a single type system can track both what a computation does and what it needs; more recent 
+work extends coeffects to imperative Java-like languages [89, 90] and to call-by-push-value 
+[91]. All of these operate at the type level: effects and coeffects are static annotations checked at 
+compile time over lexically fixed scopes. Our contribution is orthogonal to this analysis: we lift 
+the same two notions to runtime mechanisms, which lets Cordis handle dynamic composition. 
+Temporal retraction and spatial dependency are re-resolved as the set of loaded components 
+evolves, instead of being settled once over a fixed program text.
+7.2.  Programming Paradigms
+Section 3.3.3 established the context paradigm as a discipline that mediates effects and coeffects 
+through an explicit context. Two established paradigms warrant explicit comparison: one 
+shares our terminology, the other our treatment of crosscutting concerns.
+Context-oriented programming.  COP [92, 93] equips a language with layers—partial 
+method and class definitions that are activated and deactivated at runtime according to the 
+execution context, so that behavior adapts without the base code naming its context depen -
+dencies [94]. COP and Cordis coincide in treating context as a first-class, runtime-mutable 
+entity and in activating and deactivating behavior dynamically, but the resemblance is nominal. 
+In COP , “context” denotes the ambient execution situation (e.g., location, user, mode), and 
+activation changes method dispatch within a dynamically scoped extent; a layer neither tracks 
+the side effects it induces nor reverts them, and activation is not governed by dependency 
+satisfaction. In Cordis, the context is the Γ∞ entity mediating effects and coeffects: activation 
+runs a component’s revertible effects and is driven by reactive coeffect satisfaction (Section 3.2), 
+and deactivation reverts them in full. COP varies what behavior runs; Cordis composes and 
+reverts what effects and dependencies a component installs. Their difference is one of trade-off. 
+COP folds activation into the host language’s method dispatch, gaining dynamically-scoped 
+layer extents at the cost of language specificity, whereas Cordis, as a language-agnostic overlay, 
+resolves activation reactively over a shared context. Cordis can thus express as a coeffect only 
+COP’s global, value-driven fragment: context-dependent selection among implementations, 
+but not dynamically-scoped activation.
+Aspect-oriented programming. AOP [95, 96] modularizes a crosscutting concern into an 
+aspect: a pointcut that quantifies over join points selected in the base program, and advice woven 
+in at each. Cordis addresses the same problem of contextual behavior that would otherwise 
+scatter across components, but its analogue of an aspect is a coeffect: a shared point of media -
+tion many components declare a dependence on, so that crosscutting behavior can be reshaped 
+there without editing any of them. The two paradigms then differ on two axes. (1) Declaration 
+versus obliviousness: an AOP pointcut is oblivious and quantified, matching arbitrary join points 
+whose code is unaware it is advised, whereas Cordis confines crosscutting to the coeffects each 
+component declares, so its reach is exactly that declared surface. This yields determinacy and 
+traceability: an application orchestrator can inspect and govern what cross-cuts a component 
+at the configuration layer, without reading or analyzing its source, whereas an AOP concern 
+is legible only through the aspects that quantify over it. (2) Lifecycle integration: a crosscutting 
+change in Cordis is carried by a component’s effects, reverted when the component unloads 
+and propagated reactively to its dependents, so it is one move within the dynamic composition 
+model; dynamic-AOP systems [97, 98] can also weave and unweave at runtime, but as a standalone operation, neither bound to a component’s lifecycle nor triggering re-resolution among 
+the advised code.
+7.3.  Temporal Composability
+Temporal composability concerns replacing or removing a component in a running program 
+while recovering the effects it installed. Prior approaches divide by how they treat a departing 
+component’s state and effects: carrying state forward to a successor version, recovering effects 
+through developer-authored cleanup, reversing effects automatically within a scope fixed in 
+advance, or reclaiming resources from a record the runtime accumulates by interposing on an 
+interface.
+Stateful forward migration. A broad family of systems replaces components in a running 
+program without downtime by carrying their state forward across versions. All observe the 
+same timing discipline: a component may be swapped only once it reaches a safe, interactionfree point. Kramer and Magee established this criterion as quiescence [51], which Vandewoude 
+et al. later relaxed to the less disruptive tranquility [52]; our rolling-update pattern (Section 6.2) 
+enforces it by draining in-flight requests before unloading a provider. Dynamic software 
+updating (DSU) then migrates state forward through hand-written transformation functions: 
+Hicks et al.‘s general-purpose DSU for C [99], Stoyle et al.’s type-safe update points via 
+con-freeness analysis [100], and Hayden et al.‘s Kitsune [101] all map old-version data to newversion representations, inheriting heap objects, open files, and connections in place while 
+re-initializing whatever is left unmigrated. The same discipline extends to persistent state: 
+Overeem et al. [102] convert a running event store’s data between schema versions through 
+hand-written upgrade operations while keeping the system available. Erlang/OTP [15] takes 
+the same stance at the process level, migrating state through code_change/3 and recovering 
+from faults by restarting supervised processes rather than reverting their effects; JavaScript’s 
+Hot Module Replacement (e.g., webpack [46], Vite [47]) does the same at the module level, 
+handing state forward through the module.hot or import.meta.hot API across a reload. Com -
+pared with Cordis’s module replacement (Section 5.2), these approaches migrate in-memory 
+state more gracefully: Cordis reverts the old component’s tracked effects and reapplies the new 
+component’s from a clean slate, so a component’s own in-memory state does not survive a 
+reload unless placed in a longer-lived dependency, and layering DSU-style forward migration 
+atop revertible effects is future work. Cordis’s approach is nonetheless more general in two 
+respects: it needs no hand-written migration functions of the kind DSU and HMR require, and 
+it supports unloading a component entirely and recovering its resources, not merely updating 
+one in place.
+Developer-authored recovery. A second family recovers a component’s effects through 
+cleanup or compensation logic that the developer writes by hand. Plugin lifecycle conventions 
+(e.g., OSGi [50], Eclipse’s extension points, IntelliJ and VSCode) delegate cleanup to developerwritten unload callbacks; the Command pattern [103] encapsulates an operation together with 
+an undo method for undo/redo stacks; the saga model [49] structures a long-lived transaction 
+as steps each paired with a compensating action; algebraic effect handlers can attach finalizers 
+that run on teardown [104]; and event sourcing [105] retracts state by appending compensating 
+events rather than executing an inverse at all. In all of them the inverse is an unenforced duty, 
+decoupled from the operation, so that a forgotten one leaks resources silently (as documented 
+empirically in Section 1.2.1). React’s useEffect hook [106] comes closest to pairing an effect 
+with its inverse structurally, returning a cleanup the runtime invokes before each re-execution 
+and on unmount. Its shortfall is composability: a hook may be called only at the top level of 
+a component or another hook, never inside a conditional, loop, or nested function, and its 
+effect body accepts neither an async function nor an iterator. Effects thus cannot be assembled 
+from other effects or interleaved with control flow, leaving nothing from which a composite 
+inverse could be derived. Cordis effects carry no such restriction: they are ordinary operations 
+that compose freely and may run asynchronously, and require a hand-written inverse only for 
+each atomic effect, from which the inverse of any composite is derived by composition, so that 
+assembling existing effects requires writing no inverses at all. This structural pairing of every 
+effect with its inverse makes complete recovery an invariant of the system rather than a matter 
+of developer discipline.
+Statically scoped reversal.  A third family reverses effects automatically, by construction, 
+but confines reversal to a scope fixed in advance. Software transactional memory [107, 108], 
+descended from hardware transactional memory [109], records a read/write log so that a 
+group of memory operations either commits or aborts, rolling memory back to its pre-trans -
+action state. Reversible computing, from Landauer and Bennett’s thermodynamic analyses 
+[110, 111] to reversible languages such as Janus [112], goes further and makes every step of a 
+whole computation globally invertible. Reversible process calculi build backtracking into the 
+semantics itself: RCCS [113] carries a memory alongside each process and admits a step to be 
+taken back when the past it leads to is causally equivalent, and Phillips and Ulidowski [114] 
+derive reversible operators for CCS, ACP , and CSP uniformly while preserving their forward 
+operational semantics. Their causal-consistency criterion is the concurrent counterpart of the 
+order Cordis’s recovery follows, an accumulator applying a component’s own inverses in lastin-first-out order and the guard of Section  4.3.1 deferring a provider’s withdrawal until its 
+consumers have deactivated (Theorem 63). The reach, however, is fixed by the semantics, every 
+action performed remaining undoable, whereas a Cordis component supplies an inverse for 
+each atomic effect and its accumulator brings the context back to where its composition began. 
+Linear types [115], RAII [4], and Rust’s ownership system [61] tie a resource’s release to a 
+lexical region. Each fixes the scope and reach of reversal statically; Cordis, by contrast, fixes no 
+such scope in advance: it reverts arbitrary context operations over a component’s lifecycle, and 
+treats lexical resource management as complementary, appropriate for local resources within 
+a single component.
+Interposed reclamation.  A fourth family reclaims what a component acquired without 
+the component itself supplying the inverses, by recording its acquisitions at an interface the 
+runtime controls. Nooks [77] wraps every call crossing the boundary between the Linux kernel 
+and its loadable extensions, so that the kernel objects an extension touches pass through an 
+object tracker whose record tells the recovery manager what to release when the extension 
+fails; shadow drivers [78] tap the same calls from the other side, recording the requests and 
+configuration that determine a driver’s state so that a restarted instance can be restored to it. 
+Akeso [116] obtains the record by compiler instrumentation instead, dividing kernel execution 
+into nestable recovery domains that log their state changes and cross-thread dependencies, and 
+rolling a faulting request back together with every domain that depends on it. Reclamation thus 
+follows from a record the runtime maintains rather than from cleanup the developer remem -
+bers to write, which makes this family the closest systems-level precedent for revertible effects. 
+It differs from Cordis in vocabulary and in reach. The platform fixes what can be recorded, 
+whether as release code per kernel object type, one shadow per driver class, or an inverse per 
+instrumented allocator, so a component may hold only resources the platform already knows 
+how to release; a Cordis component instead introduces effects of its own and supplies an inverse 
+for each atomic one (Section 3.1). Reclamation is likewise bounded by a request that commits 
+or a restart of the same extension, whereas Cordis reverts over a component’s whole lifetime 
+and propagates removal to its dependents, which release their own effects in turn (Section 3.2).
+7.4.  Spatial Composability
+Spatial composability concerns how a component’s dependencies on others are declared and 
+bound. Prior mechanisms divide by how binding responds to change: wiring dependencies 
+once at initialization, reacting to the availability of whole components, or propagating change 
+at the granularity of individual values.
+Initialization-time dependency wiring. Two established mechanisms wire components together at initialization time. Dependency injection frameworks [38] (e.g., Spring [117], Guice, 
+Angular, Inversify) inject dependencies into components at initialization, and UI framework 
+context (e.g., Vue.js’s provide/inject and React’s Context API) passes them along a component 
+tree. Some support dynamic scoping (e.g., Spring’s prototype/request scopes, Angular’s hierarchical injectors), but neither re-resolves reactively: when a provider is replaced or removed at 
+runtime, existing dependents are neither deactivated nor re-initialized, and none offers lifecycle 
+management of the kind our component state machine provides. Cordis’s reactive coeffects 
+(Section 3.2) supply this: the notification mechanism triggers lifecycle transitions whenever the 
+satisfaction predicate changes.
+Availability-reactive component models. The closest precedent to our reactive coeffects 
+reacts to service availability. OSGi’s Declarative Services and iPOJO [118, 119] let components 
+declare provided and required services, with the runtime automatically activating and deactivating them as services appear and disappear; iPOJO’s Gravity project [119] explicitly targets 
+autonomous runtime adaptation to changing service availability, and its provide/require 
+model directly prefigures Cordis’s ctx.provide/ctx.get pattern. R-OSGi [53] extends the same 
+abstraction transparently to distributed settings via RPC, mapping network failures to servicewithdrawal events, a pattern Section 6.2 discusses as an extension of the Cordis model. All 
+these systems recover through a deactivation callback, which is limited in two ways. First, the 
+callback is hand-written, so resource safety rests on developer discipline and a forgotten one 
+leaks silently. Second, the callback is synchronous: should teardown require an asynchronous 
+exchange with the departing dependency, the frameworks offer no protocol to await it, forcing a 
+blocking wait against a reference that may already be stale. Cordis’s reactive coeffects close both 
+gaps: deactivation reverts the dependents’ accumulated effects, and its inertial 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 state 
+(Section 4.3.3) runs asynchronous teardown to completion before acting on further change.
+Value-level reactivity. Functional reactive programming (FRP) [120] and its modern incarnations (e.g., signals [121, 122] in SolidJS, Vue’s reactivity system, Angular Signals) propagate 
+change at a value-level granularity: when a signal changes, derived computations are re-evaluated synchronously or under a scheduler [123]. Cordis’s reactive coeffects act at a componentlevel granularity, adding asynchronous lifecycle semantics that value-level propagation does 
+not model. The same granularity difference runs the other way for consistency: propagating in 
+a turn, in an order the dependency graph fixes, lets FRP require that no derived computation 
+read a mixture of updated and stale inputs, which is glitch freedom [124], whereas Cordis has 
+no counterpart of a turn, orchestration actions arriving one at a time, and guarantees only 
+that no single transition straddles two resolutions of its coeffects ( Theorem 64). The two are 
+complementary rather than competing: a Cordis coeffect can itself carry reactive values, and a 
+component updates on only the parts it actually consumes, refining component-level reactivity 
+into finer-grained reactive coeffects that span both levels.

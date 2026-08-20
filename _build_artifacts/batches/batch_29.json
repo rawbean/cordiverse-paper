@@ -1,0 +1,177 @@
+[
+ {
+  "id": 1015,
+  "section": "6",
+  "en": "a coordinating compo - nent links them, treating each as a remote provider. Cross-process service access is mediated by an RPC mechanism that preserves the interface, making the distribution transparent to consumers. One caveat is that a cross-process call incurs latency and may fail mid-flight, so exposing it synchronously would block the caller. An interface intended to be exposed across processes must therefore be designed against an asynchronous contract."
+ },
+ {
+  "id": 1016,
+  "section": "6",
+  "en": "6.3. Access Control and Sandboxing"
+ },
+ {
+  "id": 1017,
+  "section": "6",
+  "en": "Given an application assembled from independent components, securing the application calls for two complementary mechanisms: (1) constraining what dependencies a component may access, and (2) sandboxing untrusted code from the host environment. Cordis supports the first through dependency declarations and interception; the second requires an external sandbox. Capability-based access control. The dependency access mechanism ( Section  5.1.4) already constitutes a form of access control over proxy-mediated properties: a component can only access dependencies it has declared; an undeclared access raises an error. This is structurally similar to capability-based security [54–56], where authority is conferred by possession of a reference rather than by ambient authority. The inject declaration acts as a capability request, and the context proxy acts as a capability mediator."
+ },
+ {
+  "id": 1018,
+  "section": "6",
+  "en": "Since these requests are declared statically, the complete set of proxy-mediated capabilities a component requires is known before it runs, letting the orchestrator review and approve them at load time rather than discovering accesses as they happen. This mediation generalizes to fine-grained policy through the interception mechanism. Access-control metadata can be carried by contexts or declared by components (Definition 30), and the provider consults it when the dependency is invoked to decide whether a request is permitted. For example, a filesystem dependency may carry metadata declaring which paths a component may read or write, and the provider checks each call against the metadata."
+ },
+ {
+  "id": 1019,
+  "section": "6",
+  "en": "Because this interception lives on the context rather than in either party’s code, an orchestrator can adjust it to constrain any component’s access to a dependency without modifying the provider, e.g., granting read-only database access to a community component whereas a core component retains full access. Moreover, since interception affects only how a dependency is invoked, not whether it is satisfied, it can be installed, reconfigured, or removed at runtime without triggering any reload or perturbing the dependency graph. Sandboxing untrusted components. When a component’s code cannot be trusted, lan - guage-level access control is insufficient, since a malicious component with access to the host runtime can reach the underlying objects directly, rendering such checks moot. Sandboxing requires an execution boundary beyond the reach of language-level means, such as software fault isolation [57], a separate language runtime, a sandboxed process, or a virtualized con - tainer [58]."
+ },
+ {
+  "id": 1020,
+  "section": "6",
+  "en": "Whatever the mechanism, the untrusted component runs in its own sandboxed context and reaches host-provided dependencies through a bridge, generalizing the crossprocess invocation of Section 6.2: the same transparency argument renders this bridged access indistinguishable from local injection. On the host side, the bridge is an ordinary fiber whose capabilities can be attenuated by the access control described above."
+ },
+ {
+  "id": 1021,
+  "section": "6",
+  "en": "6.4. Language Independence and Selection"
+ },
+ {
+  "id": 1022,
+  "section": "6",
+  "en": "Although Cordis is implemented in TypeScript, the context paradigm is language-agnostic: spatiotemporal composability is defined only by its two composability dimensions, and thus can be realized in any language that meets certain requirements along both. We analyze these requirements along each dimension in turn. Temporal composability. At its most basic, temporal composability requires closures: a revertible effect pairs an action with an inverse, and that inverse must be captured as a value, along with the state it restores, so it can be replayed on teardown. Beyond this, a component’s code and the side effects of loading it must be introducible and retractable at runtime. How a language meets this second requirement depends on its execution model. In managed runtimes, this takes the form of a programmatic module registry, where a loaded module can be evicted from the registry and garbage-collected once unreferenced;"
+ },
+ {
+  "id": 1023,
+  "section": "6",
+  "en": "Node.js, for instance, exposes such a registry.6 Native code exposes no module registry, so introduction and retraction take the form of explicit dynamic linking and unlinking (e.g., dlopen/dlclose on Unix, LoadLibrary/FreeLibrary on Windows) [59], i.e., loading object code into a running process and later detaching it. WebAssembly takes one path or the other depending on its embedder: a module instance is reclaimed by the host’s collector under a managed embedder (e.g., a JavaScript host), or released when a native embedder drops it (e.g., Wasmtime). Across these mechanisms, the revertible effects model treats loading as an effect on the context, with inverses that undo the registration of symbols, types, or handlers the module introduced. Spatial composability. Spatial composability requires a mechanism for components to declare their dependencies and for the runtime to provide and inject these dependencies."
+ },
+ {
+  "id": 1024,
+  "section": "6",
+  "en": "This reduces to a dependency injection (DI) problem [38], which manifests at two levels that differ across languages: how dependencies are typed and how their access is mediated. At the type level, the language should provide a way for developers to express well-typed dependency access. A consumer obtains a coeffect by reading its key from the context, so the context type ( Section 3.2.1) must record each key’s coeffect. Typeclasses (Haskell) [60] and traits (Rust) [61] achieve this by letting a provider extend the context type from its own module through an instance or impl [62]. TypeScript’s module augmentation [63] likewise lets a provider module merge declarations into the context type. At the runtime level, dependency access must be dynamically mediated: the coeffect behind a key may change as providers are loaded and unloaded, and may be resolved differently across 6CommonJS exposes the module cache via require.cache;"
+ },
+ {
+  "id": 1025,
+  "section": "6",
+  "en": "ES modules provide no public eviction API, though modules can still be managed through engine-internal interfaces. contexts. The language therefore needs a way to interpose on access transparently, leaving the consumer’s code unchanged, e.g., via JavaScript’s Proxy object [64] or Python’s descriptor protocol (__get__) [65]. Absent such a primitive, runtime reflection [66, 67] can mediate access dynamically, at the cost of type safety and developer experience. Across both levels, metaprogramming facilities supply the typing and the mediation together. Annotations [68] and decorators attach metadata to a declaration, which a processor expands into the accessor that mediates access; compile-time metaprogramming (e.g., Rust procedural macros, Scala macros [69], Zig comptime) emits, for each dependency, a typed declaration together with such an accessor, dispensing with a general-purpose interception primitive."
+ },
+ {
+  "id": 1026,
+  "section": "6",
+  "en": "6.5. Mutual Dependencies and Component Granularity"
+ },
+ {
+  "id": 1027,
+  "section": "6",
+  "en": "In the reactive coeffect model, a dependency cycle simply leaves the involved components permanently inactive: given two components 𝐴 and 𝐵, if 𝐴 requires a key provided by 𝐵 and 𝐵 a key provided by 𝐴, neither’s satisfaction predicate can ever become true. Unlike deadlock in concurrent systems, which depends on the schedule and must be detected as it happens, this condition is predictable from the dependency declarations alone, so a runtime can report it when components are loaded. In practice, most apparently mutual dependencies can be decomposed into finer-grained components that eliminate the cycle. Consider two components: a server (providing a network interface) and an access controller (enforcing authorization policies). The two components interact bidirectionally: the access controller mediates requests arriving at the server, and the server exposes an endpoint for modifying access-control policies. A monolithic design would make each component depend on the other."
+ },
+ {
+  "id": 1028,
+  "section": "6",
+  "en": "However, the two interaction directions are logi - cally independent concerns. Decomposing them yields four components: server-core, accesscontrol-core, request-mediation (depending on both cores to apply access control to incoming requests), and policy-management (depending on both cores to expose policy modification via the server). Through this approach, the cycle is eliminated because neither core depends on the other; only the integration components depend on both. This decomposition is always possible in principle, since every bidirectional interaction can be factored into independent unidirectional bindings, but it increases the number of components: in the general case, given 𝑛 mutually interacting components, the number of integration components can grow quadratically with 𝑛, since each pair of interacting compo - nents may require a distinct component for each direction of interaction."
+ },
+ {
+  "id": 1029,
+  "section": "6",
+  "en": "This does not affect correctness or runtime performance (components are lightweight), and finer granularity can be beneficial: users gain the ability to load only the specific integration bindings they need, effectively increasing the system’s composability. However, it may affect developer experience: more components require more configuration, more naming, and more cognitive overhead in understanding the dependency graph. Mitigating this granularity cost is an engineering concern rather than a theoretical one. Practical strategies include package bundling (i.e., grouping related fine-grained components into a single installable unit), convention-based wiring (i.e., automatically connecting components whose names or types match a pattern), and scaffold tooling (i.e., generating boilerplate integration components from declarative specifications). These strategies preserve the formal guarantees of the acyclic model while reducing the authoring burden to something closer to the monolithic case."
+ },
+ {
+  "id": 1030,
+  "section": "6",
+  "en": "6.6. Dependency Typing and Versioning"
+ },
+ {
+  "id": 1031,
+  "section": "6",
+  "en": "In the formal model, a dependency link is established purely by key identity: a component providing key 𝑘 satisfies any component declaring 𝑘 in its dependency set. The type family 𝒱︀𝑘 ensures type-level agreement within a single compilation unit, but this guarantee breaks down when components are developed and built independently, which is a common scenario in component ecosystems. This breakage leads to two distinct problems. Interface drift. A provider may modify the interface associated with 𝑘 (adding fields, changing method signatures, altering behavioral contracts) between versions, while a con - sumer compiled against an earlier interface continues to declare the same key 𝑘. The dependency is satisfied at the coeffect level ( 𝑘 ∈ dom(𝜎)), yet the runtime value no longer conforms to the consumer’s expectations, leading to type errors, method-not-found failures, or silent behavioral divergence [70]. Key collision."
+ },
+ {
+  "id": 1032,
+  "section": "6",
+  "en": "Two independently developed providers may use the same key name 𝑘 to denote entirely unrelated interfaces. Since key identity alone establishes the link, a consumer expecting one provider’s interface will accept the other’s value without any compatibility check. Unlike interface drift, where the provider and consumer at least share a common lineage, key collision involves no relationship whatsoever between the expected and actual types, making the resulting failures unpredictable and difficult to diagnose. Both problems point to the same gap: the coeffect model provides only nominal linking (by key name) but no versioned or structural linking (by interface compatibility) [71]. We discuss three approaches to the gap, from most infrastructure-coupled to most language-agnostic. Key namespacing."
+ },
+ {
+  "id": 1033,
+  "section": "6",
+  "en": "Extending the key space from 𝐾 to 𝐾 × 𝑃, where 𝑃 identifies the interface-defining package, eliminates key collision by construction: independently developed interfaces with the same local name occupy distinct keys. This is the most direct solution but also the most coupled: it embeds the package namespace into the formal model itself, making the system dependent on an external package registry for key identity. Peer dependencies. A lighter coupling is to declare version constraints through the hostlanguage package manager [72]. This is the approach Cordis currently adopts. Component dependencies are semantically peer dependencies: a component does not bundle its dependen - cies internally but expects the runtime context to supply them."
+ },
+ {
+  "id": 1034,
+  "section": "6",
+  "en": "Package managers with peer dependency support (e.g., npm) can enforce version compatibility: if the version of the package providing a key falls outside a consumer’s declared peer range, the incompatibility is caught at install time rather than surfacing as a runtime failure. However, this approach has two limitations: (1) it depends on providers faithfully adhering to semantic versioning, which is an unenforceable convention; (2) package managers typically resolve each dependency to a single version, which prevents loading components from multiple versions of the same package within one application. Structural compatibility. A fully language-agnostic approach would replace the member - ship check 𝑘 ∈ dom(𝜎) with a compatibility predicate that verifies the provider’s actual interface structurally subsumes the consumer’s expectation. This is analogous to structural subtyping [73]: a provider satisfies a consumer if the provided interface is a subtype of the required interface."
+ },
+ {
+  "id": 1035,
+  "section": "6",
+  "en": "The challenge lies in defining this predicate language-agnostically: structural compatibility is straightforward for record types (width subtyping) but becomes complex for behavioral contracts (e.g., pre/postconditions [74], effect specifications [22]), and undecidable once parametric polymorphism introduces bounded quantification [75]. These three approaches address different aspects of the problem. Designing a unified dependency model that combines these approaches while preserving the dynamic composition guarantees of the coeffect model remains an open problem."
+ },
+ {
+  "id": 1036,
+  "section": "6",
+  "en": "6.7. Co-Design with Languages and Operating Systems"
+ },
+ {
+  "id": 1037,
+  "section": "6",
+  "en": "Section 6.4 identifies the minimum a host language must supply for the context paradigm. This section takes up the converse question, what a language or operating system co-designed with the paradigm can offer beyond that minimum. Co-design with languages. A language designed around the context paradigm can improve on a library in two respects: the semantics it gives to contexts, and the primitives it gives to effects and coeffects. Such a language can make the context implicit again while preserving the context semantics of Section 3.3. An imperative language already runs every statement against an implicit context, and that single context neither tracks effects nor resolves coeffects. The context paradigm instead distinguishes multiple contexts, where an operation either modifies the context it runs against or derives another from it ( Definition 27). An in-place realization modifies the ambient context, just as an imperative language does."
+ },
+ {
+  "id": 1038,
+  "section": "6",
+  "en": "A derived realization instead introduces a separate context, for which the language must provide a construct. Making the context implicit brings both an ergonomic and a safety benefit. (1) In a library realization, every function involving effects or coeffects takes the context as an ordinary argument or a receiver, as in Section 5.1. Where the language supplies the context implicitly, functions no longer need to take it. (2) Every context carries its own lifecycle state and committed view ( Section 4.1). A library realization passes a context as an ordinary variable, so a component may reach another component’s context by mistake, through a closure or a global variable. An effect it installs there then leaks out of its own lifecycle, and a coeffect it reads there escapes its dependency specification. Making the context implicit closes both. Such a language can also make effects and coeffects known to its compiler."
+ },
+ {
+  "id": 1039,
+  "section": "6",
+  "en": "(1) For effects, an effect iterator ( Definition 51) allocates a closure at every step to hold the inverse together with the state it restores. With syntax for performing an effect, a compiler can emit a single state machine for the whole iteration and hold those inverses in its frame. (2) For coeffects, the coeffect specification can be admitted into the type system, with two benefits. First, a dependency cycle is reported at compile time instead of being left to the runtime (Section 6.5). Second, a dependency can be compared by the structure of its type rather than by key identity alone, as row types do [28], which is type-level support for the structural compatibility of Section 6.6. Co-design with operating systems."
+ },
+ {
+  "id": 1040,
+  "section": "6",
+  "en": "Section 1.2.3 observes a coarse-grained substitute for dynamic composability, where the operating system supplies temporal composability at the granularity of a process, and the container orchestrator above it supplies spatial composability at the granularity of a service. An operating system co-designed with the paradigm would support fine-grained composition, by making the coeffect specification a component declares the whole of what it can reach, and by providing its own resources as coeffects. Such an operating system can supply the sandbox that Section 6.3 defers to a mechanism outside the language. It does so by bounding a component to the dependencies it declares, supplying them when the component is loaded and leaving nothing else reachable from within it, as a WebAssembly module receives its imports from its embedder at instantiation [76]."
+ },
+ {
+  "id": 1041,
+  "section": "6",
+  "en": "It can also provide the coeffect isolation and interception of Section 3.2.3 as abilities of its own, binding a key differently for each component and mediating the accesses it supplies. Such an operating system can also provide its own resources as coeffects. A resource lying outside the boundary is made revertible where the runtime records each acquisition against the component that made it ( Section 6.1), and every runtime keeps a record of its own. An operating system that provides the resource as a coeffect keeps that record once, since it is the party that hands the resource out and can attribute it to the component that asked. Memory and file descriptors are the immediate candidates, and tracking them for the sake of recovery has been done at the kernel interface [77, 78]. Furthermore, an operating system can make revertible some of the operations Section 6.1 can only withhold or compensate for."
+ },
+ {
+  "id": 1042,
+  "section": "6",
+  "en": "A system that performs a write to persistent storage transactionally can roll it back [79], and one built on copy-on-write or immutable storage reaches an earlier state by moving a pointer [80, 81]."
+ },
+ {
+  "id": 1043,
+  "section": "6",
+  "en": "6. Discussion"
+ },
+ {
+  "id": 1044,
+  "section": "6",
+  "en": "The formal model and implementation presented in the preceding sections introduce a programming paradigm for dynamic composability. This section examines how the paradigm extends to broader engineering concerns, and discusses the design tensions and open prob - lems."
+ },
+ {
+  "id": 1045,
+  "section": "7",
+  "en": "7.1. Effect and Coeffect Systems"
+ },
+ {
+  "id": 1046,
+  "section": "7",
+  "en": "Section  2 reviewed effects and coeffects as the theoretical pillars underlying our work. We first situate the monadic effect systems now common in industrial practice, then survey three research lines that extend effects and coeffects in directions relevant to Cordis: recasting algebraic effects as capabilities, giving effects a reversible semantics, and unifying effects and coeffects under a single graded discipline. Monadic effect systems. One family of libraries encodes effects in the type systems of existing general-purpose languages, representing them as monadic values that a runtime executes. ZIO in Scala [82] models a computation as ZIO[R,E,A] and Effect-TS in TypeScript [83] as Effect<A,E,R>, a generic type whose parameters describe its result, its typed errors, and the services its context must supply; the fp-ts library [84] encodes the same error and requirement channels through Reader-based monad transformers. Two traits separate these systems from Cordis."
+ },
+ {
+  "id": 1047,
+  "section": "7",
+  "en": "First, the tracking is bought with a monadic embedding: a program obtains it only by being written inside the effect type, whereas Cordis tracks effects as an overlay over ordinary host code. Second, a requirement is discharged by interpretation, an installed service that supplies its operations, and when that service is withdrawn what its operations performed remains in place; Cordis instead pairs each effect with an inverse and re-resolves requirements as providers come and go (Section 3.1, Section 3.2). Algebraic effects as capabilities. Algebraic effects (Section 2.1) make effect operations visible to the type system. The extension closest to our work is Brachthäuser et al.‘s Effekt language, which reinterprets effect types as capabilities [85, 86]: an effect type expresses what a compu - tation requires from its context rather than what side effects it may produce. This perspective, like ours, treats the context as a mediator of capabilities."
+ },
+ {
+  "id": 1048,
+  "section": "7",
+  "en": "Cordis and Effekt differ in two respects. (1) In purpose, algebraic effects make effects visible to enable modular interpretation, giving one operation many handler semantics, whereas Cordis makes them visible to enable tracking and reversion, pairing every context transformation with an inverse. (2) In setting, Effekt disciplines effects statically at the type level, defaulting to scope-based reasoning in which capabilities are second-class and confined to their lexical scope, and recovering first-class use through boxing, which lifts that restriction by tracking captured capabilities in types; Cordis instead disciplines effects at runtime, aiming at complete resource recovery on component removal; Section 6.7 takes up what a language that made the context second class in this sense would offer. Reversible effect semantics. A parallel line gives effects a reversible semantics rather than an interpretive one. Heunen et al."
+ },
+ {
+  "id": 1049,
+  "section": "7",
+  "en": "[87] model side effects in a reversible setting by adapting Hughes’ arrows to dagger arrows and inverse arrows, capturing effects such as serialization and mutable store whose operations admit inverses. This is the formal account closest to our revertible effects: both pair each effect with the means to undo it rather than discharging it through a handler. The two differ in where reversibility resides, and in how much of it they demand. Heunen et al. work in a denotational, categorical setting where reversibility is a global property, guaranteed by construction since every computation is invertible, and the inverse is two-sided and recovered from the categorical structure. Cordis tracks inverses at runtime and requires less of them: not that the whole computation be reversible, but that each atomic effect admit a one-sided inverse, supplied by the caller at the point of application rather than derived, from which the inverse of any composite follows by composition (Section 3.1)."
+ }
+]

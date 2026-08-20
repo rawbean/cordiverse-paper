@@ -1,0 +1,110 @@
+5.2.1.  Declarative Configuration
+Section 4 decomposes a running system into fibers, each an instantiation of one component. 
+Everything an instantiation needs can be declared, so an orchestrator can describe a whole 
+system as a declarative configuration: a persistent record that the loader realizes as fibers and 
+keeps in step with them.
+Entries. A configuration consists of entries. Each entry specifies a fiber and manages it, and 
+the binding runs in both directions: the loader responds to a change in an entry’s fields by 
+adjusting the fiber, and a component that revises its own configuration or disables itself has the 
+change written back to its entry.
+Definition 74. An entry declares a single fiber, recording:
+• id — a stable identifier, used as the reconciliation key when its group’s child list changes;
+• url — the URL of the component module to instantiate;
+• isolate — an isolation annotation applied to the entry’s context;
+• intercept — an interception annotation applied to the entry’s context;
+• config — the configuration bound into the component to form its effect function apply;
+• disabled — whether the entry is administratively turned off.
+An entry can serve as a faithful specification because what supports a fiber is exactly what 
+an entry records. The support set of Definition 67 reads 𝜏, 𝜋, 𝑑, and 𝑝 and nothing else, and 
+an entry gives all four: disabled gives 𝜏, the entry’s parent in the tree gives 𝜋, and url selects 
+the component which declares 𝑑 and 𝑝. The fields the support set leaves unread are the fiber’s 
+runtime state, which an instantiation does not need either, and Lemma 70 identifies the support 
+set with the 𝖠𝖼𝗍𝗂𝗏𝖾 fibers of a quiescent state (Definition 49) as far as each component installs 
+every key it declares (Definition 69).
+These entries form a configuration tree that is the authoritative record of what the system 
+loads. An entry may be a leaf mapping to a single fiber, or its component may in turn load 
+further components, making the entry a branch node. Cordis provides components for such 
+grouped and nested loading: @cordisjs/group takes a list of child entries as its configuration 
+and loads them as a subgroup, and @cordisjs/include loads an external configuration file 
+(YAML or JSON) and grafts its entries in as a nested subtree. Both are ordinary components 
+resting on the registration primitive of Definition 47 (Algorithm 4), so a nested tree stays within 
+the calculus and the results below hold of it.
+Reconciliation. When an entry’s record changes, the loader reconciles incrementally rather 
+than tearing the fiber down and rebuilding it wholesale. Reconciling this way is sound for 
+reasons the metatheory supplies.
+• Theorem 73 makes the quiescent state a function of the final configuration alone: what -
+ever instantiations and retirements the loader performs on the way, and in whatever 
+order, the system quiesces where a load of the final configuration from scratch would 
+have left it. Which components end up loaded is read off the declarations only as far as 
+each of them installs every key it declares ( Definition 69); a component that declares a 
+key and installs it under some configurations alone is one the loader can still reconcile, 
+but the set of loaded components then answers to those configurations as well.
+• Theorem 66 proves that the system does quiesce, so a reconciliation is complete once its 
+instantiations and retirements have been issued.
+• Corollary 62 puts a departing fiber’s contribution to the state at nothing, so rebuilding 
+one entry withdraws what its fiber installed and leaves the fibers around it as they were.
+• Theorem 63 lets the entries be instantiated together, with no load order for the orches -
+trator to arrange: a fiber whose declared keys are not yet provided waits at its L-Begin, and 
+one whose provider leaves is deactivated ahead of it. A dependency therefore constrains 
+when a fiber activates rather than when its module is fetched and evaluated, so the loader 
+loads modules concurrently, where bringing up a large configuration spends its time.
+On top of the fiber that an entry declares, the loader dispatches on which of the entry’s 
+fields changed and applies the least disruptive operation for each.
+• id, url — rebuilds the entry, since its identity or its component has changed;
+• isolate — reassigns the entry’s realms (Algorithm 7);
+• intercept — updated in place, as interception metadata is consulted at read time and 
+needs no reload;
+• config — handed to the component, which decides how to apply the new payload, 
+typically by diffing it against the previous one and reloading only on a material change. 
+In particular, an @cordisjs/group entry’s config is its list of child entries, so it applies the 
+update as a keyed diff over child ids, creating, removing, or updating each child; since 
+updating a surviving child re-enters this same per-field dispatch, group reconciliation 
+and entry update recurse together down the tree;
+• disabled — unloads the fiber when set and reloads it when cleared.
+Managed realms. Isolation in the core derives a child context overriding the realm table 𝜌 
+at one key (Section 5.1.2), which suffices while the context tree stands still. An entry may be 
+moved between groups at runtime, so the loader manages realms of its own, and the isolate 
+field selects between two scoping rules per key. A value of true asks for a local realm, private 
+to the entry and tagged by its id, which the entry carries with it wherever it moves; a string 
+asks for a global realm shared by every entry naming that string, so moving such an entry 
+changes which entries it shares a binding with rather than which realm it belongs to. A realm 
+is discarded once no entry names it.
+Reassigning an entry’s realms turns on which keys changed realm, whether the entry is 
+itself the provider at a changed key, and which dependents to notify. The middle question is 
+the hard one, since a realm symbol may be shared by several fibers of which only one is the 
+provider. The loader answers it with delimiters: one symbol 𝛿𝑘 per key, under which each context 
+stores a tag of its own. A delimiter is written on a context and inherited by its descendants, so 
+the entry’s tag and the provider’s agree exactly when the two were derived within one isolate 
+scope for 𝑘, which is the case in which the binding at 𝑘 is the entry’s own and has to move 
+with it.
+Algorithm 7 Isolation realm reassignment
+1 function patch_isolation(entry, 𝜌′)
+2 𝜌 ← entry.ctx[@@isolate]
+3 store ← entry.ctx[@@store]
+4 Δ ← {𝑘 | 𝜌(𝑘) ≠ 𝜌′(𝑘)} ▷ keys whose realm changes
+5 for 𝑘 in Δ do
+6 entry.ctx[𝛿𝑘] ← fresh tag
+7 diff[𝑘] ← (𝜌(𝑘), 𝜌′(𝑘), entry.ctx[𝛿𝑘], store[𝜌(𝑘)].fiber.ctx[𝛿𝑘])
+8 entry.ctx[@@isolate] ← 𝜌′
+9 reload(entry.fiber)
+10 for 𝑘 in Δ do
+11 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘]
+12 if 𝑑1 = 𝑑2 and store[𝑠1] and not store[𝑠2] then ▷ the binding is the entry’s own
+13 store[𝑠2] ← store[𝑠1]
+14 delete store[𝑠1]
+15 function affected(fiber, 𝑘)
+16 (𝑠1, 𝑠2, 𝑑1, 𝑑2) ← diff[𝑘]
+17 return fiber.ctx[@@isolate][𝑘] ∈ {𝑠1, 𝑠2} and (fiber.ctx[𝛿𝑘] = 𝑑1) ≠ (𝑑2 = 𝑑1)
+18 notify(entry.ctx, Δ, affected) ▷ in place of the realm test of Algorithm 3
+The test turns on one property of delimiters. The tag under 𝛿𝑘 is written on the entry’s 
+context and inherited by every context derived from it, and it is drawn afresh at each reassignment, so for a context 𝛾′
+𝛾′[𝛿𝑘] = 𝑑1 ⟺ 𝛾′ is derived from the entry's context (65)
+Write own(𝛾′) for that condition, of which 𝑑2 = 𝑑1 is the instance at the provider. The 
+reassignment moves the contexts satisfying own from 𝑠1 to 𝑠2 and leaves the others where they 
+are, and by the loop above it moves the binding to 𝑠2 exactly when the provider satisfies own. 
+A dependent sees the binding while its own realm at 𝑘 is the realm the binding sits in. Where 
+own agrees on the dependent and the provider, both move or neither does, so the dependent 
+sees the binding afterwards exactly when it saw it before. Where own separates them, one side 
+moves and the other stays, so the dependent gains or loses the binding. The inequality is that 
+separation, and the membership test drops the dependents resolving 𝑘 in neither realm, which 
+no part of the move reaches.

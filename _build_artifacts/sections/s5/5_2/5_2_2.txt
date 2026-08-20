@@ -1,0 +1,81 @@
+5.2.2.  Hot Module Replacement
+Hot module replacement (HMR) applies the revertible-effect pattern at the module level: when 
+source files change, typically during development, the system replaces the affected modules 
+in-place without restarting the process. Because a fiber already bounds all of its component’s 
+effects and coeffects, a module that is itself a component can be replaced through fiber opera -
+tions alone: disposing the old fiber recovers everything the component installed, and a new 
+fiber instantiated from the reloaded module reinstalls it. HMR therefore needs no developerannotated acceptance boundaries, as opposed to Webpack [46] or Vite [47] HMR.
+The @cordisjs/hmr component provides the HMR engine, which operates in three phases.
+Phase 1: Module classification.  The engine takes two inputs: the stashed set (file URLs 
+whose contents have changed since the last reload) and the externals set (modules that cannot 
+be hot-replaced and instead trigger a full restart). Writing get_imports(url) for the modules 
+that url directly imports, it classifies the changes’ dependency subgraph, marking each module 
+accepted or declined:
+Algorithm 8 Module classification
+1 function classify(stashed, externals)
+2 accepted ← stashed
+3 declined ← externals
+4 pending ← ⌀
+5 for url in stashed do
+6 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined))
+7 repeat
+8 progress ← false
+9 for url in pending do
+10 if get_imports(url) ∩ accepted ≠ ⌀ then
+11 accepted ← accepted ∪ {url}
+12 pending ← pending ∖ {url}
+13 progress ← true
+14 else if get_imports(url) ⊆ declined then
+15 declined ← declined ∪ {url}
+16 pending ← pending ∖ {url}
+17 progress ← true
+18 else
+19 pending ← pending ∪ (get_imports(url) ∖ (accepted ∪ declined))
+20 until not progress
+21 declined ← declined ∪ pending
+22 return (accepted, declined)
+Seeded with the imports of the stashed files, the fixed point accepts a module once one of 
+its imports is accepted and declines one once all of its imports are declined; any module left 
+undecided, caught in an import cycle, defaults to declined.
+Phase 2: Stale-entry detection.  Using accepted and declined, the engine then filters the 
+component entries down to the stale ones, whose dependency tree reaches a changed module. It 
+walks each entry’s tree with get_dependencies, which collects the transitive imports of a module 
+while respecting declined as a boundary:
+Algorithm 9 Stale-entry detection
+1 function get_dependencies(root, declined)
+2 deps ← ⌀
+3 function traverse(url)
+4 if url ∈ deps or url ∈ declined then return
+5 deps ← deps ∪ {url}
+6 for child in get_imports(url) do traverse(child)
+7 traverse(root)
+8 return deps
+9 function detect(entries, accepted, declined)
+10 stale_entries ← ⌀
+11 for entry in entries do
+12 tree ← get_dependencies(entry.url, declined)
+13 if tree ∩ accepted ≠ ⌀ then
+14 accepted ← accepted ∪ tree
+15 stale_entries ← stale_entries ∪ {entry}
+16 return stale_entries
+An entry is stale exactly when its tree intersects accepted; that tree is then folded into 
+accepted, so every stale module along it is invalidated in the next phase.
+Phase 3: Transactional reload.  Finally, the engine reloads the stale entries. It invalidates 
+the accepted modules’ caches 3, backing up each removed module to enable rollback, then reimports each stale entry’s component module by its url and swaps in a fresh fiber:
+Algorithm 10 Transactional module reload
+1 function reload(ctx, accepted, stale_entries)
+2 backup ← invalidate_caches(accepted)
+3 try
+4 for entry in stale_entries do
+5 entry.fiber.dispose()
+6 entry.fiber ← ctx.use(import(entry.url), entry.config)
+7 catch error
+8 restore_caches(backup)
+9 for entry in stale_entries do
+10 entry.fiber.dispose()
+11 entry.fiber ← ctx.use(backup[entry.url], entry.config)
+12 throw error
+The transactional guarantee ensures that the system never enters a half-reloaded state: if 
+any module fails to import (e.g., due to a syntax error), the caches are restored and every 
+stale entry is rebuilt from backup[entry.url], the previous component whose cache was just 
+restored, undoing the swaps already made.

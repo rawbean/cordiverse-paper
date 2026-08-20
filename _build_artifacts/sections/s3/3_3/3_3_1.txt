@@ -1,0 +1,25 @@
+3.3.1.  Unified Context
+For a context Γ, the effect context 𝜕Γ (Section 3.1) provides a higher-level abstraction, carrying 
+the previous-level context and that level’s accumulator ( Definition 2). Making this structure 
+recursive and combining it with the coeffect context Σ yields the following type:
+Definition 32. The context type Γ∞ is defined as:
+Γ∞ ≔ 𝜇Γ. Γ × (Γ → Γ) × Σ (31)
+where the three projections are:
+• Γ: the current context state (recursive);
+• Γ → Γ: the accumulator, which recovers this level’s effects;
+• Σ: the coeffect context carrying dependency information.
+Under this definition, effect maps 𝔈Γ∞
+ to itself, unifying the 𝜕-tower into a single selfsimilar type. The coeffect context Σ is structurally integrated: dependency operations (set, get) 
+act on Σ, and the accumulator tracks their reversal. Since the type family 𝒱︀ underlying Σ is 
+unconstrained, any state the system needs to share across components can be encoded as a 
+dependency with an appropriate value type— Σ subsumes all shared mutable states, not just 
+inter-component dependencies. Every interaction between a component and its environment 
+passes through this single entity.
+Hierarchical composition. The recursive structure of Γ∞ supports hierarchical control: a 
+parent context aggregates multiple child-level effects, forming a tree-shaped control structure 
+that maintains modularity while enabling unified cross-level management. The effect transformation realizes a literal “plug-in” metaphor:
+• Loading a component corresponds to executing its effects (plugging in);
+• Unloading a component corresponds to recovering its effects (unplugging, without 
+affecting other running components);
+• Components at different levels of the hierarchy are independently loadable and unloadable; a parent context aggregates and manages the effects of all its children, enabling 
+arbitrarily nested composition.

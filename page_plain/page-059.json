@@ -1,0 +1,4 @@
+{
+ "page": 59,
+ "plain": "本页给出 fiber 惯性状态机：refresh 重算 target，空闲才启动 reload/unload；reload 先写入 committed 再跑 apply，结束若 target 变了就链式 unload；unload 对称地清完再决定是否 reload。工程直觉：过渡一旦开始先跑完，避免半加载半卸载抖来抖去，热插拔才稳。"
+}

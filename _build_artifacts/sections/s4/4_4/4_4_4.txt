@@ -1,0 +1,110 @@
+4.4.4.  Progress
+A guard that defers a provider’s withdrawal until its dependents are gone delivers Theorem 63 
+only if it eventually releases. One relation on the fibers of a registry carries the argument.
+Definition 65. The precedence relation on the names of a registry is
+𝑛 ≺ 𝑚 ≔ 𝑝𝑛 ∩ 𝑑𝑚 ≠ ⌀ (60)
+so that 𝑛 may provide a key 𝑚 declares. It reads 𝑑 and 𝑝 alone, which by Lemma 54(5) come 
+into existence with a fiber’s entry and are never written again.
+Theorem 66 and Theorem 73 are established on the hypothesis that ≺ is acyclic, which is 
+an assumption and not something the definition delivers, 𝑛 ≺ 𝑛 holding of a component that 
+declares a key it provides itself. What ≺ orders is the two fibers’ activations and not their 
+lifetimes: 𝑛 ≺ 𝑚 says that 𝑛 has to become 𝖠𝖼𝗍𝗂𝗏𝖾 before 𝑚 can, whereas that a provider outlives 
+its consumer is Theorem 63(2), a theorem about the guarded calculus.
+A fiber’s target view answers to the fiber that created it as well as to its providers. What a 
+creator writes is 𝜏𝑛, through the primitive of Definition 47, and 𝜏 is monotone by Lemma 54(5). 
+A creator can therefore turn its child’s target view at most once over that child’s whole existence.
+Progress is a claim that some rule applies, so it is formulated over the rules a host must 
+offer: L-Begin, L-Leave, L-Unload, the landing rules L-Iter, L-Finish, and L-Raise, and L-Divert. 
+It appeals to the aborting alternative of L-Divert nowhere, so a host bound by the inertia of 
+Section 4.3.3 is covered as well.
+Theorem 66. (Progress.) Assume ≺ acyclic, len(𝑒𝑛) ≤ 𝐾 for every 𝑛, and the set 𝑁 of names of 
+Definition 60 finite; and let every step apply a lifecycle rule. Write 𝑆(𝑛) for the number of steps 
+acting on 𝑛 and
+𝑉 (𝑛) ≔ |{𝑡 : target𝑡
+𝑛 ≠ target𝑡+1
+𝑛 }| (61)
+for the number of times its target view turns. Then
+1. (No deadlock.) ¬ quiet𝑡 implies that some lifecycle rule applies at 𝛾𝑡;
+2. (Termination.) 𝑆(𝑛) ≤ (𝐾 + 4)(𝑉 (𝑛) + 1), and both 𝑉 (𝑛) and ∑𝑛 𝑆(𝑛) are finite.
+Consequently every maximal sequence of lifecycle steps ends in a quiescent state.
+Proof. No deadlock. Let ¬ quiet𝑡, so some fiber 𝑛 satisfies neither clause of the quiet of Definition 49. Reading Table 1 against the four kinds it can then be:
+• 𝜃𝑡
+𝑛 = 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) with target𝑡
+𝑛 ≠ ⊥: L-Begin applies;
+• 𝜃𝑡
+𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, 𝜔𝑛) with target𝑡
+𝑛 = 𝜔𝑛: whichever of L-Iter, L-Finish, and L-Raise 
+the value of 𝑖𝑡
+𝑛(𝛾𝑡) selects applies;
+• 𝜃𝑡
+𝑛 = 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, 𝜔𝑛) with target𝑡
+𝑛 ≠ 𝜔𝑛: L-Raise applies if 𝑖𝑡
+𝑛(𝛾𝑡) raises, and other -
+wise L-Divert does, landing that iteration rather than aborting it;
+• 𝜃𝑡
+𝑛 = 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔𝑛) with target𝑡
+𝑛 ≠ 𝜔𝑛: L-Leave applies.
+Let no fiber be of any of these kinds, leaving some 𝑚0 with 𝜃𝑡
+𝑚0
+= 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀(−, −, −). Construct 
+𝑚0, 𝑚1, … as follows: given 𝑚𝑗 in 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀, either ¬ relied𝑡
+𝑚𝑗
+, in which case L-Unload applies 
+to 𝑚𝑗 and the construction stops, or there are 𝑚𝑗+1 ≠ 𝑚𝑗 and 𝑘𝑗 with installed𝑡
+𝑚𝑗+1
+ and 
+𝜔𝑡
+𝑚𝑗+1
+(𝑘𝑗) = 𝑚𝑗. In the latter case
+𝑘𝑗 ∈ 𝑑𝑚𝑗+1
+∩ dom(𝜎𝑡
+𝑚𝑗
+) ⊆ 𝑑𝑚𝑗+1
+∩ 𝑝𝑚𝑗
+the second membership being Theorem 63(3) at the episode of 𝑚𝑗+1 that 𝑡 lies in, so that 𝑚𝑗 ≺
+𝑚𝑗+1. Moreover target𝑡
+𝑚𝑗+1
+≠ 𝜔𝑡
+𝑚𝑗+1
+: an 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 fiber is outside the union defining 𝜎𝛾, so 𝑘𝑗 
+at 𝛾𝑡 is unprovided or provided by a fiber other than 𝑚𝑗. Were 𝑚𝑗+1 in 𝖠𝖼𝗍𝗂𝗏𝖾 or 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 
+it would then be of one of the four kinds excluded, so it is in 𝖴𝗇𝗅𝗈𝖺𝖽𝗂𝗇𝗀 and the construction 
+continues. The 𝑚𝑗 are ≺-increasing, hence distinct by acyclicity, and dom(𝐹𝑡) is finite, so the 
+construction stops.
+Termination. Two claims bound 𝑆(𝑛).
+(A) Over a maximal interval on which target𝑡
+𝑛 is constant at 𝜔∗, at most 𝐾 + 4 steps act on 𝑛. 
+Reading the 𝜃𝑛 columns of Table 1, from 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔) with 𝜔 ≠ 𝜔∗ the fiber takes an L-Leave and 
+an L-Unload and then, if 𝜔∗ ≠ ⊥, an L-Begin and at most len(𝑒𝑛) ≤ 𝐾 landings, plus a second 
+L-Unload where the last landing is an L-Raise; from 𝖱𝖾𝗅𝗈𝖺𝖽𝗂𝗇𝗀 against an 𝜔 ≠ 𝜔∗ it takes an LDivert in place of the L-Leave, and from any other state a suffix of that sequence. No further 
+L-Divert or L-Leave falls in the interval, the 𝜔 that the L-Begin writes being target𝑡
+𝑛 = 𝜔∗ itself, 
+and at 𝖠𝖼𝗍𝗂𝗏𝖾(−, 𝜔∗), at 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(⊥) with 𝜔∗ = ⊥, and at 𝖨𝗇𝖺𝖼𝗍𝗂𝗏𝖾(𝜉) no rule applies at all.
+(B) If target𝑡
+𝑛 ≠ target𝑡+1
+𝑛  and step 𝑡 acts on 𝑚, then either 𝑚 ≺ 𝑛 or step 𝑡 writes 𝜏𝑛. By 
+Definition 46 the value of target𝑛 is a function of 𝜏𝑛 and of the tables of the providers of the 
+keys of 𝑑𝑛; a provider satisfies 𝑘 ∈ dom(𝜎𝑚) ∩ 𝑑𝑛 and hence 𝑚 ≺ 𝑛, and a table changes only 
+at a step acting on its own fiber by Lemma 54(1). Acyclicity gives 𝑚 ≠ 𝑛 in the first case, and 
+the monotonicity of Lemma 54(5) admits the second at one 𝑡 per fiber.
+By (A) the interval count bounds 𝑆(𝑛) as 𝑆(𝑛) ≤ (𝐾 + 4)(𝑉 (𝑛) + 1), and by (B) each turn of 
+target𝑛 either consumes a step of a fiber strictly ≺-below 𝑛 or is the one turn 𝜏𝑛 affords, so 
+𝑉 (𝑛) ≤ 1 + ∑𝑚≺𝑛 𝑆(𝑚). Since ≺ is acyclic and 𝑁 is finite, the recursion
+𝐵(𝑛) ≔ (𝐾 + 4)(2 + ∑
+𝑚≺𝑛
+𝐵(𝑚))
+is well founded and defines 𝐵 with 𝑆(𝑛) ≤ 𝐵(𝑛); hence 𝑉 (𝑛) is finite and ∑𝑛 𝑆(𝑛) ≤ ∑𝑛 𝐵(𝑛). 
+By (1) a sequence that cannot be extended is quiescent. □
+Finiteness of 𝑁 is assumed rather than derived, and one condition on the components 
+delivers it. The components a host holds are finitely many programs given before anything 
+runs, so if no component can register, however indirectly, a fiber of a component that registers 
+one of its own, the registrations form a tree of bounded depth, and len(𝑒𝑛) ≤ 𝐾 bounds its 
+branching. What the assumption rules out is a component that registers instances of itself 
+without bound.
+The target records the providing fiber rather than a boolean, and under the single-source 
+discipline of Section 4.2 the two drive the same transitions, a key having one possible provider 
+there. What the view buys is the vocabulary of the results above, Theorem 63 and Theorem 64 
+both speaking of the resolution a fiber activated against, and it is what makes those results 
+survive the scoped resolution of Section  3.2.3, under which one key resolves to different 
+providers in different realms and the provisions no longer force the view. The implementation 
+carries that scoping and holds the view in fiber.committed (Section 5.1.3).

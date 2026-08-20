@@ -1,0 +1,4 @@
+{
+ "page": 58,
+ "plain": "本页讲 notify：扫活纤程，inject 命中同领域就 refresh；提供方一进 UNLOADING 就不算提供，依赖方会先开始拆。isolate/intercept 用子上下文改表，丢掉子上下文即恢复。use 把子组件登记成父纤程的 effect。工程直觉：父子卸载级联，DI 生命周期和可撤销效应绑在同一条链上。"
+}
