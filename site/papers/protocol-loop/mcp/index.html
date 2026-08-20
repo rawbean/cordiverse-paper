@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模型上下文协议（MCP）发布 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="模型上下文协议（MCP）发布">模型上下文协议（MCP）发布</p>
+      <p class="paper-authors" title="Anthropic">Anthropic</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这是一篇产品发布文，不是实验论文。容易把 MCP 读成「又一个插件协议」。下面先给出<strong>主张、机制、边界与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 用一套开放的<strong>双向</strong>标准，把 AI 系统接到数据所在之处：一边是 MCP 服务器暴露数据，一边是 MCP 客户端连上这些服务器，从而用单一协议取代一对一的碎片化集成。</p>
+</div>
+
+<h2>和 AI 工程、智能体 / Cordiverse 的关系</h2>
+<p>MCP 是协议层，不是智能体循环，也不是运行时。对 AI 工程的直接用处可以收成一句：把「每个数据源各写一套连接器」改成「实现一次 MCP，多种助手都能连」。它给智能体 / harness 提供的是<strong>工具与数据如何被发现、被调用</strong>的接线标准，而不是记忆分页、卸载或依赖拓扑。</p>
+<p>和 Toolformer / ReAct 相比，MCP 不教模型何时调用工具；它假定调用已经发生，关心的是调用走哪条线。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：协议把连接标准化了，但没有「卸掉一个服务器时副作用如何收回、依赖如何声明」的语义。此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>模型能力涨得很快，数据却仍锁在仓库、业务系统和遗留栈后面。每接一个新源就要定制实现，互联系统难以规模化。作者把缺口写成：不是模型不够聪明，而是<strong>隔离</strong>。</p>
+
+<h2>机制</h2>
+<p>架构按客户端 / 服务器切开（<a href="#page-2">第 2 页</a>）：</p>
+<ul>
+  <li><strong>MCP 服务器</strong>：把数据源暴露成标准接口。</li>
+  <li><strong>MCP 客户端</strong>：AI 应用连上这些服务器，做安全的双向通信。</li>
+  <li><strong>三件套</strong>：规范与 SDK、Claude Desktop 的本地服务器支持、开源服务器仓库（Google Drive、Slack、GitHub、Git、Postgres、Puppeteer 等预构建实现）。</li>
+</ul>
+<p>发布文强调早期采用（Block、Apollo、Zed、Replit、Codeium、Sourcegraph）和「跨工具移动时保持上下文」。正文到第 3 页结束；第 4–8 页是站点页脚，不是协议论述。</p>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>开放标准</strong>：把「接数据」收成单一协议，而不是又一个专有插件格式。</li>
+  <li><strong>可立刻用的实现面</strong>：规范、SDK、桌面端本地支持、一批企业系统的预构建服务器。</li>
+  <li><strong>生态叙事</strong>：开发工具与企业早期接入，指向「智能体少试几次就能写出更贴上下文的代码」。</li>
+  <li><strong>没有</strong>：形式语义、评测数字、卸载 / 依赖 / 权限回收的运行时模型。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>发布与问题</td>
+      <td><a href="#page-1">1</a></td>
+      <td>为何模型被数据隔离困住；MCP 要取代一对一定制。</td>
+      <td>必读。先抓住主张。</td>
+    </tr>
+    <tr>
+      <td>协议与组件</td>
+      <td><a href="#page-2">2</a></td>
+      <td>服务器 / 客户端；三件套；预构建服务器与早期采用者。</td>
+      <td>关心机制必读。</td>
+    </tr>
+    <tr>
+      <td>起步与社区</td>
+      <td><a href="#page-3">3</a></td>
+      <td>如何安装、写第一个服务器、贡献；作者与开源承诺。</td>
+      <td>要落地再读；否则扫过。</td>
+    </tr>
+    <tr>
+      <td>站点页脚</td>
+      <td><a href="#page-4">4</a>–<a href="#page-8">8</a></td>
+      <td>相关推荐、产品导航、法律声明；第 8 页空白。</td>
+      <td>可跳过。不是协议正文。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → <a href="#page-1">第 1 页</a>问题 → <a href="#page-2">第 2 页</a>架构。用白话列扫完即可。</p>
+  </div>
+  <div class="card">
+    <h3>要对上工程实践</h3>
+    <p>第 2 页三件套与预构建服务器 → 第 3 页「开始构建」三条。记下「客户端连服务器」这一刀，再对照自己的 harness 接线。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / Cordiverse</h3>
+    <p>第 2 页「跨工具保持上下文」→ <a href="#commentary">读后评论</a>。问：标准化连接之后，卸服务器、收权限、声明依赖还缺什么。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「MCP 服务器暴露的是数据还是工具」「双向指的是谁对谁」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列，而不是从头重读。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Announcements Introducing the Model Context Protocol Nov 25, 2024 Today, we&#x27;re open-sourcing the Model Context Protocol (MCP), a new standard for connecting AI assistants to the systems where data lives, including content repositories, business tools, and development environments. Its aim is to help frontier models produce better, more relevant responses. As AI assistants gain mainstream adoption, the industry has invested heavily in model capabilities, achieving rapid advances in reasoning and quality. Yet even the most sophisticated models are constrained by their isolation from data—trapped behind information silos and legacy systems. Every new data source requires its own custom implementation, making truly connected systems difficult to scale.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>公告</p>
+<p>推出模型上下文协议（MCP）</p>
+<p class="meta-line">2024年11月25日</p>
+<p>今天，我们开源模型上下文协议（Model Context Protocol，MCP）——一种将 AI 助手连接到数据所在系统的新标准，覆盖内容仓库、业务工具与开发环境。其目标是帮助前沿模型给出更好、更相关的回答。</p>
+<p>随着 AI 助手进入主流采用，业界已在模型能力上投入大量资源，推理与生成质量迅速提升。然而，即便最复杂的模型也受困于与数据的隔离——被困在信息孤岛与遗留系统之后。每一个新数据源都需要各自的定制实现，使真正互联的系统难以规模化。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是 Anthropic 发布 MCP 的开场：开源一套把 AI 助手接到仓库、业务工具和开发环境的通用协议，让前沿模型能读到真正相关的数据。
+这很重要，因为模型再强，若被锁在信息孤岛后面，回答仍会空。
+类比：以前每接一个新数据源就要单独拉一根电线；MCP 想换成墙上统一的插座。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p class="lead"><strong>MCP addresses this challenge.</strong> It provides a universal, open standard for connecting AI systems with data sources, replacing fragmented integrations with a single protocol. The result is a simpler, more reliable way to give AI systems access to the data they need. Model Context Protocol The Model Context Protocol is an open standard that enables developers to build secure, two-way connections between their data sources and AI-powered tools. The architecture is straightforward: developers can either expose their data through MCP servers or build AI applications (MCP clients) that connect to these servers. Today, we&#x27;re introducing three major components of the Model Context Protocol for developers: The Model Context Protocol specification and SDKs Local MCP server support in the Claude Desktop apps An open-source repository of MCP servers Claude 3.5 Sonnet is adept at quickly building MCP server implementations, making it easy for organizations and individuals to rapidly connect their most important datasets with a range of AI-powered tools. To help developers start exploring, we’re sharing pre-built MCP servers for popular enterprise systems like Google Drive, Slack, GitHub, Git, Postgres, and Puppeteer. Early adopters like Block and Apollo have integrated MCP into their systems, while development tools companies including Zed, Replit, Codeium, and Sourcegraph are working with MCP to enhance their platforms—enabling AI agents to better retrieve relevant information to further understand the context around a coding task and produce more nuanced and functional code with fewer attempts. &quot;At Block, open source is more than a development model—it’s the foundation of our work and a commitment to creating technology that drives meaningful change and serves as a public good for all,” said Dhanji R. Prasanna, Chief Technology Officer at Block. “Open technologies like the Model Context Protocol are the bridges that connect AI to real-world applications, ensuring innovation is accessible, transparent, and rooted in collaboration. We are excited to partner on a protocol and use it to build</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MCP 正是为应对这一挑战。它为连接 AI 系统与数据源提供通用、开放的标准，用单一协议取代碎片化集成。结果是：以更简单、更可靠的方式，让 AI 系统获得所需数据。</p>
+<p>模型上下文协议</p>
+<p>模型上下文协议是一项开放标准，使开发者能够在其数据源与 AI 驱动的工具之间建立安全的双向连接。架构直观：开发者既可通过 MCP 服务器暴露数据，也可构建连接到这些服务器的 AI 应用（MCP 客户端）。</p>
+<p>今天，我们向开发者发布模型上下文协议的三大组件：</p>
+<p>模型上下文协议规范与 SDK</p>
+<p>Claude Desktop 应用中的本地 MCP 服务器支持</p>
+<p>开源的 MCP 服务器仓库</p>
+<p>Claude 3.5 Sonnet 擅长快速构建 MCP 服务器实现，使组织与个人能够迅速把最重要的数据集接到一系列 AI 驱动工具上。为帮助开发者起步，我们分享了面向常见企业系统的预构建 MCP 服务器，包括 Google Drive、Slack、GitHub、Git、Postgres 与 Puppeteer。</p>
+<p>早期采用者如 Block 与 Apollo 已将 MCP 集成进其系统；开发工具公司包括 Zed、Replit、Codeium 与 Sourcegraph 正在用 MCP 增强其平台——使 AI 智能体更能检索相关信息，以进一步理解编码任务周围的上下文，并用更少尝试产出更细致、更可用的代码。</p>
+<p>「在 Block，开源不仅是一种开发模式——它是我们工作的基础，也是我们致力于创造能带来有意义变革、并作为公共品服务所有人的技术的承诺。」Block 首席技术官 Dhanji R. Prasanna 说。「像模型上下文协议这样的开放技术，是把 AI 连接到现实应用的桥梁，确保创新可及、透明，并植根于协作。我们很高兴在这一协议上合作，并用它来构建</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页讲清 MCP 的架构：一边是暴露数据的 MCP 服务器，一边是连上这些服务器的 MCP 客户端；再配规范、SDK、Claude Desktop 本地支持和一批现成服务器。
+这很重要，因为它把「接数据」从一对一定制，收成一套双向标准。
+类比：USB 出现之前每种外设各用各的插头；有了标准，键盘、硬盘、摄像头都能插同一口。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>agentic systems, which remove the burden of the mechanical so people can focus on the creative.” Instead of maintaining separate connectors for each data source, developers can now build against a standard protocol. As the ecosystem matures, AI systems will maintain context as they move between different tools and datasets, replacing today&#x27;s fragmented integrations with a more sustainable architecture. Getting started Developers can start building and testing MCP connectors today. All Claude.ai plans support connecting MCP servers to the Claude Desktop app. Claude for Work customers can begin testing MCP servers locally, connecting Claude to internal systems and datasets. We&#x27;ll soon provide developer toolkits for deploying remote production MCP servers that can serve your entire Claude for Work organization. To start building: Install pre-built MCP servers through the Claude Desktop app Follow our quickstart guide to build your first MCP server Contribute to our open-source repositories of connectors and implementations An open community MCP was created at Anthropic by David Soria Parra and Justin Spahr-Summers. We’re committed to building MCP as a collaborative, open-source project and ecosystem, and we’re eager to hear your feedback. Whether you’re an AI tool developer, an enterprise looking to leverage existing data, or an early adopter exploring the frontier, we invite you to build the future of context-aware AI together.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>智能体系统，卸下机械性负担，好让人专注于创造。」</p>
+<p>开发者现在不必再为每个数据源维护单独的连接器，而可以面向一套标准协议构建。随着生态成熟，AI 系统在不同工具与数据集之间移动时将保持上下文，用更可持续的架构取代今天碎片化的集成。</p>
+<p>开始使用</p>
+<p>开发者今天就可以开始构建并测试 MCP 连接器。所有 Claude.ai 套餐都支持将 MCP 服务器连接到 Claude Desktop 应用。</p>
+<p>Claude for Work 客户可以开始在本地测试 MCP 服务器，把 Claude 接到内部系统与数据集。我们很快将提供开发者工具包，用于部署可服务整个 Claude for Work 组织的远程生产 MCP 服务器。</p>
+<p>开始构建：</p>
+<p>通过 Claude Desktop 应用安装预构建的 MCP 服务器</p>
+<p>按照我们的快速入门指南构建你的第一个 MCP 服务器</p>
+<p>向我们的连接器与实现开源仓库贡献</p>
+<p>开放社区</p>
+<p>MCP 由 Anthropic 的 David Soria Parra 与 Justin Spahr-Summers 创建。我们致力于把 MCP 建成协作的开源项目与生态，并期待听到你的反馈。无论你是 AI 工具开发者、希望盘活既有数据的企业，还是探索前沿的早期采用者，我们都邀请你一起构建上下文感知 AI 的未来。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页从「怎么开始」落到开放社区：装现成服务器、跟快速入门写自己的、再贡献仓库；并点名协议作者与开源承诺。
+这很重要，因为标准只有被多方实现才算活，桌面本地测试只是第一站。
+类比：公布插座规格还不够，还得有人卖插头、有人开工厂、有人修说明书。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Related content How Claude’s text watermark works Read more Improving Fable 5&#x27;s biology safeguards Read more Mariano-Florentino (Tino) Cuéllar to join Anthropic as Chief Global Affairs Officer Mariano-Florentino (Tino) Cuéllar will join Anthropic as its first Chief Global Affairs Officer. Read more Products Claude Claude Code Claude Code Enterprise Claude Cowork @Claude Claude Design Claude Science Claude Security Claude in Chrome Claude for Microsoft 365 Skills Download app</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>相关内容 How Claude’s text watermark works 阅读更多 Improving Fable 5&#x27;s biology safeguards 阅读更多 Mariano-Florentino (Tino) Cuéllar to join Anthropic as Chief Global Affairs Officer Mariano-Florentino (Tino) Cuéllar 将加入 Anthropic，担任首任首席全球事务官。 阅读更多 产品 Claude Claude Code Claude Code Enterprise Claude Cowork @Claude Claude Design Claude Science Claude Security Claude in Chrome Claude for Microsoft 365 Skills Download app</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页已是站点页脚与相关推荐，几乎没有 MCP 正文。扫一眼产品名即可，不必当论文章节读。
+类比：杂志正文结束后的广告页。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Pricing Log in to Claude Models Mythos Fable Opus Sonnet Haiku Solutions AI agents Code modernization Coding Customer support Cybersecurity Enterprise Financial services Government Healthcare Higher education K-12 teachers Legal Life sciences Nonprofits Small business Claude Platform Overview Developer docs Pricing</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>定价</p>
+<p>登录 Claude</p>
+<p>模型</p>
+<p>Mythos</p>
+<p>Fable</p>
+<p>Opus</p>
+<p>Sonnet</p>
+<p>Haiku</p>
+<p>解决方案</p>
+<p>AI 智能体</p>
+<p>代码现代化</p>
+<p>编程</p>
+<p>客户支持</p>
+<p>网络安全</p>
+<p>企业</p>
+<p>金融服务</p>
+<p>政府</p>
+<p>医疗</p>
+<p>高等教育</p>
+<p>K-12 教师</p>
+<p>法律</p>
+<p>生命科学</p>
+<p>非营利组织</p>
+<p>小型企业</p>
+<p>Claude 平台</p>
+<p>概览</p>
+<p>开发者文档</p>
+<p>定价</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是 Anthropic 站点导航：模型线、行业解决方案与平台入口，不是 MCP 技术论述。
+类比：官网侧栏目录，不是文章本身。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Ecosystem Marketplace Regional compliance Claude on AWS Google Cloud Microsoft Foundry Console login Resources Blog Claude partner network Community Connectors Courses Customer stories Engineering at Anthropic Events Plugins Powered by Claude Service partners Tutorials Use cases Programs Startups Research Labs Help and security Availability Status Support center</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>生态</p>
+<p>市场</p>
+<p>区域合规</p>
+<p>Claude on AWS</p>
+<p>Google Cloud</p>
+<p>Microsoft Foundry</p>
+<p>控制台登录</p>
+<p>资源</p>
+<p>博客</p>
+<p>Claude 合作伙伴网络</p>
+<p>社区</p>
+<p>连接器</p>
+<p>课程</p>
+<p>客户故事</p>
+<p>Anthropic 工程</p>
+<p>活动</p>
+<p>插件</p>
+<p>Powered by Claude</p>
+<p>服务合作伙伴</p>
+<p>教程</p>
+<p>用例</p>
+<p>项目</p>
+<p>初创公司</p>
+<p>研究实验室</p>
+<p>帮助与安全</p>
+<p>可用性</p>
+<p>状态</p>
+<p>支持中心</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续站点导航：云部署、资源与支持入口。对读 MCP 协议本身没有新信息。
+类比：商场指示牌，指的是别处的店。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Company Anthropic Careers Leadership Policy Economic Futures Research News Claude’s Constitution Claude Corps Keep thinking Policy on the AI Exponential Responsible Scaling Policy Security and compliance Transparency Terms and policies Privacy choices Privacy policy Consumer health data privacy policy Responsible disclosure policy Terms of service: Commercial Terms of service: Consumer Terms of Service: US K-12 Data Processing Agreement: US K-12 Usage policy © 2026 Anthropic PBC</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>公司</p>
+<p>Anthropic</p>
+<p>职业</p>
+<p>领导层</p>
+<p>政策</p>
+<p>Economic Futures</p>
+<p>研究</p>
+<p>新闻</p>
+<p>Claude’s Constitution</p>
+<p>Claude Corps</p>
+<p>Keep thinking</p>
+<p>Policy on the AI Exponential</p>
+<p>Responsible Scaling Policy</p>
+<p>安全与合规</p>
+<p>透明度</p>
+<p>条款与政策</p>
+<p>隐私选择</p>
+<p>隐私政策</p>
+<p>消费者健康数据隐私政策</p>
+<p>负责任披露政策</p>
+<p>服务条款：商业</p>
+<p>服务条款：消费者</p>
+<p>服务条款：美国 K-12</p>
+<p>数据处理协议：美国 K-12</p>
+<p>使用政策</p>
+<p>© 2026 Anthropic PBC</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是公司、政策与法律页脚。读 MCP 时可跳过。
+类比：书籍版权页，不是章节。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 8 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（待翻译）</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页为空白抓取，无正文。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>接线标准化了，装卸与依赖还没有</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完第 1–3 页之后展开。</p>
+
+<h2>它解决的是「一对一连接器」，不是「可组合运行时」</h2>
+<p>MCP 把数据源与 AI 应用收成客户端 / 服务器：实现一次协议，多种助手可以连上同一批服务器。对正在膨胀的 <strong>agent harness</strong>，这很实用——工具发现、参数模式、双向消息有了公共形状，不必每个仓库各写一套 Slack / GitHub 胶水。</p>
+<p>Cordiverse 要的却是另一层保证：卸掉时把副作用干净收回（时间可组合性），以及依赖能声明、能发现、能随变化自动协调（空间可组合性）。这篇发布文没有这两刀。服务器被启动、被连接、被列在仓库里；没有卸载语义，没有「这个服务器依赖那个数据库、权限该一并撤掉」的规约，也没有热替换时如何收回已注入上下文。MCP 因此是组合的<strong>接线层</strong>：线插上了，回收与协调还没有。</p>
+
+<h2>发布文当作论文读时要降权的</h2>
+<ul>
+  <li><strong>没有评测</strong>：早期采用者名单不是实验。Zed / Replit「更能检索相关信息」是叙述，不是数字。</li>
+  <li><strong>「跨工具保持上下文」</strong>写在将来时。正文没有说明会话状态如何在服务器之间迁移，也没有失败与权限模型。</li>
+  <li><strong>第 4–8 页</strong>是站点页脚。不要把产品导航读成协议附录。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把「AI 如何接到数据所在之处」收成开放、双向的单一协议，并配上可立刻试的 SDK 与预构建服务器。<strong>缺口</strong>是：这是没有卸载保证、没有依赖语义的接线标准；连接存在，不等于组件可逆、拓扑可推理。Cordiverse 要补的，正是协议层之上那半截运行时。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-2">第 2 页</a>的服务器 / 客户端切开，问自己的 harness 里「卸掉一个 MCP 服务器」时，权限与上下文是否真能收回。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'mcp-paper-cols-v1';
+const total = 8;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

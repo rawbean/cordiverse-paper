@@ -1,2 +1,7 @@
-dict_build/
-vocab_unique.txt
+# 每篇论文的中间产物（保留 papers/<category>/<id>/paper.pdf）
+papers/**/artifacts/
+# 共享词典源（体积大）
+papers/_shared/
+.DS_Store
+deploy/my-values.yaml
+dist/

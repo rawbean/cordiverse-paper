@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大语言模型作为工具制造者 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="大语言模型作为工具制造者">大语言模型作为工具制造者</p>
+      <p class="paper-authors" title="T. Cai, X. Wang, T. Ma, X. Chen, D. Zhou">T. Cai, X. Wang, T. Ma, X. Chen, D. Zhou</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这篇论文不长，但容易把「会用工具」和「会造工具」读成同一件事。下面先给出<strong>主张、机制、证据与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 让强模型当<strong>工具制造者</strong>，把一类任务写成可复用的 Python 函数；让轻量模型当<strong>工具使用者</strong>，只负责把新问题译成函数调用。造一次、用多次，再加<strong>调度器</strong>做<strong>功能缓存</strong>，就可以在接近全程 GPT-4 的成绩下，把平均服务成本摊薄。</p>
+</div>
+
+<h2>和 AI 工程、智能体的关系</h2>
+<p>LATM 是 Cordiverse 引用的 <strong>[14]</strong>：模型合成可复用工具，被看作组件级自修改的<strong>较窄前驱</strong>。它解决的是「工具从哪来」——不再只调用计算器、搜索、现成 API，而是让模型为自己写出 Python 函数，并在后续同类请求上复用。</p>
+<p>和「用工具」的工作（ReAct、Toolformer、Chameleon）相比，这里的关键切口是<strong>造与用拆开</strong>：贵模型付一次性的工具制造成本，便宜模型付反复出现的工具使用成本。缓存的也不是某句自然语言回答（如 GPTCache），而是一类请求的<strong>功能</strong>。它对 AI 工程的直接用处可以收成一句：把重复推理从「每次让大模型从头想」改成「大模型写函数，小模型填参再执行」。</p>
+<p>它没有处理工具在运行时如何卸载、依赖如何声明——那是 Cordiverse 要补的时空可组合性。展开判断与开放问题见独立的<a href="#commentary">读后评论</a>，此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>外部工具能增强 LLM，但前提是<strong>已经有合适的工具</strong>。人类演化的转折点之一是会为自己制造工具；作者把这一想法迁到 LLM：遇到新任务时，不要只会调用别人写好的 API，而要能写出可复用的求解器。</p>
+<p>服务侧还有第二层压力：请求以流到来，全程用 GPT-4 太贵，全程用 GPT-3.5 又做不对复杂算术与约束推理。缺的不是又一次思维链提示，而是一次<strong>可摊销的工具制造</strong>，以及一张能识别「这题属于已有函数，还是新任务」的调度表。</p>
+
+<h2>机制（工具制造者 / 使用者 / 调度器）</h2>
+<p>流水线分两阶段，工具制造内部再拆三步（图 2，<a href="#page-4">第 4–5 页</a>）：</p>
+<ul>
+  <li><strong>工具提出</strong>：按「示例编程」从 3 条示范写 Python 函数；跑不通就把报错追加进历史再试。</li>
+  <li><strong>工具验证</strong>：用 3 条验证样本生成单元测试。这一步主要示范「如何把自然语言译成函数调用」，并且只改测试里的调用、不改函数本体；同时给自动化放行提供可靠性检查。</li>
+  <li><strong>工具封装</strong>：把函数代码与译题示范打成手册，交给工具使用者。超过重试阈值则本轮制造失败。</li>
+</ul>
+<p><strong>工具使用者</strong>（如 GPT-3.5 Turbo）以上下文学习方式生成函数调用并执行，必要时再把返回值映射成选项。对每一类任务，制造只做一次。</p>
+<p><strong>调度器</strong>是第三个、也很便宜的 LLM：维护已有工具的 API 仓库。来了新实例，先在功能缓存里找兼容工具，找到就交给使用者；找不到就视为新任务，攒够同类实例再请制造者写新函数。调度本身用提示词即可，准确率在文中约 95%–96%（<a href="#page-8">第 8 页</a>）。</p>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>闭环框架 LATM</strong>：工具制造 / 工具使用拆分，工具实现为 Python 函数，而不是另训一个调用器。</li>
+  <li><strong>提出–验证–封装</strong>三步，使造工具过程可以少人或无人盯着跑通（提示词见附录 C）。</li>
+  <li><strong>功能缓存 + 调度器</strong>：缓存一类请求的功能，而不是缓存自然语言回答；覆盖流式、多任务到达。</li>
+  <li><strong>成本论证</strong>：GPT-4 造、GPT-3.5 用，六任务上常匹配或超过 GPT-4 + 思维链，成本从 <code>O(nC)</code> 降到 <code>O(nc + C)</code>（表 2）。</li>
+  <li><strong>消融</strong>：难任务上 GPT-3.5 当制造者会失败（表 3）；把 GPT-4 的思维链交给小模型帮不上忙（表 5）；工具使用者也需要够用的上下文学习能力（表 4）。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>摘要与引言</td>
+      <td><a href="#page-1">1</a>–<a href="#page-2">2</a></td>
+      <td>为何要从「用工具」走到「造工具」；图 1 的成本分工与功能缓存直觉。</td>
+      <td>必读。先建立主张，再往下对机制。</td>
+    </tr>
+    <tr>
+      <td>相关工作</td>
+      <td><a href="#page-3">3</a>–<a href="#page-4">4</a></td>
+      <td>思维链、工具增强、推测解码、模型级联；与 Voyager / CREATOR 的同与不同。</td>
+      <td>扫定位即可；已熟工具学习文献可快翻。</td>
+    </tr>
+    <tr>
+      <td>§3 方法</td>
+      <td><a href="#page-4">4</a>–<a href="#page-5">5</a></td>
+      <td>图 2 流水线；提出 / 验证 / 封装；工具使用；调度器与功能缓存。</td>
+      <td>关心机制必读。这是全文概念核心。</td>
+    </tr>
+    <tr>
+      <td>实验设置</td>
+      <td><a href="#page-6">6</a></td>
+      <td>图 3 逻辑演绎示例；六数据集（3/3/240）；温度与重试。</td>
+      <td>看任务长什么样；数字设置扫一眼。</td>
+    </tr>
+    <tr>
+      <td>结果与消融</td>
+      <td><a href="#page-7">7</a>–<a href="#page-9">9</a></td>
+      <td>表 1–5：造出什么算法、轻量模型涨分、调度准确率、谁能造 / 谁能用、思维链当工具无效。</td>
+      <td>对证据时精读表 2、表 3、表 5。</td>
+    </tr>
+    <tr>
+      <td>结论</td>
+      <td><a href="#page-9">9</a></td>
+      <td>主张收束；缺真实人机交互数据；未来要能升级已有工具。</td>
+      <td>看作者承认还缺什么。</td>
+    </tr>
+    <tr>
+      <td>参考文献</td>
+      <td><a href="#page-10">10</a>–<a href="#page-12">12</a></td>
+      <td>书目（英文条目）。</td>
+      <td>回溯引用时再查。</td>
+    </tr>
+    <tr>
+      <td>附录</td>
+      <td><a href="#page-13">13</a>+</td>
+      <td>调度器图；安全与局限（附录 B）；提示词；封装工具；排会数据构造。</td>
+      <td>复现或对照 harness 时读 B 与 C；第 16 页几乎空白。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的三条精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → <a href="#page-1">摘要</a> → 图 1（<a href="#page-2">第 2 页</a>）→ 图 2（<a href="#page-4">第 4 页</a>）→ 结论（<a href="#page-9">第 9 页</a>）。用白话列快翻，对上主张再展开译文。</p>
+  </div>
+  <div class="card">
+    <h3>核对成本与数字</h3>
+    <p>图 1 的 <code>C</code> 与 <code>c</code> → 表 2（<a href="#page-7">第 7 页</a>）→ 表 3–5（<a href="#page-8">第 8–9 页</a>）。盯「谁必须贵、谁可以便宜」以及「思维链不能当工具」。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / harness</h3>
+    <p>§3 调度器与功能缓存（<a href="#page-5">第 5 页</a>）→ 附录 B 安全（<a href="#page-13">第 13 页</a>）→ 结论里「升级已有工具」（<a href="#page-9">第 9 页</a>）。读完再看<a href="#commentary">读后评论</a>：造得出函数，不等于运行时卸得干净。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「验证阶段为什么不改函数本身」「功能缓存和 GPTCache 差在哪」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页的原文 / 译文 / 白话三列，而不是从头重读。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 LARGE LANGUAGE MODELS AS TOOL MAKERS Tianle Cai1,2∗ Xuezhi Wang1 Tengyu Ma1,3† Xinyun Chen1 Denny Zhou1 1Google Deepmind 2Princeton University 3Stanford University ABSTRACT Recent research has highlighted the potential of large language models (LLMs) to improve their problem-solving capabilities with the aid of suitable external tools. In our work, we further advance this concept by introducing a closedloop framework, referred to as LLMs As Tool Makers (LATM), where LLMs create their own reusable tools for problem-solving. Our approach consists of two phases: 1) tool making: an LLM acts as the tool maker that crafts tools for a set of tasks, where a tool is implemented as a Python utility function. 2) tool using: another LLM acts as the tool user, which applies the tool built by the tool maker for problem-solving. The tool user can be either the same or a different LLM from the tool maker. On the problem-solving server side, tool-making enables continual tool generation and caching as new requests emerge. This framework enables subsequent requests to access cached tools via their corresponding APIs, enhancing the efficiency of task resolution. Beyond enabling LLMs to create their own tools, our framework also uncovers intriguing opportunities to optimize the serving cost of LLMs: Recognizing that tool-making requires more sophisticated capabilities, we assign this task to a powerful, albeit resource-intensive, model. Conversely, the simpler tool-using phase is delegated to a lightweight model. This strategic division of labor allows the once-off cost of tool-making to be spread over multiple instances of tool-using, significantly reducing average costs while maintaining strong performance. Furthermore, our method offers a functional cache through the caching and reuse of tools, which stores the functionality of a class of requests instead of the natural language responses from LLMs, thus extending the applicability of the conventional cache mechanism. We evaluate our approach across various complex reasoning tasks, including Big-Bench tasks. With GPT-4 as the tool maker and GPT-3.5 as the tool user, LATM demonstrates performance equivalent to using GPT-4 for both roles, but with a significantly reduced inference cost. The codebase can be found in https://github.com/ ctlllll/LLM-ToolMaker. INTRODUCTION Large language models (LLMs) have demonstrated outstanding capabilities across a broad array of NLP tasks (Brown et al., 2020; Chowdhery et al., 2022; Zhang et al., 2022; Hoffmann et al., 2022; OpenAI, 2023; Google, 2023) and have even shown promising signs of achieving certain aspects of artificial general intelligence (Bubeck et al., 2023; Kosinski, 2023). Moreover, analogous to the evolution of human intelligence, recent research has unveiled the potential of augmenting LLMs with external tools, thereby significantly enhancing their problem-solving capacities and efficiencies (Yao et al., 2023; Liu et al., 2023; Parisi et al., 2022; Schick et al., 2023). However, the applicability of these tool-using methods is largely contingent on the availability of suitable tools. According to the lessons learned from the evolutionary milestones of humans, a crucial turning point was that humans got the ability to fabricate their own tools to address emerging challenges. Inspired by the importance of tool-making for humans, in this work, we embark on an initial exploration to apply this evolutionary concept to the realm of LLMs. We propose a closed-loop framework, which we term as LLMs As Tool Makers (LATM), enables LLMs to generate their own reusable tools to tackle new tasks. Our approach comprises two key stages: 1) tool making: an LLM, ∗Work done as a Student Researcher at Google Deepmind. †Work done as a Visiting Researcher at Google Deepmind. arXiv:2305.17126v2 [cs.LG] 11 Mar 2024</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>大语言模型作为工具制造者</p>
+<p>LARGE LANGUAGE MODELS AS TOOL MAKERS</p>
+<p>Tianle Cai1,2∗</p>
+<p>Xuezhi Wang1</p>
+<p>Tengyu Ma1,3†</p>
+<p>Xinyun Chen1</p>
+<p>Denny Zhou1</p>
+<p class="meta-line">1Google Deepmind</p>
+<p class="meta-line">2Princeton University</p>
+<p class="meta-line">3Stanford University</p>
+<h1>摘要</h1>
+<p>近期研究指出，大语言模型（LLM）借助合适的外部工具，可提升其问题解决能力。本文进一步推进这一思路，提出一种闭环框架，称为 LLMs As Tool Makers（LATM），使 LLM 能够为自己的问题解决过程制造可复用的工具。我们的方法包含两个阶段：1）工具制造：由一个 LLM 充当工具制造者，为一组任务打造工具，工具实现为 Python 工具函数。2）工具使用：由另一个 LLM 充当工具使用者，应用工具制造者所构建的工具来解决问题。工具使用者可以与工具制造者是同一模型，也可以是不同模型。在问题解决服务端，工具制造使系统能够随着新请求的出现持续生成并缓存工具。该框架使后续请求可通过相应 API 访问已缓存的工具，从而提高任务求解效率。除了让 LLM 制造自己的工具之外，该框架还揭示了优化 LLM 服务成本的有趣机会：认识到工具制造需要更强的能力，我们将这一任务交给强大但资源消耗较大的模型；相反，较为简单的工具使用阶段则委托给轻量模型。这种策略性的分工使一次性的工具制造成本可以分摊到多次工具使用上，从而在保持较强性能的同时显著降低平均成本。此外，我们的方法通过缓存与复用工具提供了一种功能缓存：它存储的是一类请求的功能，而非 LLM 的自然语言回答，从而扩展了传统缓存机制的适用范围。我们在包括 Big-Bench 任务在内的多种复杂推理任务上评估了该方法。以 GPT-4 作为工具制造者、GPT-3.5 作为工具使用者，LATM 取得了与两个角色均使用 GPT-4 相当的性能，但推理成本显著更低。代码库见 https://github.com/ctlllll/LLM-ToolMaker。</p>
+<p>引言</p>
+<p>大语言模型（LLM）已在广泛的 NLP 任务上展现出卓越能力（Brown et al., 2020; Chowdhery et al., 2022; Zhang et al., 2022; Hoffmann et al., 2022; OpenAI, 2023; Google, 2023），甚至在某些方面显示出迈向通用人工智能的迹象（Bubeck et al., 2023; Kosinski, 2023）。此外，与人类智能演化相类比，近期研究揭示了用外部工具增强 LLM 的潜力，从而显著提升其问题解决能力与效率（Yao et al., 2023; Liu et al., 2023; Parisi et al., 2022; Schick et al., 2023）。</p>
+<p>然而，这些工具使用方法的适用性在很大程度上取决于是否已有合适的工具。从人类演化里程碑中得到的经验是：一个关键转折点在于人类获得了制造自己工具以应对新挑战的能力。受工具制造对人类重要性的启发，本文对将这一演化概念应用于 LLM 领域做了初步探索。我们提出一种闭环框架，称为 LLMs As Tool Makers（LATM），使 LLM 能够生成自己的可复用工具以应对新任务。我们的方法包含两个关键阶段：1）工具制造：由一个 LLM，</p>
+<p>∗作为 Google Deepmind 学生研究员完成的工作。</p>
+<p>†作为 Google Deepmind 访问研究员完成的工作。</p>
+<p>arXiv:2305.17126v2 [cs.LG] 11 Mar 2024</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是全文开场：作者提出 LATM，让大模型自己造可复用工具，再拿去解题。工具是 Python 函数；强模型当工具制造者，轻量模型当工具使用者，造一次、用多次，成本摊薄，成绩却接近全程用 GPT-4。
+这很重要，因为它把「会用现成工具」推进到「会给自己造工具」。
+类比：请大师傅做一副模具，再让普通工人用模具批量生产——模具成本摊到每一件上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 1: The closed-loop framework of LATM. In situations with numerous problem-solving requests, directly utilizing a powerful LLM to solve all the instances can result in high costs. On the other hand, lightweight models are cost-effective but usually struggle with complex tasks. LATM leverages the strengths of both models by employing a powerful model as the tool maker to generate reusable tools (implemented as Python functions) for tasks observed in the requests and pass the tool to a cost-effective tool user model for solving similar instances in the following requests. This approach allows the lightweight model to achieve performance comparable to the powerful model while maintaining greater cost-efficiency. known as the tool maker, designs tools (implemented as Python functions) specifically for a given task. 2) tool using: another LLM referred to as the tool user, which can be the same as the tool maker, applies the tools to handle new requests. The two-stage design allows LATM to allocate jobs in each stage to the most suitable LLM. Specifically, the tool-making process, which requires a high degree of capability, can be assigned to a powerful albeit resource-intensive model (e.g., GPT-4). On the other hand, the tool-using process, which is comparatively simpler, can be assigned to a lightweight and cost-effective model (e.g., GPT-3.5 Turbo). This approach not only enhances the problem-solving capabilities of LLMs, but also significantly reduces the average computational cost of addressing a series of tasks. As the tool-making process needs to be executed only once for a given functionality, the resulting tools can be reused across different task instances. This approach paves the way for a scalable and cost-efficient solution for handling complex task. For instance, consider a task where a user ask the LLM to schedule a meeting that works for everyone (e.g., in email conversations). Lightweight models like GPT-3.5 Turbo often struggle with such tasks that involve complex arithmetic reasoning. In contrast, more powerful models (e.g., GPT-4) can find the correct solutions, despite that the inference costs become much higher. LATM overcomes these hurdles by employing a powerful yet expensive model as the tool maker, and passing it to a cost-effective model as the tool user, for subsequent usage. After the tool has been forged, the lightweight tool user can use it to solve the task efficiently with high performance. This paradigm can similarly be applied to recurring tasks in various workflows, such as parsing and analyzing web documents into specific data formats or formulating routing plans that satisfy several custom requirements, or being used to solve popular games like the 24-game, Sudoku. In the context of serving cost reduction, LATM introduces the opportunity of creating a functional cache for the LLM server. Specifically, consider a streaming setting where the LLM server continuously receives a sequence of requests. Traditional cache systems, such as GPTCache (Zilliz, 2023), store the responses generated by the LLMs and reuse them for textually similar requests. However, with the capacity for tool-making that LATM introduces, the system can store tools crafted by the tool maker and reuse them for functionally analogous requests. This novel approach, combined with the strategic division of labor between the tool maker and tool user, has the potential to considerably reduce the average cost of serving a sequence of requests while maintaining high performance.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 1：LATM 的闭环框架。当问题解决请求数量很多时，直接用强大的 LLM 求解全部实例会导致高昂成本；另一方面，轻量模型成本低，但通常难以胜任复杂任务。LATM 发挥两类模型各自的长处：用强大模型作为工具制造者，针对请求中观察到的任务生成可复用工具（实现为 Python 函数），再把工具交给成本更低的工具使用者模型，用于求解后续类似实例。由此，轻量模型可以达到与强大模型相当的性能，同时保持更高的成本效率。</p>
+<p>被称为工具制造者的模型，为给定任务专门设计工具（实现为 Python 函数）。2）工具使用：由另一个被称为工具使用者的 LLM 应用这些工具处理新请求；工具使用者可以与工具制造者相同。两阶段设计使 LATM 能够把各阶段的工作分配给最合适的 LLM。具体而言，对能力要求很高的工具制造过程，可以交给强大但资源消耗较大的模型（例如 GPT-4）；相对更简单的工具使用过程，则可以交给轻量、低成本的模型（例如 GPT-3.5 Turbo）。这一做法不仅增强了 LLM 的问题解决能力，也显著降低了处理一系列任务的平均计算成本。</p>
+<p>由于对给定功能只需执行一次工具制造，所得工具可以在不同任务实例之间复用。这为处理复杂任务铺就了一条可扩展且成本高效的路径。例如，考虑用户请 LLM 安排一次所有人都方便的会议（如在电子邮件对话中）。GPT-3.5 Turbo 这类轻量模型往往难以应对涉及复杂算术推理的任务；更强大的模型（例如 GPT-4）能找到正确解，但推理成本高得多。LATM 克服这些障碍的方式是：用强大但昂贵的模型当工具制造者，再把工具交给成本更低的模型当工具使用者，供后续使用。工具锻造完成后，轻量工具使用者就能高效、高质量地求解该任务。这一范式同样适用于各类工作流中的重复任务，例如把网页文档解析并分析成特定数据格式、制定满足若干自定义约束的路由计划，或用于求解 24 点、数独等流行游戏。</p>
+<p>在降低服务成本的语境下，LATM 为 LLM 服务器创造了构建功能缓存的机会。具体而言，考虑流式场景：LLM 服务器持续接收一串请求。传统缓存系统（如 GPTCache (Zilliz, 2023)）存储 LLM 生成的回答，并在文本相似的请求上复用。然而，有了 LATM 引入的工具制造能力，系统可以存储工具制造者打造的工具，并在功能类似的请求上复用。这种新做法与工具制造者 / 工具使用者之间的策略性分工相结合，有望在保持高性能的同时，显著降低服务一串请求的平均成本。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用图 1 把闭环讲清楚：强模型造 Python 工具，轻量模型接着用；再举约会排期、网页解析、24 点等会反复出现的任务。作者还提出功能缓存——缓存的是「一类请求怎么算」，不是某句自然语言回答。
+这很重要，因为它解释了为何能又便宜又准：贵的那次只付一次。
+类比：传统缓存像把同一道菜的外卖原样再送一次；功能缓存像把菜谱存下来，换食材也能按同一套步骤做。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Our experiments validate the effectiveness of this approach on a range of complex reasoning tasks, including several challenging Big-Bench tasks (Srivastava et al., 2022). The results show that LATM can achieve performance on par with more resource-intensive models while being more cost-effective. This novel approach to LLMs, which mimics the evolutionary leap of humans in creating and using tools, opens up exciting possibilities for a growing community with LLM-generated tools. RELATED WORK Chain of thought (CoT). Recently, significant progress has been made in enhancing the problemsolving abilities of large language models (LLMs) for complex tasks. For instance, CoT prompting (Wei et al., 2022; Wang et al., 2022) has been proposed to bolster LLM reasoning capabilities, demonstrating improved performance across various reasoning and natural language processing tasks. CoT is typically articulated through natural languages (Ling et al., 2017; Cobbe et al., 2021; Suzgun et al., 2022; Shi et al., 2022; Zhou et al., 2022), yet it might also be effectively represented using programming languages (Amini et al., 2019; Austin et al., 2021; Nye et al., 2021; Chowdhery et al., 2022; Gao et al., 2023; Chen et al., 2022). More recently, Arora et al. (2023) proposed using LLMs to generate structured views over documents, balancing quality and cost by ensembling extractions from multiple synthesized functions. Our method shares a similar spirit with Arora et al. (2023) in managing cost and quality trade-offs but focuses on more general use cases. Augmenting language models with tools. Recent works have explored the potential of using external tools to supplement LLMs’ capabilities for complex tasks. Yao et al. (2023); Yang et al. (2023) proposed augmenting reasoning traces with task-specific actions in LLMs, enabling models to reason and act synergistically. Various studies (Liu et al., 2023; Parisi et al., 2022; Schick et al., 2023; Shen et al., 2023; Lu et al., 2023; Paranjape et al., 2023; Liang et al., 2023) have demonstrated that supplementing LLMs with tools, such as calculators, search engines, translation systems, calendars, or even API calls on other models, can help solve tasks that are not easily addressed by LLMs alone. Similar to LATM, methods like Chameleon (Lu et al., 2023) also incorporate Python executors in the pipeline. However, their primary focus is on using Python executors to accurately solve sub-steps involving arithmetic reasoning, similar to Gao et al. (2023); Chen et al. (2022). In contrast, we use Python executors to create reusable tools for addressing other task instances. Furthermore, the separation of the tool maker and tool user enables the use of a lightweight model for most inferences, thus enhancing efficiency and cost-effectiveness in LATM. Adaptive generation in language models. In addition, recent research has proposed methods to adaptively control decoding in LLMs to improve text generation efficiency (Leviathan et al., 2022; Chen et al., 2023a; Xia et al., 2023). Speculative decoding is based on the notion that generating text tokens (a more expensive process) can be expedited with a faster yet less powerful model while approximating the performance of larger, costlier models by using them to score generated tokens (a much faster process). Our approach of passing tools from a more expensive model to a smaller, faster model also shares a similar spirit of adaptive computing. Instead of altering the decoding procedure, we transfer newly generated tools between models to boost both the performance and efficiency of an LLM in solving tasks. Language model cascades. There is recent evidence that LLMs can enable repeated interactions and that multiple LLMs can be combined to extend their capabilities further (Wu et al., 2022; Zhou et al., 2022; Dohan et al., 2022; Chen et al., 2023c). Also, Chen et al. (2023b) demonstrated that identifying optimal LLM combinations can help reduce costs while improving accuracy. Our motivation aligns with these findings; however, rather than merely cascading LLMs, we identify task categories that can be better addressed using new tools generated by a larger model and assign each individual inference within that task category to a smaller model. Early attempts on tool-making. Concurrent and independent to our work, several early attempts have been made towards using LLMs to make tools. Wang et al. (2023) conducted research within the Minecraft environment and demonstrated the ability of an LLM-powered agent to acquire new skills in the form of programs. Similarly, Qian et al. (2023) proposes a method of decomposing problem-solving for each individual instance into an abstract tool creation phase and a concrete tool</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>我们的实验在包括若干具有挑战性的 Big-Bench 任务（Srivastava et al., 2022）在内的一系列复杂推理任务上验证了该方法的有效性。结果表明，LATM 能够在更具成本效益的同时，取得与更耗资源的模型相当的性能。这种模仿人类在创造与使用工具上的演化跃迁的 LLM 新路径，为日益增长的、由 LLM 生成工具的社区打开了令人兴奋的可能性。</p>
+<p>相关工作</p>
+<p>思维链（CoT）。</p>
+<p>近期，在增强大语言模型（LLM）应对复杂任务的问题解决能力方面已有显著进展。例如，思维链提示（Wei et al., 2022; Wang et al., 2022）被提出以增强 LLM 的推理能力，并在多种推理与自然语言处理任务上展现出更好的性能。思维链通常用自然语言表达（Ling et al., 2017; Cobbe et al., 2021; Suzgun et al., 2022; Shi et al., 2022; Zhou et al., 2022），但也可以用程序语言有效表示（Amini et al., 2019; Austin et al., 2021; Nye et al., 2021; Chowdhery et al., 2022; Gao et al., 2023; Chen et al., 2022）。更近一些，Arora et al. (2023) 提出用 LLM 对文档生成结构化视图，通过集成多个合成函数的抽取结果来平衡质量与成本。我们的方法在管理成本与质量权衡上与 Arora et al. (2023) 精神相近，但关注更一般的用例。</p>
+<p>用工具增强语言模型。</p>
+<p>近期工作探索了用外部工具补充 LLM 能力以应对复杂任务的潜力。Yao et al. (2023); Yang et al. (2023) 提出在 LLM 中用任务特定动作增强推理轨迹，使模型能够协同地推理与行动。多项研究（Liu et al., 2023; Parisi et al., 2022; Schick et al., 2023; Shen et al., 2023; Lu et al., 2023; Paranjape et al., 2023; Liang et al., 2023）表明，用计算器、搜索引擎、翻译系统、日历、甚至对其它模型的 API 调用等工具补充 LLM，有助于求解仅靠 LLM 不易处理的任务。与 LATM 类似，Chameleon（Lu et al., 2023）等方法也在流水线中纳入 Python 执行器。然而，它们的主要关注点是用 Python 执行器准确求解涉及算术推理的子步骤，类似于 Gao et al. (2023); Chen et al. (2022)。相比之下，我们用 Python 执行器创建可复用工具，以应对其它任务实例。此外，工具制造者与工具使用者的分离使大多数推理可以使用轻量模型，从而提升 LATM 的效率与成本效益。</p>
+<p>语言模型中的自适应生成。</p>
+<p>此外，近期研究提出了自适应控制 LLM 解码以提高文本生成效率的方法（Leviathan et al., 2022; Chen et al., 2023a; Xia et al., 2023）。推测解码基于这样一种想法：生成文本 token（更昂贵的过程）可以由更快但能力较弱的模型加速，同时用更大、更昂贵的模型对已生成 token 打分（快得多的过程），以逼近大模型的性能。我们把工具从更昂贵的模型交给更小、更快的模型，也具有类似的自适应计算精神。我们并不改变解码过程，而是在模型之间传递新生成的工具，以同时提升 LLM 求解任务的性能与效率。</p>
+<p>语言模型级联。</p>
+<p>近期有证据表明，LLM 可以支持反复交互，并且多个 LLM 可以组合以进一步扩展能力（Wu et al., 2022; Zhou et al., 2022; Dohan et al., 2022; Chen et al., 2023c）。此外，Chen et al. (2023b) 表明，识别最优的 LLM 组合有助于在提高准确率的同时降低成本。我们的动机与这些发现一致；然而，我们并非仅仅级联 LLM，而是识别出那些用更大模型生成的新工具能更好处理的任务类别，并把该类别内的每一次单独推理交给更小的模型。</p>
+<p>工具制造的早期尝试。</p>
+<p>与我们的工作同期且独立，已有若干早期尝试用 LLM 制造工具。Wang et al. (2023) 在 Minecraft 环境中开展研究，展示了由 LLM 驱动的智能体以程序形式获取新技能的能力。类似地，Qian et al. (2023) 提出一种方法，把每个实例的问题解决分解为抽象的工具创建阶段与具体的工具</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束引言并进入相关工作：思维链、用工具增强模型、推测解码式自适应计算、模型级联，以及 Voyager / CREATOR 等同期「造工具」工作。作者强调：别人多用 Python 算一步算术，LATM 是造可复用函数，并把贵模型和便宜模型拆开。
+这很重要，因为它划清「用工具」和「造工具」不是同一篇文章。
+类比：相关工作像工具箱里已有的扳手；LATM 要讲的是怎么自己车一把新扳手，再让学徒接着用。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 application phase. Our work aligns with the spirit of both Wang et al. (2023) and Qian et al. (2023) in the aim to let LLMs to generate their own tools for problem-solving. However, we also underscore the significance of tool reusability and cost-effectiveness stemming from the division of labor. The idea of tool making is also mentioned in a recent survey paper (Qin et al., 2023). LLM AS TOOL MAKER (LATM) Figure 2: The pipeline of LATM. LATM can be divided into two stages: 1) tool making: a powerful yet more expensive model serves as the tool maker to generate generic and reusable tools from a few demonstrations; 2) tool using: a lightweight and cheaper model serves as the tool user to use the tool to solve various instances of the task. The tool-making stage can be further divided into three sub-stages: (i) tool proposing: the tool maker makes an attempt to generate the tool (Python function) from a few training demonstrations, if the tool is not executable, report the error and generate a new one (fix the function); (ii) tool verification: the tool maker runs unit tests on validation samples, if the tool does not pass the tests, report the error and generate new tests (fix the function calls in unit tests); and (iii) tool wrapping: wrapping up the function code and the demonstrations of how to convert a question into a function call from unit tests, preparing usable tools for tool user. 3.1 MAKING NEW TOOLS AND REUSE THEM In the LATM paradigm, the main process can be split into two stages: Tool Making and Tool Using. Each stage utilizes different types of Large Language Models (LLMs) to balance performance and cost-effectiveness. All the prompts used in our experiments are shown in Appendix C. Tool Making. This stage employs a powerful yet more expensive model, such as GPT-4, to serve as the tool maker. Tool maker’s role is to create a generic and reusable tool (implemented as a Python function) from a few demonstrations of a task. This stage can be further divided into three sub-stages:</p>
+<ul>
+<li>Tool Proposing: In this stage, tool maker attempts to generate a Python function to solve the demonstrations from the given task. This process follows the “programming by example” (PbE)</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p class="lead"><strong>应用阶段。</strong>我们的工作在让 LLM 为自己的问题解决生成工具这一点上，与 Wang et al. (2023) 和 Qian et al. (2023) 精神一致。然而，我们也强调工具可复用性，以及由分工带来的成本效益。工具制造的想法也在一篇近期综述中被提及（Qin et al., 2023）。</p>
+<p>LLM 作为工具制造者（LATM）</p>
+<p>图 2：LATM 的流水线。LATM 可分为两个阶段：1）工具制造：由强大但更昂贵的模型充当工具制造者，从少量示范中生成通用、可复用的工具；2）工具使用：由轻量、更便宜的模型充当工具使用者，用该工具求解该任务的各种实例。工具制造阶段可进一步分为三个子阶段：（i）工具提出：工具制造者尝试从少量训练示范生成工具（Python 函数）；若工具不可执行，则报告错误并生成新的工具（修复函数）；（ii）工具验证：工具制造者在验证样本上运行单元测试；若工具未通过测试，则报告错误并生成新的测试（修复单元测试中的函数调用）；（iii）工具封装：把函数代码以及如何把问题转换成函数调用的示范（来自单元测试）封装起来，为工具使用者准备可用工具。</p>
+<h2>3.1. 制造新工具并复用它们</h2>
+<p>在 LATM 范式中，主过程可分为两个阶段：工具制造与工具使用。各阶段使用不同类型的大语言模型（LLM），以平衡性能与成本效益。我们实验中使用的全部提示词见附录 C。</p>
+<p>工具制造。</p>
+<p>本阶段采用强大但更昂贵的模型（例如 GPT-4）充当工具制造者。工具制造者的角色是：从任务的少量示范中创建通用、可复用的工具（实现为 Python 函数）。本阶段可进一步分为三个子阶段：</p>
+<ul>
+<li>工具提出：在此阶段，工具制造者尝试生成一个 Python 函数，以求解给定任务的示范。该过程遵循「示例编程」（programming by example, PbE）</li>
+</ul></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页进入方法：图 2 把流水线拆成工具制造（提出、验证、封装）和工具使用。强模型从几条示范写出通用 Python 函数；写不跑就根据报错再改。
+这很重要，因为后文所有实验都按这三步自动化，不必人盯着改代码。
+类比：像带学徒做题——先按例题写出通解函数，再出几道测验看会不会用，最后把函数和「怎么把题翻译成函数调用」装进一本小手册交给别人。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 paradigm (Halbert, 1984) where several concrete demonstrations are provided, and the model is required to write programs that produce the demonstrated behaviors. In our experiments, we use 3 demonstrations for this stage. If the proposed tool is unexecutable or encounters errors, tool maker appends the error messages to the history and makes another attempt.</p>
+<ul>
+<li>Tool Verification: In this stage, the tool maker generates unit tests using validation samples and subsequently executes these tests on the proposed tool. We utilize 3 validation samples in our experiments. If the tool fails any of these tests, the tool maker records the error in its history and makes an attempt to rectify the issues within the unit tests (this procedure will only correct the function calls in the unit test part and will not correct the function). The ability of LLMs to self-debug has been demonstrated effectively in recent research (Madaan et al., 2023; Chen et al., 2023c; Lu et al., 2023; Kim et al., 2023). However, within the LATM pipeline, the verification stage serves a slightly different usage. This stage fulfills two key roles: 1) it provides examples that demonstrate how to convert natural language questions into function calls, and 2) it verifies the tool’s reliability, enabling the entire process to be fully automated.</li>
+<li>Tool Wrapping: If the execution or verification fails over a preset threshold, the Tool Making stage is viewed as failed. Otherwise, tool maker is ready to prepare the wrapped tool for tool user. This step involves wrapping up the function code and providing demonstrations of how to convert a task into a function call. These demonstrations are extracted from the Tool Verification step, which converts questions into unit tests. This final product is then ready for use by the tool user. Please see Appendix D for examples of the wrapped tools. Tool Using. This second stage involves a lightweight and cost-effective model, such as GPT-3.5 Turbo, to serve as the tool user. The tool user’s role is to utilize the verified tool to solve various instances of the task. The prompt for this stage is the wrapped tool which contains the function for solving the task and demonstrations of how to convert a task query into a function call. With the demonstrations, tool user can then generate the required function call in an in-context learning fashion. The function calls are then executed to solve the task. Optionally, postprocessing can be applied to convert the output to match the required format of the task, such as options for multiple-choice questions. The tool-making stage, including tool proposing, verification, and wrapping, only needs to be performed once for each type of task. The resulting tools can then be reused for all instances of that task. This makes LATM significantly more efficient and cost-effective than using a powerful model alone. Furthermore, the Python function tools are a more generic form of Chain-of-Thought, enhancing the overall utility and flexibility of the LLMs, as they can be used to solve questions that involve algorithmic reasoning ability (Veliˇckovi´c and Blundell, 2021). LATM FOSTERS A FUNCTIONAL CACHE MECHANISM FOR LLM SERVING In real-world scenarios, tasks often arrive in a sequential stream. To address this, we introduce a third LLM, the dispatcher, that decides whether to engage the tool user or tool maker for each incoming task. While this tool selection function mirrors existing works (Lu et al., 2023; Shen et al., 2023; Schick et al., 2023; Paranjape et al., 2023), our dispatcher distinctively contributes to creating a functional cache—it discerns new tasks that cannot be resolved with existing tools, thereby triggering the tool maker to generate appropriate tools for these tasks. The dispatcher maintains a repository of existing tools crafted by the tool maker in the format of function APIs. Upon receipt of a new task instance, the dispatcher first attempts to locate a compatible tool within the cache. If such a tool is present, the dispatcher assigns the instance and corresponding tool to the tool user for resolution. However, if no suitable tool is available, the dispatcher identifies this as a novel task, either solving it with a powerful model or, if necessary, invoking a human labeler. These new instances are then cached until a sufficient number are amassed to craft a new tool, further enriching the functional cache. This mechanism allows for the functionally similar tasks to reuse these tools, expanding the coverage of the classic cache mechanism and reducing the overall serving cost. Given the simplicity of the dispatching task, a lightweight model equipped with appropriate prompts (See Appendix C) can efficiently serve as the dispatcher, adding only a marginal cost to the entire pipeline.</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>范式（Halbert, 1984）：提供若干具体示范，要求模型写出能产生所示范行为的程序。在我们的实验中，本阶段使用 3 条示范。若所提出的工具不可执行或遇到错误，工具制造者将错误信息追加到历史中并再试一次。</p>
+<ul>
+<li>工具验证：在此阶段，工具制造者利用验证样本生成单元测试，随后在所提出的工具上执行这些测试。实验中我们使用 3 个验证样本。若工具未通过任一测试，工具制造者将错误记入历史，并尝试修正单元测试中的问题（该步骤只修正单元测试部分的函数调用，不修正函数本身）。LLM 的自调试能力已在近期研究中得到有效展示（Madaan et al., 2023; Chen et al., 2023c; Lu et al., 2023; Kim et al., 2023）。然而，在 LATM 流水线中，验证阶段的用途略有不同。本阶段承担两项关键角色：1）提供示范，说明如何把自然语言问题转换成函数调用；2）核验工具的可靠性，使整个过程能够完全自动化。</li>
+<li>工具封装：若执行或验证失败超过预设阈值，则视工具制造阶段失败。否则，工具制造者准备为工具使用者封装工具。这一步把函数代码封装起来，并提供如何把任务转换成函数调用的示范。这些示范提取自工具验证步骤（该步骤把问题转换成单元测试）。最终产物即可供工具使用者使用。封装后的工具示例见附录 D。</li>
+</ul>
+<p>工具使用。</p>
+<p>第二阶段由轻量、低成本的模型（例如 GPT-3.5 Turbo）充当工具使用者。工具使用者的角色是：利用已验证的工具求解该任务的各种实例。本阶段的提示词就是封装后的工具，其中包含求解任务的函数，以及如何把任务查询转换成函数调用的示范。有了这些示范，工具使用者便能以上下文学习的方式生成所需的函数调用。函数调用随后被执行以求解任务。可选地，可做后处理，把输出转换成任务要求的格式，例如选择题的选项。</p>
+<p>工具制造阶段——包括工具提出、工具验证与工具封装——对每一类任务只需执行一次。所得工具随后可复用于该类任务的全部实例。这使 LATM 比单独使用强大模型显著更高效、更具成本效益。此外，Python 函数工具是一种更通用的思维链形式，增强了 LLM 的整体效用与灵活性，因为它们可用于求解需要算法推理能力的问题（Veličković and Blundell, 2021）。</p>
+<p>LATM 为 LLM 服务培育功能缓存机制</p>
+<p>在现实场景中，任务往往以顺序流到达。为此，我们引入第三个 LLM——调度器，由它决定对每个到来的任务启用工具使用者还是工具制造者。这一工具选择功能与已有工作相呼应（Lu et al., 2023; Shen et al., 2023; Schick et al., 2023; Paranjape et al., 2023），但我们的调度器有一个独特贡献：它创建功能缓存——辨别无法用现有工具解决的新任务，从而触发工具制造者为这些任务生成合适的工具。</p>
+<p>调度器以函数 API 的形式维护工具制造者打造的现有工具仓库。收到新任务实例后，调度器首先尝试在缓存中定位兼容的工具。若存在这样的工具，调度器就把该实例与相应工具交给工具使用者求解。然而，若没有合适工具，调度器将其识别为新任务，或用强大模型求解，或在必要时调用人工标注者。这些新实例随后被缓存，直到积累到足够数量以打造新工具，从而进一步丰富功能缓存。该机制使功能相似的任务能够复用这些工具，扩展了经典缓存机制的覆盖范围，并降低总体服务成本。鉴于调度任务本身简单，配备合适提示词（见附录 C）的轻量模型即可高效充当调度器，给整条流水线只增加边际成本。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把三步写实：工具提出按「示例编程」写函数，失败就看报错再试；工具验证用 3 道题做单元测试，主要教「把题译成函数调用」，一般不改函数本体；工具封装打成给使用者的小手册。接着引入调度器，在流式请求里决定用旧工具还是造新工具，形成功能缓存。
+这很重要，因为「造一次、用一类」和「缓存功能而不是缓存句子」都在这里落地。
+类比：调度器像图书馆前台——有现成书就借出；没有就登记缺书，攒够同类需求再请人写一本新书。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 3: An illustration of the Tool Proposing and Tool Using stages of the LATM pipeline for the Logical Deduction task (Srivastava et al., 2022). This task requires determining the order of five objects based on several given conditions. In the Tool Proposing stage, the tool maker (such as GPT-4) formulates a generic Python function capable of solving the provided k demonstrations from the task (where k equals 3 in our experiments). The tool maker generates a search algorithm that enumerates all possible orderings and verifies each against the provided conditions. During the tool-using stage, the tool user translates each natural language question into a series of conditions, generating function calls to utilize the tool for each task instance. EXPERIMENTS 5.1 EXPERIMENTAL SETUP Datasets. We evaluate our approach on six datasets from diverse domains, including Logical Deduction, Tracking Shuffled Objects, Dyck Language, Word Sorting, Chinese Remainder Theorem, and Scheduling Meeting. The first five datasets are sourced from BigBench (Srivastava et al., 2022). We take the 5 objects version of the Logical Deduction and Tracking Shuffled Objects tasks, referred to as Logical Deduction (5) and Tracking Shuffled Objects (5) in the paper. We also constructed the Scheduling Meeting task to demonstrate the effectiveness of LATM in real-world scenarios. Detailed information on dataset generation can be found in Appendix E. We divide each dataset into training, validation, and test sets, containing 3, 3, and 240 instances, respectively. Model settings. During the tool-making stage, we set the temperature to 0.3 to introduce randomness to the generation process, allowing for retries if necessary. For this stage, we conduct experiments using GPT-4 and GPT-3.5 Turbo models with the ChatCompletion API, always appending the response to the chat history to create an interactive experience. In the tool-using stage, the LLM API call is made only once, and we also perform ablation studies on GPT-3-type models with the standard Completion API. When using the tools, we consistently set the temperature to</p>
+<p>0.0. We set the maximal retry times to be 3 for the tool-proposing and tool-verification stages. 5.2 EFFECTIVENESS OF THE TOOL-MAKING STAGE In the tool-making stage, we use a powerful yet slower model to generate generic Python functions tailored to a specific task. This step is performed only once for each task, and the overhead is amortized across all instances of that task. In our experiments, we use GPT-4 (OpenAI, 2023) as a</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 3：以逻辑演绎任务（Srivastava et al., 2022）为例，展示 LATM 流水线中工具提出与工具使用阶段。该任务要求根据若干给定条件确定五个物体的顺序。在工具提出阶段，工具制造者（例如 GPT-4）从该任务提供的 k 条示范（实验中 k 等于 3）写出一个能够求解这些示范的通用 Python 函数。工具制造者生成一种搜索算法：枚举所有可能排序，并对照所给条件逐一核验。在工具使用阶段，工具使用者把每条自然语言问题翻译成一组条件，生成函数调用，以便对该任务的每个实例使用该工具。</p>
+<p>实验</p>
+<h2>5.1. 实验设置</h2>
+<p>数据集。</p>
+<p>我们在来自不同领域的六个数据集上评估该方法，包括逻辑演绎（Logical Deduction）、跟踪洗牌物体（Tracking Shuffled Objects）、Dyck 语言（Dyck Language）、单词排序（Word Sorting）、中国剩余定理（Chinese Remainder Theorem）以及日程安排（Scheduling Meeting）。前五个数据集来自 BigBench（Srivastava et al., 2022）。对逻辑演绎与跟踪洗牌物体，我们取 5 个物体的版本，文中分别称为 Logical Deduction (5) 与 Tracking Shuffled Objects (5)。我们还构造了日程安排任务，以展示 LATM 在现实场景中的有效性。数据集生成的详细信息见附录 E。我们将每个数据集划分为训练、验证与测试集，分别包含 3、3 与 240 个实例。</p>
+<p>模型设置。</p>
+<p>在工具制造阶段，我们将温度设为 0.3，为生成过程引入随机性，以便在必要时重试。本阶段我们使用 GPT-4 与 GPT-3.5 Turbo 模型，通过 ChatCompletion API 进行实验，始终把回应追加到对话历史中，以形成交互体验。在工具使用阶段，LLM API 只调用一次；我们还对 GPT-3 系列模型用标准 Completion API 做了消融。使用工具时，温度始终设为 0.0。对工具提出与工具验证阶段，我们将最大重试次数设为 3。</p>
+<h2>5.2. 工具制造阶段的有效性</h2>
+<p>在工具制造阶段，我们用强大但较慢的模型生成针对特定任务的通用 Python 函数。该步骤对每个任务只执行一次，开销分摊到该任务的全部实例上。实验中，我们用 GPT-4（OpenAI, 2023）作为</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用图 3 演示逻辑演绎：制造者写出「枚举排列再核条件」的搜索函数；使用者只负责把中文/英文题译成约束再调用。实验覆盖六个任务（五个 Big-Bench，外加作者自造的排会），每集 3 条训练、3 条验证、240 条测试。
+这很重要，因为它把「工具长什么样」从抽象流水线变成看得见的算法。
+类比：制造者像写出数独求解器；使用者像把题目抄成格子约束，按一下运行，不必自己推每一步。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Logical Deduction (5) Tracking Shuffled Objects (5) Dyck Language Word Sorting Chinese Remainder Theorem Schedule Meeting Search Simulation Stack Sort Search/Extended Euclidean Interval intersections Table 1: The utility functions generated by tool maker to solve the tasks. representative tool maker, while we explore other models’ tool-making capabilities in Section 5.5. We provide several few-shot exemplars for the language model, guiding it to generate generic Python programs, as illustrated in Figure 3. Our observations indicate that when GPT-4 is employed as the tool maker, the model frequently devises suitable algorithms for solving tasks. For instance, as shown in Table 1, the tool maker creates code to solve the logical deduction task by searching through all permutations and selecting the correct one that satisfies the given constraints. In our experiment, the tool-verification stage is mainly used to provide examples that demonstrate how to convert natural language questions into function calls, and we only observe 2 cases out of the 60 trials that the tool maker can correct its mistakes with the guide of error messages. See Section 5.5 for more discussions on the tool maker. 5.3 LATM IMPROVES THE PERFORMANCE OF LIGHTWEIGHT LLMS In Table 2, we compare the performance of Chain-of-Thought prompting (Wei et al., 2022) with our method, LATM. We employ GPT-4 as the tool maker to generate tools for the six tasks, and evaluate the performance of both GPT-3.5 Turbo and GPT-4 as tool user. The results demonstrate that with the help of the tool, a lightweight model like GPT-3.5 Turbo can achieve performance on par with GPT-4, significantly outperforming CoT prompting. Additionally, the average cost of using GPT-3.5 Turbo with the tool is much lower compared to using GPT-4. This highlights the effectiveness of LATM in enhancing the performance of lightweight models and therefore reducing the cost compared to employing expensive models. Intriguingly, for the Dyck Language task, GPT-3.5 Turbo as the tool user even surpasses GPT-4 in its role as the tool user. Upon investigating the failure cases, we find that when converting the question into a function call, GPT-4 occasionally superfluously closes some brackets within the argument instead of leaving the argument unchanged and letting the function solve it, which leads to incorrect function output. Tool User Model Method Logical Deduction (5) Tracking Shuffled Objects (5) Dyck Language Word Sorting Chinese Remainder Theorem Schedule Meeting Cost on n samples GPT-3.5 Turbo CoT 66.4 61.6 20.4 59.2 0.0 18.9 O(nc) LATM 79.7 (+13.3) 99.6 (+38.0) 92.2 (+71.8) 98.3 (+39.1) 100.0 (+100.0) 100.0 (+81.1) O(nc + C) GPT-4 CoT 88.8 100.0 63.6 90.9 0.0 55.6 O(nC) LATM 86.6 100.0 87.5 99.1 100.0 100.0 O(nC) Table 2: Accuracy comparison between LATM and Chain-of-Thought. The six tasks are detailed in Section 5.1. For LATM, the tool is created by GPT-4 and utilized by both GPT-3.5 Turbo and GPT4. The results demonstrate that the application of LATM can significantly enhance the performance of GPT-3.5 Turbo, often surpassing or matching GPT-4’s performance with CoT in certain scenarios. The last column depicts the overall cost of processing n samples. Here, C represents the cost of one call to GPT-4, while c denotes the cost of one call to GPT-3.5 Turbo. At the time of writing this paper, C is over 15x larger than c. The few-shot CoT demonstrations for the first four tasks are provided by Suzgun et al. (2022), while for the last two tasks, we apply direct few-shot prompting without CoT. 5.4 ADAPTING LATM TO A DYNAMIC STREAM OF DIVERSE TASKS As discussed in Section 4, we can adapt LATM to handle a dynamic stream where instances from potentially different tasks emerge in real-time. In this setting, we introduce an additional model, the dispatcher, tasked with identifying the task to which each incoming instance pertains. We employ GPT-3.5 Turbo for this role, evaluating its effectiveness in two key functions: 1) Identifying and employing existing tools from the functional cache to resolve an incoming instance, and 2)</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>逻辑演绎 (5)</p>
+<p>跟踪洗牌物体 (5)</p>
+<p>Dyck 语言</p>
+<p>单词排序</p>
+<p>中国剩余定理</p>
+<p>日程安排</p>
+<p>Search</p>
+<p>Simulation</p>
+<p>Stack</p>
+<p>Sort</p>
+<p>Search / 扩展欧几里得</p>
+<p>区间交集</p>
+<p>表 1：工具制造者为求解各任务所生成的工具函数。</p>
+<p>代表性的工具制造者；我们在第 5.5 节探索其它模型的工具制造能力。我们为语言模型提供若干少样本示例，引导其生成通用 Python 程序，如图 3 所示。</p>
+<p>我们的观察表明，当以 GPT-4 作为工具制造者时，模型经常能设计出求解任务的合适算法。例如，如表 1 所示，工具制造者通过搜索全部排列并选出满足给定约束的正确排列，来编写求解逻辑演绎任务的代码。在我们的实验中，工具验证阶段主要用于提供如何把自然语言问题转换成函数调用的示范；在 60 次试验中，我们只观察到 2 例工具制造者能在错误信息引导下纠正自己的错误。关于工具制造者的更多讨论见第 5.5 节。</p>
+<h2>5.3. LATM 提升轻量 LLM 的性能</h2>
+<p>在表 2 中，我们将思维链提示（Wei et al., 2022）与我们的方法 LATM 进行比较。我们用 GPT-4 作为工具制造者为六个任务生成工具，并评估 GPT-3.5 Turbo 与 GPT-4 分别作为工具使用者的性能。结果表明，有了工具的帮助，GPT-3.5 Turbo 这样的轻量模型可以取得与 GPT-4 相当的性能，并显著优于思维链提示。此外，使用带工具的 GPT-3.5 Turbo 的平均成本远低于使用 GPT-4。这凸显了 LATM 在增强轻量模型性能、从而相对使用昂贵模型降低成本方面的有效性。有趣的是，在 Dyck 语言任务上，作为工具使用者的 GPT-3.5 Turbo 甚至超过了作为工具使用者的 GPT-4。我们在调查失败案例后发现：在把问题转换成函数调用时，GPT-4 偶尔会在参数里多余地补上一些括号，而不是保持参数不变、交给函数去求解，从而导致错误的函数输出。</p>
+<p>工具使用者</p>
+<p>模型</p>
+<p>方法</p>
+<p>逻辑演绎 (5)</p>
+<p>跟踪洗牌物体 (5)</p>
+<p>Dyck 语言</p>
+<p>单词排序</p>
+<p>中国剩余定理</p>
+<p>日程安排</p>
+<p>n 个样本上的成本</p>
+<p>GPT-3.5 Turbo</p>
+<p>CoT</p>
+<p class="meta-line">66.4</p>
+<p class="meta-line">61.6</p>
+<p class="meta-line">20.4</p>
+<p class="meta-line">59.2</p>
+<p class="meta-line">0.0</p>
+<p class="meta-line">18.9</p>
+<p>O(nc)</p>
+<p>LATM</p>
+<p class="meta-line">79.7 (+13.3)</p>
+<p class="meta-line">99.6 (+38.0)</p>
+<p class="meta-line">92.2 (+71.8)</p>
+<p class="meta-line">98.3 (+39.1)</p>
+<p class="meta-line">100.0 (+100.0)</p>
+<p class="meta-line">100.0 (+81.1)</p>
+<p>O(nc + C)</p>
+<p>GPT-4</p>
+<p>CoT</p>
+<p class="meta-line">88.8</p>
+<p class="meta-line">100.0</p>
+<p class="meta-line">63.6</p>
+<p class="meta-line">90.9</p>
+<p class="meta-line">0.0</p>
+<p class="meta-line">55.6</p>
+<p>O(nC)</p>
+<p>LATM</p>
+<p class="meta-line">86.6</p>
+<p class="meta-line">100.0</p>
+<p class="meta-line">87.5</p>
+<p class="meta-line">99.1</p>
+<p class="meta-line">100.0</p>
+<p class="meta-line">100.0</p>
+<p>O(nC)</p>
+<p>表 2：LATM 与思维链的准确率比较。六个任务详见第 5.1 节。对 LATM，工具由 GPT-4 创建，并由 GPT-3.5 Turbo 与 GPT-4 使用。结果表明，应用 LATM 可显著提升 GPT-3.5 Turbo 的性能，在某些场景下经常超过或匹配 GPT-4 配思维链的表现。最后一列刻画处理 n 个样本的总体成本。此处 C 表示一次调用 GPT-4 的成本，c 表示一次调用 GPT-3.5 Turbo 的成本。在撰写本文时，C 比 c 大 15 倍以上。前四个任务的少样本思维链示范由 Suzgun et al. (2022) 提供；对最后两个任务，我们采用不含思维链的直接少样本提示。</p>
+<h2>5.4. 将 LATM 适配到多样任务的动态流</h2>
+<p>如第 4 节所述，我们可以把 LATM 适配到动态流：来自可能不同任务的实例实时出现。在此设置中，我们引入额外的模型——调度器，负责识别每个到来实例所属的任务。我们</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是核心数字：表 1 列出各任务被写成的算法（搜索、模拟、栈、排序、扩展欧几里得、区间交集）；表 2 显示 GPT-3.5 当工具使用者时，多项任务从思维链的低分跳到接近或超过 GPT-4，成本是 O(nc+C) 而不是全程 O(nC)。
+这很重要，因为「轻量模型 + 现成函数 ≈ 贵模型」第一次有表可查。
+类比：思维链像每道题都让贵律师从头写意见；LATM 像律师写好格式合同，助理按空填，平均律师费就被摊薄了。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool Maker Model Logical Deduction (5) Tracking Shuffled Objects (5) Dyck Language Word Sorting Chinese Remainder Theorem Schedule Meeting GPT-3.5 Turbo 0/5 0/5 5/5 5/5 5/5 0/5 GPT-4 3/5 4/5 5/5 5/5 5/5 3/5 Table 3: Success rate of generating new tools (Python functions that pass the tool-verification step) in the tool-making stage with GPT-4 v.s. GPT-3.5 Turbo. We run 5 trials for each model on each task, n/5 means n trails out of 5 successes to produce a valid tool. For hard tasks like Logical Deduction and Tracking Shuffled Objects, GPT-3.5 Turbo fails in all trials, showing the necessity of using a more powerful model as tool maker. Detecting unseen tasks and triggering the tool maker to create appropriate tools for these tasks. This experimental setup helps assess how effectively our system can reduce serving costs by reusing and extending the functional cache in a dynamic, multi-tasking scenario. Identifying existing tools. The first part of our evaluation assesses the dispatcher’s capability to recognize existing tools within the functional cache that correspond to a given instance, analogous to the cache fetching phase of traditional cache systems. To this end, we generate a test set of 100 samples, randomly mixed from the six tasks discussed in Section 5.1. For each instance, the dispatcher is tasked to determine the appropriate tool from existing ones, utilizing prompts containing task examples associated with these tools (See Appendix C). Success is measured by the correct identification of the tool. Over five random constructions of the test set, the accuracy in correctly determining the suitable tool is 95% ± 2%. Requesting tool-making. The second part of our evaluation tests the dispatcher’s ability to request tool-making for instances originating from an unseen task. This situation is akin to enqueuing a new instance into the cache when a cache miss happens. We randomly designate four tasks as existing tasks with readily available tools and select four other tasks for testing—two of these are unseen, and the other two fall within the realm of existing tasks. Again, a test set of 100 samples is generated. For each instance in the test set, the dispatcher determines whether it needs to request tool-making or if an existing tool can solve the instance. Over multiple runs, the accuracy of making the correct decision stands at 96% ± 3%, demonstrating the robustness of our approach in efficiently managing the functional cache. The above results illustrate that the dispatcher can effectively recognize existing tools and accurately request tool-making for unseen tasks, all while maintaining high performance. These findings highlight the potential of LATM to be seamlessly adapted to a streaming environment encompassing a diverse range of tasks. This validation serves to fortify the viability of our framework in real-world applications, particularly where the efficient management of functional cache is paramount. 5.5 ABLATION STUDY Capacity required for the tool-making language model. We investigate the capacity requirements for the language model used in the tool-making stage (See Table 3). Generally, we found that a more powerful and expensive model better serves the purpose, as this stage is performed only once for each task, and high accuracy is crucial for effectively passing tools to a smaller model. Specifically, on hard tasks like Logical Deduction and Tracking Shuffled Objects, GPT-3.5 Turbo fails in all the 5 trails. And the major failure reason is that the tool is not general enough and may only work on the training samples. On the other hand, we also discovered that for easy tasks, the tool maker can be a lightweight language model. For simple tasks like Word Sorting, GPT-3.5 Turbo can effortlessly generate a program that solves the task. Another limitation that may contribute to the tool maker’s failure is the context length constraints. Since we use the entire history in each step of tool-making to enhance the reliability of the tool-making stage, this also introduces a longer context. In this case GPT-4 with 8192 context length is preferable. Capacity required for the tool-using language model. In this section, we investigate the capacity requirements for the tool-using model. The results are presented in Table 4. We observed that GPT-3.5</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>工具制造者模型</p>
+<p>逻辑演绎 (5)</p>
+<p>跟踪洗牌物体 (5)</p>
+<p>Dyck 语言</p>
+<p>单词排序</p>
+<p>中国剩余定理</p>
+<p>日程安排</p>
+<p>GPT-3.5 Turbo</p>
+<p class="meta-line">0/5</p>
+<p class="meta-line">0/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">0/5</p>
+<p>GPT-4</p>
+<p class="meta-line">3/5</p>
+<p class="meta-line">4/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">5/5</p>
+<p class="meta-line">3/5</p>
+<p>表 3：工具制造阶段用 GPT-4 与 GPT-3.5 Turbo 生成新工具（通过工具验证的 Python 函数）的成功率。我们对每个模型在每个任务上运行 5 次试验，n/5 表示 5 次中有 n 次成功产生有效工具。对逻辑演绎、跟踪洗牌物体等困难任务，GPT-3.5 Turbo 全部失败，表明有必要用更强大的模型作为工具制造者。</p>
+<p>采用 GPT-3.5 Turbo 担任这一角色，并在两项关键功能上评估其有效性：1）从功能缓存中识别并启用现有工具以求解到来的实例；2）检测未见过的任务并触发工具制造者为这些任务创建合适的工具。该实验设置有助于评估：在动态、多任务场景中，我们的系统通过复用并扩展功能缓存，能多有效地降低服务成本。</p>
+<p>识别现有工具。</p>
+<p>评估的第一部分考察调度器能否识别功能缓存中与给定实例对应的现有工具，这类似于传统缓存系统的缓存读取阶段。为此，我们生成一个 100 条样本的测试集，从第 5.1 节讨论的六个任务中随机混合。对每个实例，调度器需利用包含与这些工具相关联的任务示例的提示词（见附录 C），从现有工具中判定合适的工具。成功以正确识别工具来衡量。在五次随机构造的测试集上，正确判定合适工具的准确率为 95% ± 2%。</p>
+<p>请求工具制造。</p>
+<p>评估的第二部分测试调度器能否为来自未见任务的实例请求工具制造。这一情形类似于缓存未命中时把新实例入队。我们随机指定四个任务为已有现成工具的既有任务，并另选四个任务用于测试——其中两个未见，另外两个属于既有任务范围。同样生成 100 条样本的测试集。对测试集中的每个实例，调度器判定是需要请求工具制造，还是已有工具可以求解该实例。多次运行中，做出正确决策的准确率为 96% ± 3%，表明我们的方法在高效管理功能缓存方面具有稳健性。</p>
+<p>上述结果说明，调度器能够有效识别现有工具，并准确地为未见任务请求工具制造，同时保持高性能。这些发现凸显了 LATM 无缝适配到涵盖多样任务的流式环境的潜力。这一验证有助于巩固我们框架在现实应用中的可行性，尤其是在功能缓存的高效管理至关重要之处。</p>
+<h2>5.5. 消融实验</h2>
+<p>工具制造语言模型所需的能力。</p>
+<p>我们研究工具制造阶段所用语言模型的能力需求（见表 3）。总体而言，我们发现更强大、更昂贵的模型更能胜任，因为该阶段对每个任务只执行一次，而高准确率对于有效地把工具交给更小模型至关重要。具体而言，在逻辑演绎、跟踪洗牌物体等困难任务上，GPT-3.5 Turbo 在全部 5 次试验中均失败。主要失败原因是工具不够通用，可能只在训练样本上有效。另一方面，我们也发现：对容易的任务，工具制造者可以是轻量语言模型。对单词排序这类简单任务，GPT-3.5 Turbo 可以轻松生成求解该任务的程序。另一个可能导致工具制造者失败的限制是上下文长度约束。由于我们在工具制造的每一步都使用全部历史以增强该阶段的可靠性，这也会引入更长的上下文。在这种情况下，具有 8192 上下文长度的 GPT-4 更为可取。</p>
+<p>工具使用语言模型所需的能力。</p>
+<p>在本节中，我们研究工具使用模型的能力需求。结果见表 4。我们观察到 GPT-3.5</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页两块：调度器在混杂请求里认出旧工具约 95%，判断要不要造新工具约 96%；表 3 则说明造工具这件事本身——难任务上 GPT-3.5 五战全败，GPT-4 才能写出够通用的函数。
+这很重要，因为它证明「谁造、谁用」不能对调：便宜模型当制造者会写出只对例题有效的假工具。
+类比：调度器像分诊台，对了几乎总能把病人送到对的科室；但开药方必须专家，实习医生抄例题开方会出事。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 GPT-3.5 Turbo text-davinci-002 davinci curie babbage ada Logical Deduction (5) 79.7% 58.2% 11.6% 6.5% 11.6% 3.0% Tracking Shuffled Objects (5) 99.6% 100.0% 62.1% 20.7% 16.4% 5.2% Dyck Language 92.2% 35.8% 16.4% 18.1% 9.1% 9.9% Word Sorting 98.3% 60.8% 26.6% 7.3% 7.3% 0.9% Chinese Remainder Theorem 100.0% 100.0% 99.6% 93.1% 75.0% 66.0% Schedule Meeting 100.0% 100.0% 62.9% 59.1% 23.2% 0.0% Cost ($ per 1K tokens) 0.002 0.02 0.02 0.002 0.0005 0.0004 Table 4: A performance comparison of various tool user models, all using the same tool generated by GPT-4. All costs are based on the rates at the time of writing. Of all the models, GPT-3.5 Turbo demonstrates the best trade-off between performance and cost. We opted for GPT-3 models prior to instruction tuning (ada instead of text-ada-001, etc.), as we observed that the models after instruction tuning underperformed in the tool-using stage. We postulate that this is due to the instruction tuning impairing the in-context learning ability, which is essential for the tool-using stage. Turbo offers the best balance between performance and cost among all the models tested. Regarding the older GPT-3 series of models (ada, babbage, curie, davinci), we found that models that before instruction tuning often perform better than their counterparts post instruction tuning (text-ada-001, etc.). We hypothesize that the instruction tuning phase in these models may adversely impact the in-context learning ability, which is crucial for the tool-using stage. CoT as a tool does not help. In addition to LATM, we investigate if we can improve task performance by reusing Chain-of-Thought (CoT) from a larger model to a smaller model similar to LATM pipeline. Specifically, we use the same larger model (GPT-4) in the “CoT-making” stage, using zero-shot prompting “Let’s think step by step.” to elicit the intermediate thought steps, and then use the generated CoT to the same smaller tool-using model (GPT-3.5 Turbo). We test this on two tasks and report the results Table 5. We observe that using CoT from a large model has a similar or even worse performance than human-written CoT, which is much worse than LATM. Accuracy GPT-4 CoT Human-written CoT LATM Logical Deduction (5) 36.8 66.4 79.7 Tracking Shuffled Objects (5) 63.2 61.6 99.6 Table 5: Accuracy of using CoT generated by GPT-4. The performance is similar to human-written CoT, which is much worse than LATM. CONCLUSION AND FUTURE WORK We introduced LATM, a closed-loop framework empowering large language models (LLMs) to create and utilize their own tools for diverse tasks. Our approach, inspired by human’s evolutionary strides in tool creation, employs two key stages: Tool Making and Tool Using. This division of labor allows us to harness the capabilities of advanced LLMs while significantly reducing computational costs. Our experiments confirmed the efficacy of LATM across various complex tasks, demonstrating that our framework performs comparably to resource-intensive models while being more cost-effective. In addition, we show that adding another dispatcher LLM can further provide flexibility to our framework, enabling on-the-fly tool creation and usage. In our evaluation process, we identified a significant lack of high-quality datasets that authentically represent daily human-computer interactions, including recurring tasks such as scheduling meetings or booking flights over email or phone calls, in their raw natural language format. We anticipate that our work will stimulate the research community to create such datasets, which could prove instrumental in cultivating the next generation of AI systems. These systems, capable of generating and applying their own tools, will be equipped to tackle complex tasks more effectively. An exciting avenue for future research is enabling the tool maker to refine and upgrade existing tools to manage new problem instances, much like in software development. This adaptability could further catalyze the evolution of the AI ecosystem, unlocking a wealth of opportunities.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>GPT-3.5 Turbo</p>
+<p>text-davinci-002</p>
+<p>davinci</p>
+<p>curie</p>
+<p>babbage</p>
+<p>ada</p>
+<p>逻辑演绎 (5)</p>
+<p class="meta-line">79.7%</p>
+<p class="meta-line">58.2%</p>
+<p class="meta-line">11.6%</p>
+<p class="meta-line">6.5%</p>
+<p class="meta-line">11.6%</p>
+<p class="meta-line">3.0%</p>
+<p>跟踪洗牌物体 (5)</p>
+<p class="meta-line">99.6%</p>
+<p class="meta-line">100.0%</p>
+<p class="meta-line">62.1%</p>
+<p class="meta-line">20.7%</p>
+<p class="meta-line">16.4%</p>
+<p class="meta-line">5.2%</p>
+<p>Dyck 语言</p>
+<p class="meta-line">92.2%</p>
+<p class="meta-line">35.8%</p>
+<p class="meta-line">16.4%</p>
+<p class="meta-line">18.1%</p>
+<p class="meta-line">9.1%</p>
+<p class="meta-line">9.9%</p>
+<p>单词排序</p>
+<p class="meta-line">98.3%</p>
+<p class="meta-line">60.8%</p>
+<p class="meta-line">26.6%</p>
+<p class="meta-line">7.3%</p>
+<p class="meta-line">7.3%</p>
+<p class="meta-line">0.9%</p>
+<p>中国剩余定理</p>
+<p class="meta-line">100.0%</p>
+<p class="meta-line">100.0%</p>
+<p class="meta-line">99.6%</p>
+<p class="meta-line">93.1%</p>
+<p class="meta-line">75.0%</p>
+<p class="meta-line">66.0%</p>
+<p>日程安排</p>
+<p class="meta-line">100.0%</p>
+<p class="meta-line">100.0%</p>
+<p class="meta-line">62.9%</p>
+<p class="meta-line">59.1%</p>
+<p class="meta-line">23.2%</p>
+<p class="meta-line">0.0%</p>
+<p>成本（美元 / 1K tokens）</p>
+<p class="meta-line">0.002</p>
+<p class="meta-line">0.02</p>
+<p class="meta-line">0.02</p>
+<p class="meta-line">0.002</p>
+<p class="meta-line">0.0005</p>
+<p class="meta-line">0.0004</p>
+<p>表 4：在 GPT-4 生成的同一工具上，各种工具使用者模型的性能比较。所有成本均基于撰文时的费率。在全部模型中，GPT-3.5 Turbo 展现出最佳的性能–成本权衡。我们选择了指令微调之前的 GPT-3 模型（ada 而非 text-ada-001 等），因为我们观察到指令微调后的模型在工具使用阶段表现更差。我们推测，这是由于指令微调损害了上下文学习能力，而该能力对工具使用阶段至关重要。</p>
+<p>Turbo 在所有受试模型中提供了最佳的性能与成本平衡。关于更早的 GPT-3 系列模型（ada、babbage、curie、davinci），我们发现指令微调之前的模型往往优于指令微调之后的对应模型（text-ada-001 等）。我们假设，这些模型中的指令微调阶段可能对上下文学习能力产生不利影响，而该能力对工具使用阶段至关重要。</p>
+<p>把思维链当作工具并无帮助。</p>
+<p>除 LATM 之外，我们还研究：能否像 LATM 流水线那样，把更大模型的思维链（CoT）复用到更小模型以提升任务性能。具体而言，我们在「思维链制造」阶段使用同一更大模型（GPT-4），用零样本提示 “Let&#x27;s think step by step.” 引出中间思考步骤，再把生成的思维链交给同一更小的工具使用模型（GPT-3.5 Turbo）。我们在两个任务上测试，结果见表 5。我们观察到，使用来自大模型的思维链，其性能与人工撰写的思维链相近甚至更差，远逊于 LATM。</p>
+<p>准确率</p>
+<p>GPT-4 CoT</p>
+<p>人工撰写的 CoT</p>
+<p>LATM</p>
+<p>逻辑演绎 (5)</p>
+<p class="meta-line">36.8</p>
+<p class="meta-line">66.4</p>
+<p class="meta-line">79.7</p>
+<p>跟踪洗牌物体 (5)</p>
+<p class="meta-line">63.2</p>
+<p class="meta-line">61.6</p>
+<p class="meta-line">99.6</p>
+<p>表 5：使用 GPT-4 生成的思维链的准确率。性能与人工撰写的思维链相近，远逊于 LATM。</p>
+<p>结论与未来工作</p>
+<p>我们提出了 LATM，一种闭环框架，使大语言模型（LLM）能够为自己的多样任务创建并使用工具。我们的方法受人类在工具创造上的演化步伐启发，采用两个关键阶段：工具制造与工具使用。这种分工使我们能够发挥先进 LLM 的能力，同时显著降低计算成本。我们的实验在多种复杂任务上证实了 LATM 的有效性，表明我们的框架在更具成本效益的同时，性能可与资源密集型模型相比。此外，我们表明再增加一个调度器 LLM，可以进一步为框架提供灵活性，使工具能够即时创建与使用。</p>
+<p>在评估过程中，我们发现严重缺乏高质量数据集，能够以原始自然语言形式真实刻画日常人机交互，包括通过电子邮件或电话反复出现的排会、订机票等任务。我们期望本文能促使研究社区创建此类数据集，它们可能对培育下一代 AI 系统具有关键作用。这些系统能够生成并应用自己的工具，将更有效地应对复杂任务。一个令人兴奋的未来研究方向是：使工具制造者能够精炼并升级现有工具以处理新的问题实例，就像软件开发中那样。这种适应性可能进一步催化 AI 生态系统的演化，解锁大量机会。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束实验并下结论：表 4 说明工具使用者也不能太弱，GPT-3.5 性价比最好；更小的 GPT-3 系列掉点明显。表 5 是关键对照——把 GPT-4 的思维链交给小模型，并不比人手写思维链强，远不如把 Python 函数当工具。结论还点出缺真实排会/订票数据，以及将来要能升级已有工具。
+这很重要，因为它否定「把贵模型的思路抄给便宜模型就行」。
+类比：把名厨口述步骤念给学徒，学徒仍可能炒糊；把炒法写成可运行的程序，学徒按按钮就稳得多。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 REFERENCES Aida Amini, Saadia Gabriel, Peter Lin, Rik Koncel-Kedziorski, Yejin Choi, and Hannaneh Hajishirzi. Mathqa: Towards interpretable math word problem solving with operation-based formalisms. arXiv preprint arXiv:1905.13319, 2019. Simran Arora, Brandon Yang, Sabri Eyuboglu, Avanika Narayan, Andrew Hojel, Immanuel Trummer, and Christopher Ré. Language models enable simple systems for generating structured views of heterogeneous data lakes, 2023. Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901, 2020. Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan, Johannes Gehrke, Eric Horvitz, Ece Kamar, Peter Lee, Yin Tat Lee, Yuanzhi Li, Scott Lundberg, et al. Sparks of artificial general intelligence: Early experiments with gpt-4. arXiv preprint arXiv:2303.12712, 2023. Charlie Chen, Sebastian Borgeaud, Geoffrey Irving, Jean-Baptiste Lespiau, Laurent Sifre, and John Jumper. Accelerating large language model decoding with speculative sampling. February 2023a. doi: 10.48550/ARXIV.2302.01318. Lingjiao Chen, Matei Zaharia, and James Zou. Frugalgpt: How to use large language models while reducing cost and improving performance, 2023b. Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W. Cohen. Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks, 2022. Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. ARXIV.ORG, 2023c. doi: 10.48550/arXiv.2304.05128. Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, et al. Palm: Scaling language modeling with pathways. arXiv preprint arXiv:2204.02311, 2022. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168, 2021. David Dohan, Winnie Xu, Aitor Lewkowycz, Jacob Austin, David Bieber, Raphael Gontijo Lopes, Yuhuai Wu, Henryk Michalewski, Rif A. Saurous, Jascha Sohl-dickstein, Kevin Murphy, and Charles Sutton. Language model cascades, 2022. Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. Pal: Program-aided language models, 2023. Google. Palm 2 technical report, 2023. URL https://ai.google/static/documents/ palm2techreport.pdf. Daniel Conrad Halbert. Programming by example. University of California, Berkeley, 1984. Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, et al. Training compute-optimal large language models. arXiv preprint arXiv:2203.15556, 2022. Geunwoo Kim, P. Baldi, and S. McAleer. Language models can solve computer tasks. ARXIV.ORG,</p>
+<p>2023. doi: 10.48550/arXiv.2303.17491. Michal Kosinski. Theory of mind may have spontaneously emerged in large language models. arXiv preprint arXiv:2302.02083, 2023.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>参考文献</h1>
+<p>Aida Amini, Saadia Gabriel, Peter Lin, Rik Koncel-Kedziorski, Yejin Choi, and Hannaneh Hajishirzi. Mathqa: Towards interpretable math word problem solving with operation-based formalisms. arXiv preprint arXiv:1905.13319, 2019. Simran Arora, Brandon Yang, Sabri Eyuboglu, Avanika Narayan, Andrew Hojel, Immanuel Trummer, and Christopher Ré. Language models enable simple systems for generating structured views of heterogeneous data lakes, 2023. Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901, 2020. Sébastien Bubeck, Varun Chandrasekaran, Ronen Eldan, Johannes Gehrke, Eric Horvitz, Ece Kamar, Peter Lee, Yin Tat Lee, Yuanzhi Li, Scott Lundberg, et al. Sparks of artificial general intelligence: Early experiments with gpt-4. arXiv preprint arXiv:2303.12712, 2023. Charlie Chen, Sebastian Borgeaud, Geoffrey Irving, Jean-Baptiste Lespiau, Laurent Sifre, and John Jumper. Accelerating large language model decoding with speculative sampling. February 2023a. doi: 10.48550/ARXIV.2302.01318. Lingjiao Chen, Matei Zaharia, and James Zou. Frugalgpt: How to use large language models while reducing cost and improving performance, 2023b. Wenhu Chen, Xueguang Ma, Xinyi Wang, and William W. Cohen. Program of thoughts prompting: Disentangling computation from reasoning for numerical reasoning tasks, 2022. Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. ARXIV.ORG, 2023c. doi: 10.48550/arXiv.2304.05128. Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, et al. Palm: Scaling language modeling with pathways. arXiv preprint arXiv:2204.02311, 2022. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168, 2021. David Dohan, Winnie Xu, Aitor Lewkowycz, Jacob Austin, David Bieber, Raphael Gontijo Lopes, Yuhuai Wu, Henryk Michalewski, Rif A. Saurous, Jascha Sohl-dickstein, Kevin Murphy, and Charles Sutton. Language model cascades, 2022. Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. Pal: Program-aided language models, 2023. Google. Palm 2 technical report, 2023. URL https://ai.google/static/documents/palm2techreport.pdf. Daniel Conrad Halbert. Programming by example. University of California, Berkeley, 1984. Jordan Hoffmann, Sebastian Borgeaud, Arthur Mensch, Elena Buchatskaya, Trevor Cai, Eliza Rutherford, Diego de Las Casas, Lisa Anne Hendricks, Johannes Welbl, Aidan Clark, et al. Training compute-optimal large language models. arXiv preprint arXiv:2203.15556, 2022. Geunwoo Kim, P. Baldi, and S. McAleer. Language models can solve computer tasks. ARXIV.ORG, 2023. doi: 10.48550/arXiv.2303.17491. Michal Kosinski. Theory of mind may have spontaneously emerged in large language models. arXiv preprint arXiv:2302.02083, 2023.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开始参考文献，条目保持英文，便于按作者名回查思维链、程序合成、自调试与 PaLM 等出处。需要核对某条引用时再对照原文即可。
+类比：像论文末尾的书架标签，书名不翻译，免得检索对不上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Yaniv Leviathan, Matan Kalman, and Yossi Matias. Fast inference from transformers via speculative decoding. November 2022. doi: 10.48550/ARXIV.2211.17192. Yaobo Liang, Chenfei Wu, Ting Song, Wenshan Wu, Yan Xia, Yu Liu, Yang Ou, Shuai Lu, Lei Ji, Shaoguang Mao, et al. Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis. arXiv preprint arXiv:2303.16434, 2023. Wang Ling, Dani Yogatama, Chris Dyer, and Phil Blunsom. Program induction by rationale generation: Learning to solve and explain algebraic word problems. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 158–167, Vancouver, Canada, July 2017. Association for Computational Linguistics. doi: 10.18653/v1/P17-1015. URL https://aclanthology.org/P17-1015. Ruibo Liu, Jason Wei, Shixiang Shane Gu, Te-Yen Wu, Soroush Vosoughi, Claire Cui, Denny Zhou, and Andrew M. Dai. Mind’s eye: Grounded language model reasoning through simulation. In The Eleventh International Conference on Learning Representations, 2023. URL https: //openreview.net/forum?id=4rXMRuoJlai. Pan Lu, Baolin Peng, Hao Cheng, Michel Galley, Kai-Wei Chang, Ying Nian Wu, Song-Chun Zhu, and Jianfeng Gao. Chameleon: Plug-and-play compositional reasoning with large language models. arXiv preprint arXiv:2304.09842, 2023. Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al. Self-refine: Iterative refinement with self-feedback. arXiv preprint arXiv:2303.17651, 2023. Maxwell Nye, Anders Johan Andreassen, Guy Gur-Ari, Henryk Michalewski, Jacob Austin, David Bieber, David Dohan, Aitor Lewkowycz, Maarten Bosma, David Luan, et al. Show your work: Scratchpads for intermediate computation with language models. arXiv preprint arXiv:2112.00114, 2021. OpenAI. Gpt-4 technical report, 2023. Bhargavi Paranjape, Scott Lundberg, Sameer Singh, Hannaneh Hajishirzi, Luke Zettlemoyer, and Marco Tulio Ribeiro. Art: Automatic multi-step reasoning and tool-use for large language models. arXiv preprint arXiv:2303.09014, 2023. Aaron Parisi, Yao Zhao, and Noah Fiedel. Talm: Tool augmented language models, 2022. Cheng Qian, Chi Han, Yi R Fung, Yujia Qin, Zhiyuan Liu, and Heng Ji. Creator: Disentangling abstract and concrete reasonings of large language models through tool creation. arXiv preprint arXiv:2305.14318, 2023. Yujia Qin, Shengding Hu, Yankai Lin, Weize Chen, Ning Ding, Ganqu Cui, Zheni Zeng, Yufei Huang, Chaojun Xiao, Chi Han, et al. Tool learning with foundation models. arXiv preprint arXiv:2304.08354, 2023. Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools, 2023. Yongliang Shen, Kaitao Song, Xu Tan, Dongsheng Li, Weiming Lu, and Yueting Zhuang. Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface. arXiv preprint arXiv:2303.17580, 2023. Freda Shi, Mirac Suzgun, Markus Freitag, Xuezhi Wang, Suraj Srivats, Soroush Vosoughi, Hyung Won Chung, Yi Tay, Sebastian Ruder, Denny Zhou, et al. Language models are multilingual chain-of-thought reasoners. arXiv preprint arXiv:2210.03057, 2022. Aarohi Srivastava, Abhinav Rastogi, Abhishek Rao, Abu Awal Md Shoeb, Abubakar Abid, Adam Fisch, Adam R Brown, Adam Santoro, Aditya Gupta, Adrià Garriga-Alonso, et al. Beyond the imitation game: Quantifying and extrapolating the capabilities of language models. arXiv preprint arXiv:2206.04615, 2022.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 Yaniv Leviathan, Matan Kalman, and Yossi Matias. Fast inference from transformers via speculative decoding. November 2022. doi: 10.48550/ARXIV.2211.17192. Yaobo Liang, Chenfei Wu, Ting Song, Wenshan Wu, Yan Xia, Yu Liu, Yang Ou, Shuai Lu, Lei Ji, Shaoguang Mao, et al. Taskmatrix. ai: Completing tasks by connecting foundation models with millions of apis. arXiv preprint arXiv:2303.16434, 2023. Wang Ling, Dani Yogatama, Chris Dyer, and Phil Blunsom. Program induction by rationale generation: Learning to solve and explain algebraic word problems. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 158–167, Vancouver, Canada, July 2017. Association for Computational Linguistics. doi: 10.18653/v1/P17-1015. URL https://aclanthology.org/P17-1015. Ruibo Liu, Jason Wei, Shixiang Shane Gu, Te-Yen Wu, Soroush Vosoughi, Claire Cui, Denny Zhou, and Andrew M. Dai. Mind’s eye: Grounded language model reasoning through simulation. In The Eleventh International Conference on Learning Representations, 2023. URL https://openreview.net/forum?id=4rXMRuoJlai. Pan Lu, Baolin Peng, Hao Cheng, Michel Galley, Kai-Wei Chang, Ying Nian Wu, Song-Chun Zhu, and Jianfeng Gao. Chameleon: Plug-and-play compositional reasoning with large language models. arXiv preprint arXiv:2304.09842, 2023. Aman Madaan, Niket Tandon, Prakhar Gupta, Skyler Hallinan, Luyu Gao, Sarah Wiegreffe, Uri Alon, Nouha Dziri, Shrimai Prabhumoye, Yiming Yang, et al. Self-refine: Iterative refinement with self-feedback. arXiv preprint arXiv:2303.17651, 2023. Maxwell Nye, Anders Johan Andreassen, Guy Gur-Ari, Henryk Michalewski, Jacob Austin, David Bieber, David Dohan, Aitor Lewkowycz, Maarten Bosma, David Luan, et al. Show your work: Scratchpads for intermediate computation with language models. arXiv preprint arXiv:2112.00114, 2021. OpenAI. Gpt-4 technical report, 2023. Bhargavi Paranjape, Scott Lundberg, Sameer Singh, Hannaneh Hajishirzi, Luke Zettlemoyer, and Marco Tulio Ribeiro. Art: Automatic multi-step reasoning and tool-use for large language models. arXiv preprint arXiv:2303.09014, 2023. Aaron Parisi, Yao Zhao, and Noah Fiedel. Talm: Tool augmented language models, 2022. Cheng Qian, Chi Han, Yi R Fung, Yujia Qin, Zhiyuan Liu, and Heng Ji. Creator: Disentangling abstract and concrete reasonings of large language models through tool creation. arXiv preprint arXiv:2305.14318, 2023. Yujia Qin, Shengding Hu, Yankai Lin, Weize Chen, Ning Ding, Ganqu Cui, Zheni Zeng, Yufei Huang, Chaojun Xiao, Chi Han, et al. Tool learning with foundation models. arXiv preprint arXiv:2304.08354, 2023. Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools, 2023. Yongliang Shen, Kaitao Song, Xu Tan, Dongsheng Li, Weiming Lu, and Yueting Zhuang. Hugginggpt: Solving ai tasks with chatgpt and its friends in huggingface. arXiv preprint arXiv:2303.17580, 2023. Freda Shi, Mirac Suzgun, Markus Freitag, Xuezhi Wang, Suraj Srivats, Soroush Vosoughi, Hyung Won Chung, Yi Tay, Sebastian Ruder, Denny Zhou, et al. Language models are multilingual chain-of-thought reasoners. arXiv preprint arXiv:2210.03057, 2022. Aarohi Srivastava, Abhinav Rastogi, Abhishek Rao, Abu Awal Md Shoeb, Abubakar Abid, Adam Fisch, Adam R Brown, Adam Santoro, Aditya Gupta, Adrià Garriga-Alonso, et al. Beyond the imitation game: Quantifying and extrapolating the capabilities of language models. arXiv preprint arXiv:2206.04615, 2022.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续参考文献，仍保持英文条目，覆盖推测解码、Chameleon、CREATOR、Toolformer、HuggingGPT 与 Big-Bench 等。回溯「用工具」与「造工具」谱系时，这些条目最有用。
+类比：还是同一排书架的后半段，按作者姓氏接着往下找即可。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung, Aakanksha Chowdhery, Quoc V Le, Ed H Chi, Denny Zhou, et al. Challenging big-bench tasks and whether chain-of-thought can solve them. arXiv preprint arXiv:2210.09261, 2022. Petar Veliˇckovi´c and Charles Blundell. Neural algorithmic reasoning. Patterns, 2(7):100273, 2021. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models. arXiv preprint arXiv:2305.16291, 2023. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. arXiv preprint arXiv:2203.11171, 2022. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed Chi, Quoc Le, and Denny Zhou. Chain of thought prompting elicits reasoning in large language models. arXiv preprint arXiv:2201.11903, 2022. Tongshuang Wu, Michael Terry, and Carrie Jun Cai. Ai chains: Transparent and controllable human-ai interaction by chaining large language model prompts. In Proceedings of the 2022 CHI Conference on Human Factors in Computing Systems, pages 1–22, 2022. Heming Xia, Tao Ge, Si-Qing Chen, Furu Wei, and Zhifang Sui. Speculative decoding: Lossless speedup of autoregressive translation, 2023. URL https://openreview.net/forum?id= H-VlwsYvVi. Zhengyuan Yang, Linjie Li, Jianfeng Wang, Kevin Lin, Ehsan Azarnasab, Faisal Ahmed, Zicheng Liu, Ce Liu, Michael Zeng, and Lijuan Wang. Mm-react: Prompting chatgpt for multimodal reasoning and action. arXiv preprint arXiv:2303.11381, 2023. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations, 2023. URL https://openreview.net/forum? id=WE_vluYUL-X. Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, et al. Opt: Open pre-trained transformer language models. arXiv preprint arXiv:2205.01068, 2022. Denny Zhou, Nathanael Schärli, Le Hou, Jason Wei, Nathan Scales, Xuezhi Wang, Dale Schuurmans, Olivier Bousquet, Quoc Le, and Ed Chi. Least-to-most prompting enables complex reasoning in large language models. arXiv preprint arXiv:2205.10625, 2022. Zilliz. Gptcache. https://github.com/zilliztech/GPTCache, 2023.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 Mirac Suzgun, Nathan Scales, Nathanael Schärli, Sebastian Gehrmann, Yi Tay, Hyung Won Chung, Aakanksha Chowdhery, Quoc V Le, Ed H Chi, Denny Zhou, et al. Challenging big-bench tasks and whether chain-of-thought can solve them. arXiv preprint arXiv:2210.09261, 2022. Petar Veličković and Charles Blundell. Neural algorithmic reasoning. Patterns, 2(7):100273, 2021. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models. arXiv preprint arXiv:2305.16291, 2023. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. arXiv preprint arXiv:2203.11171, 2022. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed Chi, Quoc Le, and Denny Zhou. Chain of thought prompting elicits reasoning in large language models. arXiv preprint arXiv:2201.11903, 2022. Tongshuang Wu, Michael Terry, and Carrie Jun Cai. Ai chains: Transparent and controllable human-ai interaction by chaining large language model prompts. In Proceedings of the 2022 CHI Conference on Human Factors in Computing Systems, pages 1–22, 2022. Heming Xia, Tao Ge, Si-Qing Chen, Furu Wei, and Zhifang Sui. Speculative decoding: Lossless speedup of autoregressive translation, 2023. URL https://openreview.net/forum?id=H-VlwsYvVi. Zhengyuan Yang, Linjie Li, Jianfeng Wang, Kevin Lin, Ehsan Azarnasab, Faisal Ahmed, Zicheng Liu, Ce Liu, Michael Zeng, and Lijuan Wang. Mm-react: Prompting chatgpt for multimodal reasoning and action. arXiv preprint arXiv:2303.11381, 2023. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik R Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. In The Eleventh International Conference on Learning Representations, 2023. URL https://openreview.net/forum?id=WE_vluYUL-X. Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, et al. Opt: Open pre-trained transformer language models. arXiv preprint arXiv:2205.01068, 2022. Denny Zhou, Nathanael Schärli, Le Hou, Jason Wei, Nathan Scales, Xuezhi Wang, Dale Schuurmans, Olivier Bousquet, Quoc Le, and Ed Chi. Least-to-most prompting enables complex reasoning in large language models. arXiv preprint arXiv:2205.10625, 2022. Zilliz. Gptcache. https://github.com/zilliztech/GPTCache, 2023.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是参考文献收尾，含 Voyager、ReAct、思维链原文、GPTCache 等。正文里对比「造工具」与「用工具 / 缓存句子」时，常回到这里。
+类比：书架的最后一层，ReAct 与 GPTCache 两本最常被抽出来对照。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 A ILLUSTRATION OF THE DISPATCHER Figure 4: An illustration of the Dispatcher that enables functional cache mechanism. In an online setting where task instances arrive sequentially, the dispatcher, a lightweight model, assesses each incoming instance. If a suitable tool already exists in the cache to tackle the task, the dispatcher selects this tool and forwards the task instance to the tool user for resolution. If no suitable tool is found, the dispatcher routes the task instance to the tool maker to create a new tool that can be used by tool user later. B BROADER IMPACT AND LIMITATIONS This paper explores the potential of enabling Large Language Models (LLMs) to create their own tools, thus allowing them greater autonomy in developing their ecosystem. While this avenue of research is promising, it also raises important ethical, safety, and control considerations that need to be carefully addressed. One of the most significant impacts of our work lies in the potential for LLMs to grow and achieve unprecedented capabilities automatically. This could significantly enhance the range and complexity of tasks these models can handle, potentially revolutionizing fields such as customer service, technical support, and even areas of research and development. It could lead to more efficient use of computational resources and a reduction in human intervention, especially for routine or repetitive tasks. However, this newfound autonomy of LLMs is a double-edged sword. As we endow LLMs with the ability to generate their own tools, we also create a scenario where the quality of the tools they develop may not always meet the standards or expectations set by human developers. Without proper safeguards, there’s a risk that these models could generate solutions that are suboptimal, incorrect, or even potentially harmful. Furthermore, as LLMs become more autonomous, the potential for loss of control increases. If these models are widely used without appropriate regulation, there could be unforeseen consequences, potentially even leading to scenarios where humans lose control over the AI systems. In this study, we have not addressed these control and safety issues in depth, and our work has some limitations. Our proposed framework, LLM As Tool Maker, while effective in the tested scenarios, is still in its early stages of development. It is crucial to note that the real-world performance and safety of the system may vary based on the complexity and nature of the tasks it is applied to. Additionally, the evaluation and validation of the tools created by the tool maker in a real-world setting is a challenge that needs to be addressed.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>附录 A</p>
+<p>调度器示意图</p>
+<p>图 4：使功能缓存机制成为可能的调度器示意图。在任务实例顺序到达的在线设置中，调度器（轻量模型）评估每个到来的实例。若缓存中已有合适工具可以应对该任务，调度器选择该工具，并把任务实例转给工具使用者求解。若未找到合适工具，调度器把任务实例路由给工具制造者，以创建随后可供工具使用者使用的新工具。</p>
+<p>附录 B</p>
+<p>更广泛的影响与局限</p>
+<p>本文探索了让大语言模型（LLM）创造自己的工具的潜力，从而使它们在发展自身生态系统时拥有更大自主性。这一研究方向虽有前景，但也提出了需要审慎对待的重要伦理、安全与控制问题。</p>
+<p>我们工作最显著的影响之一，在于 LLM 自动成长并获得前所未有能力的潜力。这可能显著扩展这些模型所能处理的任务范围与复杂度，或将变革客户服务、技术支持乃至研发等领域。它可能导致计算资源的更高效使用，并减少人工干预，尤其是对常规或重复性任务。</p>
+<p>然而，LLM 这种新获得的自主性是一把双刃剑。当我们赋予 LLM 生成自己工具的能力时，也造成一种情形：它们开发的工具质量未必总能达到人类开发者设定的标准或预期。若没有适当保障，这些模型可能生成次优、不正确、甚至潜在有害的解。此外，随着 LLM 变得更自主，失控的可能性上升。若这些模型在缺乏适当监管的情况下被广泛使用，可能产生未预见的后果，甚至导致人类对 AI 系统失去控制的情景。</p>
+<p>在本研究中，我们并未深入处理这些控制与安全问题，我们的工作存在若干局限。我们所提出的框架 LLM As Tool Maker 虽在受试场景中有效，仍处于发展早期。必须指出，系统的现实表现与安全性可能随其所应用任务的复杂度与性质而变化。此外，在现实环境中评估并验证工具制造者所创建的工具，仍是有待解决的挑战。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页附录 A 用图 4 重画调度器：有工具就交给使用者，没有就去造。附录 B 则承认自主造工具是双刃剑——质量、安全、失控都还没认真做，现实世界里如何验收这些 Python 函数仍是开放问题。
+这很重要，因为正文的高分建立在六个干净任务上，附录自己把「别当成已安全落地」写明了。
+类比：像工厂展示新产线很高效，质检手册却写着：次品、危险品和谁来签字停线，都还没设计。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 C LATM PROMPTS Tool Maker Prompt Please write a generic Python function to solve this type of problems using only standard python libraries. The output of the function can later be converted to the answer (option for multiple choice question). All the function should be wrapped by ,→ ,→ ,→ ,→ ```python ``` Tool Verifier Prompt Write unit tests to verify the correctness of the function on the questions above using the following format: ,→ ```python {parse the question into the arguments of the function} {call the function and save the return value in a variable named &quot;ret&quot;} ,→ {for multiple choice question, parse the options} {convert the return value &quot;ret&quot; to the answer (if the question is a multiple choice question, convert to an option) and save it in a variable named &quot;ans&quot;, otherwise} ,→ ,→ {assert ans == the provided answer (if the question is a multiple choice question, assert ans == option)} ,→ ``` Tool Wrapper Prompt Success! The function is correct. We will need to summarize the function and use cases up for further use. Please extract the information from the history in the following format: ,→ ,→ ,→ Here is a function to solve a class of problems: ```python {the function, including necessary imports} ``` Use cases: Question: {question (including options)} Solution: ```python {parse the question into the arguments of the function} {call the function and save the return value in a variable named &quot;ret&quot;} ,→ {for multiple choice question, parse the options} {convert the return value &quot;ret&quot; to the answer (if the question is a multiple choice question, convert to an option) and save it in a variable named &quot;ans&quot;, otherwise} ,→ ,→ ``` Do this for all the questions in the verification step.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 附录 C LATM 提示词 工具制造者提示词 Please write a generic Python function to solve this type of problems using only standard python libraries. The output of the function can later be converted to the answer (option for multiple choice question). All the function should be wrapped by ```python ``` 工具验证者提示词 Write unit tests to verify the correctness of the function on the questions above using the following format: ```python {parse the question into the arguments of the function} {call the function and save the return value in a variable named &quot;ret&quot;} {for multiple choice question, parse the options} {convert the return value &quot;ret&quot; to the answer (if the question is a multiple choice question, convert to an option) and save it in a variable named &quot;ans&quot;, otherwise} {assert ans == the provided answer (if the question is a multiple choice question, assert ans == option)} ``` 工具封装者提示词 Success! The function is correct. We will need to summarize the function and use cases up for further use. Please extract the information from the history in the following format: Here is a function to solve a class of problems: ```python {the function, including necessary imports} ``` Use cases: Question: {question (including options)} Solution: ```python {parse the question into the arguments of the function} {call the function and save the return value in a variable named &quot;ret&quot;} {for multiple choice question, parse the options} {convert the return value &quot;ret&quot; to the answer (if the question is a multiple choice question, convert to an option) and save it in a variable named &quot;ans&quot;, otherwise} ``` Do this for all the questions in the verification step.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页附录 C 给出三套英文提示词：请制造者只用标准库写通用函数；请验证者按固定模板写单元测试（变量名 ret、ans）；封装成功后按「函数 + 用例」格式抽出给使用者的手册。提示词原文保持英文。
+这很重要，因为整条流水线几乎就靠这三句话驱动，没有额外训练。
+类比：像车间墙上的三张操作卡——怎么写、怎么测、怎么装箱，工人照着念就行。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Dispatcher Prompt Here are several functions that can be used to solve some task: ,→ Task: logical_deduction_five_objects API: find_order(objects, constraints): Finds the order of objects that satisfies a given set of constraints. ,→ objects: A list of unique objects (strings) to be ordered. constraints: A list of lambda functions that represent the constraints on the order of objects. Each constraint should take the order of objects as input and return a boolean value (True if the constraint is satisfied, False otherwise). ,→ ,→ ,→ ,→ return: A tuple representing the order of objects that satisfies all the constraints. If no such order exists, the function returns None. ,→ ,→ === Task: tracking_shuffled_objects_five_objects API: square_dance(initial_partners, switches): This function takes an initial list of pairs and a list of switches, and returns a dictionary representing the final state of the pairs after performing the switches. ,→ ,→ initial_partners: A list of tuples, where each tuple contains two elements representing a pair (e.g., [(&quot;Alice&quot;,</p>
+<div class="toc-line">&quot;goalkeeper&quot;), (&quot;Bob&quot;, &quot;left midfielder&quot;), ...]). The</div>
+<pre class="math">elements can be any type (e.g., strings, integers, etc.). ,→ ,→ ,→ switches: A list of tuples, where each tuple contains two elements representing a pair of elements from the initial_partners list that will be switched (e.g.,</pre>
+<div class="toc-line">[(&quot;Alice&quot;, &quot;Claire&quot;), (&quot;Alice&quot;, &quot;Bob&quot;), ...]). The</div>
+<p>elements should match the types used in the initial_partners list. ,→ ,→ ,→ ,→ ,→ return: A dictionary representing the final state of the pairs after performing the switches. The keys are the first elements of the pairs in the initial_partners list, and the values are the corresponding second elements after performing the switches (e.g., {&quot;Alice&quot;: &quot;right</p>
+<div class="toc-line">winger&quot;, &quot;Bob&quot;: &quot;center midfielder&quot;, ...}).</div>
+<p>,→ ,→ ,→ ,→ ,→ === Skip other tasks Here is a question:\n{question}\n\nAccoding to the API documents above, you may find some functions that can be used to solve the task, or, sometimes there does not exist proper function to solve the task. Figure out if there is function to solve the task and reply in the format:\nTask: {{task}} (reply unknown if no function can solve the question) ,→ ,→ ,→ ,→ ,→ ,→</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 调度器提示词 Here are several functions that can be used to solve some task: Task: logical_deduction_five_objects API: find_order(objects, constraints): Finds the order of objects that satisfies a given set of constraints. objects: A list of unique objects (strings) to be ordered. constraints: A list of lambda functions that represent the constraints on the order of objects. Each constraint should take the order of objects as input and return a boolean value (True if the constraint is satisfied, False otherwise). return: A tuple representing the order of objects that satisfies all the constraints. If no such order exists, the function returns None. === Task: tracking_shuffled_objects_five_objects API: square_dance(initial_partners, switches): This function takes an initial list of pairs and a list of switches, and returns a dictionary representing the final state of the pairs after performing the switches. initial_partners: A list of tuples, where each tuple contains two elements representing a pair (e.g., [(&quot;Alice&quot;,</p>
+<div class="toc-line">&quot;goalkeeper&quot;), (&quot;Bob&quot;, &quot;left midfielder&quot;), ...]). The</div>
+<p>elements can be any type (e.g., strings, integers, etc.). switches: A list of tuples, where each tuple contains two elements representing a pair of elements from the initial_partners list that will be switched (e.g.,</p>
+<div class="toc-line">[(&quot;Alice&quot;, &quot;Claire&quot;), (&quot;Alice&quot;, &quot;Bob&quot;), ...]). The</div>
+<p>elements should match the types used in the initial_partners list. return: A dictionary representing the final state of the pairs after performing the switches. The keys are the first elements of the pairs in the initial_partners list, and the values are the corresponding second elements after performing the switches (e.g., {&quot;Alice&quot;: &quot;right</p>
+<div class="toc-line">winger&quot;, &quot;Bob&quot;: &quot;center midfielder&quot;, ...}).</div>
+<p>=== Skip other tasks Here is a question:\n{question}\n\nAccoding to the API documents above, you may find some functions that can be used to solve the task, or, sometimes there does not exist proper function to solve the task. Figure out if there is function to solve the task and reply in the format:\nTask: {{task}} (reply unknown if no function can solve the question)</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是调度器提示词：先列出已有工具的 API 文档（如 find_order、square_dance），再问当前题属于哪一类；对不上就回答 unknown。正文里约 95%–96% 的调度准确率，靠的就是这种「读说明书再分诊」。提示词保持英文。
+这很重要，因为它让功能缓存不必另训一个分类器，用提示词就能分流。
+类比：像前台对照科室简介给病人分诊，对不上号就写「未知」，而不是硬塞进某个科。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页几乎空白，只有会议页眉，没有正文。翻到下一页继续附录中已封装的工具示例。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 D WRAPPED TOOLS Tool for Logical Deduction Here is a function to solve a class of problems: ```python from itertools import permutations def find_order(objects, constraints): for order in permutations(objects): valid = True for constraint in constraints: if not constraint(order): valid = False break if valid: return order ``` Use cases: Question: The following paragraphs each describe a set of five objects arranged in a fixed order. The statements are logically consistent within each paragraph. On a shelf, there are five books: a white book, a green book, a brown book, a gray book, and an orange book. The gray book is to the right of the orange book. The green book is the second from the right. The brown book is to the right of the white book. The brown book is to the left of the orange book. ,→ ,→ ,→ ,→ ,→ ,→ ,→ ,→ Options: (A) The white book is the third from the left (B) The green book is the third from the left (C) The brown book is the third from the left (D) The gray book is the third from the left (E) The orange book is the third from the left Solution: ```python objects = [&quot;white&quot;, &quot;green&quot;, &quot;brown&quot;, &quot;gray&quot;, &quot;orange&quot;] constraints = [ lambda order: order.index(&quot;gray&quot;) &gt; order.index(&quot;orange&quot;), ,→ lambda order: order.index(&quot;green&quot;) == len(order) - 2, lambda order: order.index(&quot;brown&quot;) &gt; order.index(&quot;white&quot;), ,→ lambda order: order.index(&quot;brown&quot;) &lt; order.index(&quot;orange&quot;) ,→ ] ret = find_order(objects, constraints) options = { &quot;A&quot;: &quot;white&quot;, &quot;B&quot;: &quot;green&quot;, &quot;C&quot;: &quot;brown&quot;, &quot;D&quot;: &quot;gray&quot;, &quot;E&quot;: &quot;orange&quot; } ans = [k for k, v in options.items() if v == ret[2]][0] ```</p>
+<div class="toc-line">Skip two more questions...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 附录 D 封装后的工具 逻辑演绎任务的工具 Here is a function to solve a class of problems: ```python from itertools import permutations def find_order(objects, constraints): for order in permutations(objects): valid = True for constraint in constraints: if not constraint(order): valid = False break if valid: return order ``` 用例： Question: The following paragraphs each describe a set of five objects arranged in a fixed order. The statements are logically consistent within each paragraph. On a shelf, there are five books: a white book, a green book, a brown book, a gray book, and an orange book. The gray book is to the right of the orange book. The green book is the second from the right. The brown book is to the right of the white book. The brown book is to the left of the orange book. Options: (A) The white book is the third from the left (B) The green book is the third from the left (C) The brown book is the third from the left (D) The gray book is the third from the left (E) The orange book is the third from the left Solution: ```python objects = [&quot;white&quot;, &quot;green&quot;, &quot;brown&quot;, &quot;gray&quot;, &quot;orange&quot;] constraints = [ lambda order: order.index(&quot;gray&quot;) &gt; order.index(&quot;orange&quot;), lambda order: order.index(&quot;green&quot;) == len(order) - 2, lambda order: order.index(&quot;brown&quot;) &gt; order.index(&quot;white&quot;), lambda order: order.index(&quot;brown&quot;) &lt; order.index(&quot;orange&quot;) ] ret = find_order(objects, constraints) options = { &quot;A&quot;: &quot;white&quot;, &quot;B&quot;: &quot;green&quot;, &quot;C&quot;: &quot;brown&quot;, &quot;D&quot;: &quot;gray&quot;, &quot;E&quot;: &quot;orange&quot; } ans = [k for k, v in options.items() if v == ret[2]][0] ``` 此处略去另外两道题……</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页附录 D 给出逻辑演绎的封装工具：find_order 穷举排列，约束写成 lambda；用例示范如何把「灰书在橙书右边」译成 index 比较，再对照选项写出 ans。函数与题目保持英文。
+这很重要，因为工具使用者从未见过算法本身，只靠这份手册做上下文学习即可调用。
+类比：像把「谁坐谁左边」的推理题，翻译成一套可执行的座位检查清单。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-18" data-page="18">
+  <div class="page-label">第 18 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-018.jpg" alt="PDF page 18" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool for Tracking Shuffled Objects Here is a function to solve a class of problems: ```python def square_dance(initial_partners, switches): # Create a dictionary to store the current partners current_partners = dict(initial_partners) # Iterate through the switches and update the current partners ,→ for switch in switches: dancer1, dancer2 = switch partner1 = current_partners[dancer1] partner2 = current_partners[dancer2] # Swap the partners current_partners[dancer1] = partner2 current_partners[dancer2] = partner1 return current_partners ``` Use cases: Question: Alice, Bob, Claire, Dave, and Eve are on the same team in a soccer match. At the start of the match, they are each assigned to a position: Alice is playing goalkeeper, Bob is playing left midfielder, Claire is playing right winger, Dave is playing striker, and Eve is playing center midfielder. ,→ ,→ ,→ ,→ ,→ As the game progresses, pairs of players occasionally swap positions. First, Alice and Claire trade positions. Then, Alice and Bob trade positions. Then, Dave and Bob trade positions. Then, Bob and Eve trade positions. Finally, Dave and Eve trade positions. At the end of the match, Eve is playing ,→ ,→ ,→ ,→ ,→ Options: (A) goalkeeper (B) left midfielder (C) right winger (D) striker (E) center midfielder Answer: (C) Solution: ```python initial_positions = [(&quot;Alice&quot;, &quot;goalkeeper&quot;), (&quot;Bob&quot;, &quot;left midfielder&quot;), (&quot;Claire&quot;, &quot;right winger&quot;), (&quot;Dave&quot;, &quot;striker&quot;), (&quot;Eve&quot;, &quot;center midfielder&quot;)] ,→ ,→ switches = [(&quot;Alice&quot;, &quot;Claire&quot;), (&quot;Alice&quot;, &quot;Bob&quot;), (&quot;Dave&quot;, &quot;Bob&quot;), (&quot;Bob&quot;, &quot;Eve&quot;), (&quot;Dave&quot;, &quot;Eve&quot;)] ,→ ret = square_dance(initial_positions, switches) options = [&quot;goalkeeper&quot;, &quot;left midfielder&quot;, &quot;right winger&quot;, &quot;striker&quot;, &quot;center midfielder&quot;] ,→ ans = options.index(ret[&quot;Eve&quot;]) + 1 # Convert the return value to an option index (1-based) ,→ ```</p>
+<div class="toc-line">Skip two more questions...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 跟踪洗牌物体任务的工具 Here is a function to solve a class of problems: ```python def square_dance(initial_partners, switches): # Create a dictionary to store the current partners current_partners = dict(initial_partners) # Iterate through the switches and update the current partners for switch in switches: dancer1, dancer2 = switch partner1 = current_partners[dancer1] partner2 = current_partners[dancer2] # Swap the partners current_partners[dancer1] = partner2 current_partners[dancer2] = partner1 return current_partners ``` 用例： Question: Alice, Bob, Claire, Dave, and Eve are on the same team in a soccer match. At the start of the match, they are each assigned to a position: Alice is playing goalkeeper, Bob is playing left midfielder, Claire is playing right winger, Dave is playing striker, and Eve is playing center midfielder. As the game progresses, pairs of players occasionally swap positions. First, Alice and Claire trade positions. Then, Alice and Bob trade positions. Then, Dave and Bob trade positions. Then, Bob and Eve trade positions. Finally, Dave and Eve trade positions. At the end of the match, Eve is playing Options: (A) goalkeeper (B) left midfielder (C) right winger (D) striker (E) center midfielder Answer: (C) Solution: ```python initial_positions = [(&quot;Alice&quot;, &quot;goalkeeper&quot;), (&quot;Bob&quot;, &quot;left midfielder&quot;), (&quot;Claire&quot;, &quot;right winger&quot;), (&quot;Dave&quot;, &quot;striker&quot;), (&quot;Eve&quot;, &quot;center midfielder&quot;)] switches = [(&quot;Alice&quot;, &quot;Claire&quot;), (&quot;Alice&quot;, &quot;Bob&quot;), (&quot;Dave&quot;, &quot;Bob&quot;), (&quot;Bob&quot;, &quot;Eve&quot;), (&quot;Dave&quot;, &quot;Eve&quot;)] ret = square_dance(initial_positions, switches) options = [&quot;goalkeeper&quot;, &quot;left midfielder&quot;, &quot;right winger&quot;, &quot;striker&quot;, &quot;center midfielder&quot;] ans = options.index(ret[&quot;Eve&quot;]) + 1 # Convert the return value to an option index (1-based) ``` 此处略去另外两道题……</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是跟踪洗牌物体的工具 square_dance：用字典记下谁在哪个位置，按交换序列两两对调，最后读 Eve 的位置。足球换位题被收成「初值 + 交换列表」。代码与题面保持英文。
+这很重要，因为它说明工具不必高深，关键是通用、可对任意人名和交换序列复用。
+类比：像用便签记下谁拿了哪顶帽子，每换一次就改两张便签，不必在脑子里演整场。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-19" data-page="19">
+  <div class="page-label">第 19 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-019.jpg" alt="PDF page 19" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool for Dyck Language Here is a function to solve a class of problems: ```python def complete_sequence(input_str): stack = [] closing_map = {&#x27;(&#x27;: &#x27;)&#x27;, &#x27;[&#x27;: &#x27;]&#x27;, &#x27;&lt;&#x27;: &#x27;&gt;&#x27;, &#x27;{&#x27;: &#x27;}&#x27;} result = [] for char in input_str: if char in closing_map.keys(): stack.append(char) elif char in closing_map.values(): if stack and closing_map[stack[-1]] == char: stack.pop() else: return &quot;Invalid sequence&quot; else: return &quot;Invalid character&quot; while stack: result.append(closing_map[stack[-1]]) stack.pop() return &#x27;&#x27;.join(result) ``` Use cases: Question: Complete the rest of the sequence, making sure that the parentheses are closed properly. Input: ([[[{}]]{&lt;[&lt;[{}]&gt;]&gt;} ,→ ,→ Answer: ]) Solution: ```python input_str = &quot;([[[{}]]{&lt;[&lt;[{}]&gt;]&gt;}&quot; ret = complete_sequence(input_str) ans = ret ```</p>
+<div class="toc-line">Skip two more questions...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 Dyck 语言任务的工具 Here is a function to solve a class of problems: ```python def complete_sequence(input_str): stack = [] closing_map = {&#x27;(&#x27;: &#x27;)&#x27;, &#x27;[&#x27;: &#x27;]&#x27;, &#x27;&lt;&#x27;: &#x27;&gt;&#x27;, &#x27;{&#x27;: &#x27;}&#x27;} result = [] for char in input_str: if char in closing_map.keys(): stack.append(char) elif char in closing_map.values(): if stack and closing_map[stack[-1]] == char: stack.pop() else: return &quot;Invalid sequence&quot; else: return &quot;Invalid character&quot; while stack: result.append(closing_map[stack[-1]]) stack.pop() return &#x27;&#x27;.join(result) ``` 用例： Question: Complete the rest of the sequence, making sure that the parentheses are closed properly. Input: ([[[{}]]{&lt;[&lt;[{}]&gt;]&gt;} Answer: ]) Solution: ```python input_str = &quot;([[[{}]]{&lt;[&lt;[{}]&gt;]&gt;}&quot; ret = complete_sequence(input_str) ans = ret ``` 此处略去另外两道题……</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是 Dyck 语言工具：用栈补全括号。制造者写出教科书级的括号匹配，使用者只需把输入字符串塞进 complete_sequence。正文里 GPT-4 当使用者反而会在参数里多余闭合括号，正是这种「不该替函数做事」的失误。代码保持英文。
+这很重要，因为它解释表 2 里小模型反超 GPT-4 的原因。
+类比：栈像一摞盘子，开口进栈、闭合出栈；使用者只要把盘子递过去，不要自己先把盖子盖上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-20" data-page="20">
+  <div class="page-label">第 20 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-020.jpg" alt="PDF page 20" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool for Word Sorting Here is a function to solve a class of problems: ```python def sort_words_alphabetically(word_list): return sorted(word_list) ``` Use cases: Question: Sort the following words alphabetically: List: conference apparition ignore dutton layperson coupe superstitious westward turnoff messenger copra floruit primitive implement ,→ ,→ ,→ Answer: apparition conference copra coupe dutton floruit ignore implement layperson messenger primitive superstitious turnoff westward ,→ ,→ Solution: ```python words1 = [&quot;conference&quot;, &quot;apparition&quot;, &quot;ignore&quot;, &quot;dutton&quot;, &quot;layperson&quot;, &quot;coupe&quot;, &quot;superstitious&quot;, &quot;westward&quot;, &quot;turnoff&quot;, &quot;messenger&quot;, &quot;copra&quot;, &quot;floruit&quot;, &quot;primitive&quot;, &quot;implement&quot;] ,→ ,→ ,→ ret1 = sort_words_alphabetically(words1) ans1 = &quot; &quot;.join(ret1) ```</p>
+<div class="toc-line">Skip two more questions...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 单词排序任务的工具 Here is a function to solve a class of problems: ```python def sort_words_alphabetically(word_list): return sorted(word_list) ``` 用例： Question: Sort the following words alphabetically: List: conference apparition ignore dutton layperson coupe superstitious westward turnoff messenger copra floruit primitive implement Answer: apparition conference copra coupe dutton floruit ignore implement layperson messenger primitive superstitious turnoff westward Solution: ```python words1 = [&quot;conference&quot;, &quot;apparition&quot;, &quot;ignore&quot;, &quot;dutton&quot;, &quot;layperson&quot;, &quot;coupe&quot;, &quot;superstitious&quot;, &quot;westward&quot;, &quot;turnoff&quot;, &quot;messenger&quot;, &quot;copra&quot;, &quot;floruit&quot;, &quot;primitive&quot;, &quot;implement&quot;] ret1 = sort_words_alphabetically(words1) ans1 = &quot; &quot;.join(ret1) ``` 此处略去另外两道题……</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是单词排序工具，函数体几乎就是一行 sorted。表 3 里 GPT-3.5 当制造者也能五战全胜，正是因为任务足够简单。代码与词表保持英文。
+这很重要，因为它衬托难任务：不是所有工具都需要 GPT-4 来造，但调度与分工仍然值得留下。
+类比：有的模具是精密夹具，有的只是把东西按字母丢进整理盒——后者学徒自己也能做成。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-21" data-page="21">
+  <div class="page-label">第 21 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-021.jpg" alt="PDF page 21" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool for Chinese Remainder Theorem Here is a function to solve a class of problems: ```python def find_number(max_limit, divisors, remainders): for num in range(max_limit + 1): if all((num - remainder) % return num return None ``` Use cases: Question: There is a basket of no more than 1188877 durians. If we divide them equally among 41 penguins, we have 17 left; if we divide them equally among 107 dinosaurs, we have 42 left; if we divide them equally among 271 elephants, we have 260 left. How many durians are in the basket? ,→ ,→ ,→ ,→ ,→ Solution: ```python max_limit = 1188877 divisors = [41, 107, 271] remainders = [17, 42, 260] ret = find_number(max_limit, divisors, remainders) ans = ret ```</p>
+<div class="toc-line">Skip two more questions...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 中国剩余定理任务的工具 Here is a function to solve a class of problems: ```python def find_number(max_limit, divisors, remainders): for num in range(max_limit + 1): if all((num - remainder) % return num return None ``` 用例： Question: There is a basket of no more than 1188877 durians. If we divide them equally among 41 penguins, we have 17 left; if we divide them equally among 107 dinosaurs, we have 42 left; if we divide them equally among 271 elephants, we have 260 left. How many durians are in the basket? Solution: ```python max_limit = 1188877 divisors = [41, 107, 271] remainders = [17, 42, 260] ret = find_number(max_limit, divisors, remainders) ans = ret ``` 此处略去另外两道题……</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是中国剩余定理工具 find_number：在上限内枚举，使各除数对应给定余数。思维链在该任务上是 0 分，LATM 到 100%，因为模型不必口算同余，只要把三个余数填进函数。抽取文本里循环条件被截断，以 PDF 为准。代码与题面保持英文。
+这很重要，因为它是「算法推理交给程序」最干净的例子。
+类比：像韩信点兵——人逐个数会晕，写成「除几余几」的程序一遍扫过就出答案。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-22" data-page="22">
+  <div class="page-label">第 22 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-022.jpg" alt="PDF page 22" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Tool for Schedule Meeting Here is a function to solve a class of problems: ```python from datetime import datetime, timedelta def find_earliest_time_slot(a_availability, b_availability, meeting_duration): ,→ a_availability = [(datetime.strptime(start, &#x27;% b_availability = [(datetime.strptime(start, &#x27;% for a_start, a_end in a_availability: for b_start, b_end in b_availability: latest_start = max(a_start, b_start) earliest_end = min(a_end, b_end) if earliest_end - latest_start &gt;= timedelta(minutes=meeting_duration): ,→ return latest_start.strftime(&#x27;% return None ``` Use cases: Question: A and B want to schedule a 1-hour meeting together. A&#x27;s availability: 12:00 - 12:30, 13:00 - 13:30, 14:30 - 15:30, 17:30 - 18:00. B&#x27;s availability: 09:00 - 11:00, 12:00 - 12:30, 13:00 - 13:30, 15:30 - 16:30, 17:30 - 18:00. What time slot works best? (if multiple, choose the earliest one) ,→ ,→ ,→ ,→ ,→ Answer: No time slot works. Solution: ```python a_availability = [(&#x27;12:00&#x27;, &#x27;12:30&#x27;), (&#x27;13:00&#x27;, &#x27;13:30&#x27;), (&#x27;14:30&#x27;, &#x27;15:30&#x27;), (&#x27;17:30&#x27;, &#x27;18:00&#x27;)] ,→ b_availability = [(&#x27;09:00&#x27;, &#x27;11:00&#x27;), (&#x27;12:00&#x27;, &#x27;12:30&#x27;), (&#x27;13:00&#x27;, &#x27;13:30&#x27;), (&#x27;15:30&#x27;, &#x27;16:30&#x27;), (&#x27;17:30&#x27;, &#x27;18:00&#x27;)] ,→ ,→ meeting_duration = 60 ret = find_earliest_time_slot(a_availability, b_availability, meeting_duration) ,→ ans = ret if ret else &quot;No time slot works.&quot; ```</p>
+<div class="toc-line">Skip two more questions...</div>
+<pre class="math">E DATASET CONSTRUCTION For the “schedule meeting” task, we use the following template to generate the dataset: question_format = &quot;&quot;&quot;A and B want to schedule a {interval}-hour meeting together. ,→ A&#x27;s availability: {A_availability}</pre></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 日程安排任务的工具 Here is a function to solve a class of problems: ```python from datetime import datetime, timedelta def find_earliest_time_slot(a_availability, b_availability, meeting_duration): a_availability = [(datetime.strptime(start, &#x27;% b_availability = [(datetime.strptime(start, &#x27;% for a_start, a_end in a_availability: for b_start, b_end in b_availability: latest_start = max(a_start, b_start) earliest_end = min(a_end, b_end) if earliest_end - latest_start &gt;= timedelta(minutes=meeting_duration): return latest_start.strftime(&#x27;% return None ``` 用例： Question: A and B want to schedule a 1-hour meeting together. A&#x27;s availability: 12:00 - 12:30, 13:00 - 13:30, 14:30 - 15:30, 17:30 - 18:00. B&#x27;s availability: 09:00 - 11:00, 12:00 - 12:30, 13:00 - 13:30, 15:30 - 16:30, 17:30 - 18:00. What time slot works best? (if multiple, choose the earliest one) Answer: No time slot works. Solution: ```python a_availability = [(&#x27;12:00&#x27;, &#x27;12:30&#x27;), (&#x27;13:00&#x27;, &#x27;13:30&#x27;), (&#x27;14:30&#x27;, &#x27;15:30&#x27;), (&#x27;17:30&#x27;, &#x27;18:00&#x27;)] b_availability = [(&#x27;09:00&#x27;, &#x27;11:00&#x27;), (&#x27;12:00&#x27;, &#x27;12:30&#x27;), (&#x27;13:00&#x27;, &#x27;13:30&#x27;), (&#x27;15:30&#x27;, &#x27;16:30&#x27;), (&#x27;17:30&#x27;, &#x27;18:00&#x27;)] meeting_duration = 60 ret = find_earliest_time_slot(a_availability, b_availability, meeting_duration) ans = ret if ret else &quot;No time slot works.&quot; ``` 此处略去另外两道题…… 附录 E 数据集构造 对「日程安排」任务，我们使用如下模板生成数据集： question_format = &quot;&quot;&quot;A and B want to schedule a {interval}-hour meeting together. A&#x27;s availability: {A_availability}</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是作者自造的排会工具：求两人空闲区间的交集，取最早且够长的时段；没有则返回 No time slot works。抽取文本里 strptime 格式串被截断，以 PDF 为准。附录 E 开始介绍用模板随机生成该数据集。代码与提示模板保持英文。
+这很重要，因为它是最接近「邮箱里约会议」的例子，也是结论里呼吁真实数据的伏笔。
+类比：像两个人把日历叠在一起看，程序替你找第一段都有空且够一小时的格子。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-23" data-page="23">
+  <div class="page-label">第 23 / 23 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-023.jpg" alt="PDF page 23" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 B&#x27;s availability: {B_availability} What time slot works best? (if multiple, choose the earliest one)&quot;&quot;&quot; ,→ where the interval is randomly sampled from {0.5, 1, 1.5}, and the availability of A and B are randomly sampled from 8:00-18:00 with 30 minutes as the granularity. The answer is computed by computing the intersection of the two availability sets and then find the earliest time slot that is at least as long as the meeting duration. If there is no such time slot, we return “No time slot works.”.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>B&#x27;s availability: {B_availability}</p>
+<p>What time slot works best? (if multiple, choose the earliest</p>
+<p>one)&quot;&quot;&quot;</p>
+<p>其中 interval 从 {0.5, 1, 1.5} 中随机采样，A 与 B 的空闲时间从 8:00–18:00 以 30 分钟为粒度随机采样。答案通过计算两个空闲集合的交集，再找到不短于会议时长的最早时段得到。若没有这样的时段，则返回 “No time slot works.”。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页补完附录 E：排会题用模板填空闲与时长，时长从 0.5/1/1.5 小时抽，空闲按半小时格子在 8 点到 18 点随机切；标准答案是区间交集里最早够长的一段，否则写没有合适时段。
+这很重要，因为它提醒读者：该「现实任务」仍是合成数据，不是真实邮件语料。
+类比：像用扑克牌随机发两个人的日历，再请程序当秘书找空档——规则清楚，但口气不像真人写信。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>对 harness 有用，对运行时组合还不够</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完方法、表 2 与附录 B 之后展开。</p>
+
+<h2>它在工具谱系里站哪一层</h2>
+<p>LATM 不是又一个「调用现成 API」的智能体框架。它把工具写成 <strong>Python 函数</strong>：强模型从几条示范里提出、验证、封装，轻量模型只做译题与填参。和 ReAct / Toolformer 相比，重点从「何时调用已知工具」挪到「如何为新任务类造出可复用工具」。和思维链相比，函数是可执行、可缓存、可在实例间共享的求解器，而不是一段一次性的自然语言草稿。</p>
+<p>对正在长出来的 <strong>agent harness</strong>，这很实用：重复出现的约束推理、解析、排期，不必每次都烧一遍最贵的模型。功能缓存比「缓存同一句话」更接近真实流量——同一类请求措辞可以变，算法结构仍在。</p>
+
+<h2>和 Cordiverse 的接口，也是缺口</h2>
+<p>Cordiverse 把 LATM 标成引用 <strong>[14]</strong>：模型合成可复用工具，是组件级自修改的较窄前驱。前驱在于——工具开始由模型生产，而不只是人注册。窄在于——LATM 的生命周期几乎停在「造出来、放进仓库、下次还能调」。</p>
+<p>它<strong>不讨论</strong>工具在运行时如何卸载、替换时副作用如何收回，也不讨论工具之间的依赖如何声明、拓扑一变谁该停谁该等。功能缓存是一张越积越厚的 API 清单；调度器会为新任务再造函数，但没有「这条函数过期了、与另一条冲突了、权限该一并撤掉」的语义。那正是 Cordiverse 用可逆效应与反应式余效应要管的事：造得出，还要卸得干净、依赖跟得上。</p>
+
+<h2>作者已点名、但仍开放</h2>
+<ul>
+  <li><strong>工具质量与安全</strong>（附录 B）：自主造工具是双刃剑。函数可能次优、错误、甚至有害；文中没有防护、审计或人可冻结的闸门。现实世界里如何验收这些工具，作者承认尚未处理。</li>
+  <li><strong>升级已有工具</strong>（结论）：现在是「新任务 → 新函数」。像软件开发那样精炼、版本化、在旧工具上打补丁，只是展望，调度器也不会做热替换。</li>
+  <li><strong>真实数据</strong>（结论）：六个评测里五个来自 Big-Bench，排会是模板合成。缺的是邮箱、电话里那种原始、重复、脏的人机交互语料。高分建立在干净、同类、可穷举的任务上。</li>
+</ul>
+
+<h2>读 harness 时额外要盯的</h2>
+<ul>
+  <li>验证阶段默认<strong>不改函数本体</strong>，只改单元测试里的调用。自动化友好，但一旦提出的算法系统性错了，验证过关也不等于工具对。</li>
+  <li>难任务上必须用强模型当制造者（表 3）。把「模型会自己改脚手架」理解成全程便宜模型即可，会被这篇直接打脸。</li>
+  <li>上下文里带着全部制造历史，长度与费用会涨；工具仓库变大之后，调度提示词里的 API 说明书本身会成为新的上下文税。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把「模型造 Python 工具 + 贵便宜分工 + 功能缓存」做成可复现的闭环，证明轻量模型可以站在强模型写出的函数上接近强模型的成绩。<strong>对未来智能体仍缺的</strong>是：这些函数进入长跑 harness 之后，如何安全升级、如何卸载与回收、如何表达依赖，以及如何在真实、肮脏的请求流里证明工具仍然可信。LATM 把工具生产出来了；Cordiverse 要问的是，生产之后如何组合。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-5">第 5 页</a>的调度器 / 功能缓存，和 <a href="#page-13">附录 B</a> 作者自己写下的安全边界。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'latm-paper-cols-v1';
+const total = 23;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

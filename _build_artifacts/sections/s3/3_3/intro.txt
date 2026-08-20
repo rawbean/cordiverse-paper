@@ -1,5 +1,0 @@
-3.3.  The Context Paradigm
-Section 3.1 and Section 3.2 each act on a context, the first as the carrier of effects and the second 
-as the carrier of coeffects, leaving open what a single context carrying both looks like. This 
-section gives that unification a concrete construction, assembles from the coeffects an observational equivalence that supplies the effect independence Section 3.1.3 leaves open, and argues 
-that the resulting context type constitutes a programming paradigm in its own right.

@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>如何构建有效的智能体 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="如何构建有效的智能体">如何构建有效的智能体</p>
+      <p class="paper-authors" title="Anthropic">Anthropic</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这是工程博文，不是实验论文。容易把五张工作流图都装进一个产品。下面先给出<strong>主张、切词、模式地图与精读路径</strong>。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 有效的智能体来自简单、可组合的模式：先分清<strong>工作流</strong>（代码规定路径）与<strong>智能体</strong>（模型自己决定下一步）；能单次调用解决的就不要上循环；框架可以入门，生产时要看得见提示与工具。</p>
+</div>
+
+<h2>和 AI 工程、智能体 / Cordiverse 的关系</h2>
+<p>这是少有的、直接写给 <strong>harness 工程</strong>的实践文：增强 LLM、提示链、路由、并行、编排器、评估器、自主循环，以及把工具当 ACI 来打磨。对 AI 工程的用处可以收成一句：复杂度是成本，不是勋章。</p>
+<p>它点名 MCP 作为给增强 LLM 接第三方工具的一种方式，但没有讨论服务器如何卸载、依赖如何声明。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：可组合的是提示图，不是带逆变换的运行时。此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>团队容易一上来就上厚框架，抽象挡住提示，也诱使加戏。作者从客户现场看到：跑得通的实现几乎都更瘦，并且先问「要不要智能体」。 </p>
+
+<h2>机制（模式清单）</h2>
+<ul>
+  <li><strong>增强 LLM</strong>：检索 / 工具 / 记忆；可用 MCP 接线。</li>
+  <li><strong>工作流</strong>：提示链、路由、并行（分段 / 投票）、编排器–工作者、评估器–优化器。</li>
+  <li><strong>智能体</strong>：循环里用工具，环境反馈当地面真值，设停止条件，沙箱加护栏。</li>
+  <li><strong>三条原则</strong>：简单、规划可见、认真做 ACI。</li>
+</ul>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>切词</strong>：把「agentic systems」拆成工作流 vs 智能体，避免一词多用。</li>
+  <li><strong>可选用地图</strong>：每张图都写何时用、何时不要用。</li>
+  <li><strong>ACI</strong>：工具格式迁就模型（少数字段、少转义、绝对路径防呆）；SWE-bench 上改工具比改总提示更久。</li>
+  <li><strong>没有</strong>：对照实验、卸载语义、依赖拓扑。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>主张 · 切词 · 何时用</td>
+      <td><a href="#page-1">1</a>–<a href="#page-3">3</a></td>
+      <td>简单模式；工作流 vs 智能体；框架的代价。</td>
+      <td>必读。</td>
+    </tr>
+    <tr>
+      <td>增强 LLM · 提示链 · 路由</td>
+      <td><a href="#page-4">4</a>–<a href="#page-6">6</a></td>
+      <td>MCP；链与门；分类分流。</td>
+      <td>要对图时精读。</td>
+    </tr>
+    <tr>
+      <td>并行 · 编排 · 评估器</td>
+      <td><a href="#page-6">6</a>–<a href="#page-9">9</a></td>
+      <td>分段 / 投票；动态拆工；写手+编辑循环。</td>
+      <td>关心工作流必读。</td>
+    </tr>
+    <tr>
+      <td>智能体 · 原则</td>
+      <td><a href="#page-9">9</a>–<a href="#page-12">12</a></td>
+      <td>地面真值、停止条件、SWE-bench / 计算机使用；三条原则。</td>
+      <td>关心 harness 必读。</td>
+    </tr>
+    <tr>
+      <td>附录 1–2</td>
+      <td><a href="#page-12">12</a>–<a href="#page-15">15</a></td>
+      <td>客服与编码为何先跑通；工具提示工程与防呆。</td>
+      <td>要落地精读附录 2。</td>
+    </tr>
+    <tr>
+      <td>站点页脚</td>
+      <td><a href="#page-15">15</a>–<a href="#page-19">19</a></td>
+      <td>订阅与导航；第 19 页空白。</td>
+      <td>可跳过。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → <a href="#page-2">第 2 页</a>切词 → <a href="#page-12">第 12 页</a>三条原则。</p>
+  </div>
+  <div class="card">
+    <h3>要对上工作流图</h3>
+    <p>第 4–9 页五张图，每张只问「我的任务能不能预先拆开」。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / Cordiverse</h3>
+    <p>附录 2 的 ACI → <a href="#commentary">读后评论</a>：模式可组合，卸载与依赖仍缺。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「编排器和并行差在预不预知子任务」「绝对路径为什么算 ACI」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Engineering at Anthropic Building effective agents We&#x27;ve worked with dozens of teams building LLM agents across industries. Consistently, the most successful implementations use simple, composable patterns rather than complex frameworks. Published Dec 19, 2024 Note: Much of the tooling landscape described in this post has changed since December 2024. For our current approach, see how we built Claude Managed Agents and the Managed Agents documentation. Over the past year, we&#x27;ve worked with dozens of teams building large language model (LLM) agents across industries. Consistently, the most successful implementations weren&#x27;t using complex frameworks or specialized libraries. Instead, they were building with simple, composable patterns.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>Anthropic 工程</p>
+<p>如何构建有效的智能体</p>
+<p>我们与数十个跨行业构建 LLM 智能体的团队合作过。始终如一的是：最成功的实现使用简单、可组合的模式，而不是复杂框架。</p>
+<p>发布于 2024 年 12 月 19 日</p>
+<p>注：本文所描述的工具图景自 2024 年 12 月以来已有变化。关于我们当前的方法，见我们如何构建 Claude Managed Agents 以及 Managed Agents 文档。</p>
+<p>在过去一年里，我们与数十个跨行业构建大语言模型（LLM）智能体的团队合作。始终如一的是：最成功的实现并没有使用复杂框架或专用库。相反，它们用简单、可组合的模式来构建。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是全文主张的第一锤：观察了几十个跨行业团队之后，作者说真正跑得通的智能体，靠的是简单、可组合的模式，而不是厚框架。
+这很重要，因为它先把「上智能体就要上编排套件」这句默认话按住。
+类比：厨房赢在刀工和火候，不在买了一整面墙的料理机。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>In this post, we share what we’ve learned from working with our customers and building agents ourselves, and give practical advice for developers on building effective agents. What are agents? &quot;Agent&quot; can be defined in several ways. Some customers define agents as fully autonomous systems that operate independently over extended periods, using various tools to accomplish complex tasks. Others use the term to describe more prescriptive implementations that follow predefined workflows. At Anthropic, we categorize all these variations as agentic systems, but draw an important architectural distinction between workflows and agents: Workflows are systems where LLMs and tools are orchestrated through predefined code paths. Agents, on the other hand, are systems where LLMs dynamically direct their own processes and tool usage, maintaining control over how they accomplish tasks. Below, we will explore both types of agentic systems in detail. In Appendix 1 (“Agents in Practice”), we describe two domains where customers have found particular value in using these kinds of systems. When (and when not) to use agents When building applications with LLMs, we recommend finding the simplest solution possible, and only increasing complexity when needed. This might mean not building agentic systems at all. Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense. When more complexity is warranted, workflows offer predictability and consistency for well-defined tasks, whereas agents are the better option when flexibility and model-driven decision-making are needed at scale. For many applications, however, optimizing single LLM calls with retrieval and in-context examples is usually enough.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>在这篇文章中，我们分享从与客户合作以及自己构建智能体中学到的东西，并向开发者给出构建有效智能体的实践建议。</p>
+<p>什么是智能体？</p>
+<p>「智能体」可以有若干定义。一些客户把智能体定义为在较长时间内独立运行、使用各种工具完成复杂任务的完全自主系统。另一些人用该词描述遵循预定义工作流的、更具规定性的实现。在 Anthropic，我们将所有这些变体归类为智能体系统（agentic systems），但在工作流与智能体之间划出重要的架构区分：</p>
+<p>工作流是这样的系统：LLM 与工具通过预定义的代码路径被编排。</p>
+<p>智能体则是这样的系统：LLM 动态指导其自身过程与工具使用，对如何完成任务保持控制。</p>
+<p>下面我们将详细探讨这两类智能体系统。在附录 1（「实践中的智能体」）中，我们描述客户发现这类系统特别有价值的两个领域。</p>
+<p>何时（以及何时不要）使用智能体</p>
+<p>用 LLM 构建应用时，我们建议寻找尽可能简单的方案，仅在需要时增加复杂度。这可能意味着根本不构建智能体系统。智能体系统常常用延迟和成本换更好的任务性能，你应当考虑这种权衡何时合理。</p>
+<p>当更多复杂度确有必要时，工作流为定义良好的任务提供可预测性与一致性，而智能体在需要灵活性与模型驱动的决策、且要规模化时是更好的选项。然而对许多应用而言，用检索与上下文中的示例优化单次 LLM 调用通常就够了。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把词切开：工作流是代码规定路径，智能体是模型自己决定下一步；并劝你先找最简单的解，很多时候一次带检索的调用就够。
+这很重要，因为它给「上不上智能体」一个可执行的刹车。
+类比：十字路口装红绿灯（工作流）还是派交警临场指挥（智能体）——车流简单时，灯就够了。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>When and how to use frameworks There are many frameworks that make agentic systems easier to implement, including: The Claude Agent SDK; Strands Agents SDK by AWS; Rivet, a drag and drop GUI LLM workflow builder; and Vellum, another GUI tool for building and testing complex workflows. These frameworks make it easy to get started by simplifying standard low-level tasks like calling LLMs, defining and parsing tools, and chaining calls together. However, they often create extra layers of abstraction that can obscure the underlying prompts ​ and responses, making them harder to debug. They can also make it tempting to add complexity when a simpler setup would suffice. We suggest that developers start by using LLM APIs directly: many patterns can be implemented in a few lines of code. If you do use a framework, ensure you understand the underlying code. Incorrect assumptions about what&#x27;s under the hood are a common source of customer error. See our cookbook for some sample implementations. Building blocks, workflows, and agents In this section, we’ll explore the common patterns for agentic systems we’ve seen in production. We&#x27;ll start with our foundational building block—the augmented LLM— and progressively increase complexity, from simple compositional workflows to autonomous agents. Building block: The augmented LLM The basic building block of agentic systems is an LLM enhanced with augmentations such as retrieval, tools, and memory. Our current models can actively use these capabilities—generating their own search queries, selecting appropriate tools, and determining what information to retain.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>何时以及如何使用框架</p>
+<p>有许多框架使智能体系统更易实现，包括：</p>
+<p>The Claude Agent SDK；</p>
+<p>AWS 的 Strands Agents SDK；</p>
+<p>Rivet，一个拖放式 GUI LLM 工作流构建器；以及</p>
+<p>Vellum，另一个用于构建与测试复杂工作流的 GUI 工具。</p>
+<p>这些框架通过简化调用 LLM、定义与解析工具、以及把调用串起来等标准底层任务，使入门变得容易。然而，它们常常制造额外的抽象层，可能遮蔽底层提示与响应，使其更难调试。它们也可能诱使你在更简单的设置就足够时添加复杂度。</p>
+<p>我们建议开发者从直接使用 LLM API 开始：许多模式可以用几行代码实现。若你确实用框架，请确保理解底层代码。对引擎盖下有什么的错误假设，是客户错误的常见来源。</p>
+<p>见我们的 cookbook 以获取一些示例实现。</p>
+<p>构建块、工作流与智能体</p>
+<p>在本节中，我们将探讨我们在生产中见到的智能体系统常见模式。我们将从基础构建块——增强的 LLM——开始，并逐步增加复杂度，从简单的组合工作流到自主智能体。</p>
+<p>构建块：增强的 LLM</p>
+<p>智能体系统的基本构建块是用检索、工具与记忆等增强所强化的 LLM。我们当前的模型可以主动使用这些能力——生成自己的搜索查询、选择适当的工具，并决定保留哪些信息。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页劝你先直接打 API：框架能省样板，但也挡提示、诱使加戏。然后把增强 LLM（检索、工具、记忆）定为后面所有模式的积木。
+这很重要，因为它把「先理解调用」写成纪律，而不是口味。
+类比：先学会用炉灶和锅，再决定要不要买自动炒菜机；买了也要拆开看看电路。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The augmented LLM We recommend focusing on two key aspects of the implementation: tailoring these capabilities to your specific use case and ensuring they provide an easy, welldocumented interface for your LLM. While there are many ways to implement these augmentations, one approach is through our recently released Model Context Protocol, which allows developers to integrate with a growing ecosystem of thirdparty tools with a simple client implementation. For the remainder of this post, we&#x27;ll assume each LLM call has access to these augmented capabilities. Workflow: Prompt chaining Prompt chaining decomposes a task into a sequence of steps, where each LLM call processes the output of the previous one. You can add programmatic checks (see &quot;gate” in the diagram below) on any intermediate steps to ensure that the process is still on track.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>增强的 LLM</p>
+<p>我们建议聚焦实现的两个关键方面：将这些能力裁剪到你的具体用例，并确保它们为你的 LLM 提供简易、文档良好的接口。尽管实现这些增强有许多方式，一种途径是通过我们最近发布的模型上下文协议（MCP），它允许开发者以简单的客户端实现接入不断增长的第三方工具生态。</p>
+<p>在本文余下部分，我们将假定每次 LLM 调用都能访问这些增强能力。</p>
+<p>工作流：提示链</p>
+<p>提示链将任务分解为步骤序列，其中每次 LLM 调用处理前一次的输出。你可以在任何中间步骤上加入程序性检查（见下图中的「门」），以确保过程仍在正轨上。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页点名 MCP 作为给增强 LLM 接工具的一种方式，然后介绍第一种工作流：提示链——一步的输出当下一步的输入，中间可以设门。
+这很重要，因为它把「把难事先切成固定小步」写成可复用图，而不是提示技巧。
+类比：生产线：写大纲 → 质检门 → 再写全文；门没过就别往下流。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The prompt chaining workflow When to use this workflow: This workflow is ideal for situations where the task can be easily and cleanly decomposed into fixed subtasks. The main goal is to trade off latency for higher accuracy, by making each LLM call an easier task. Examples where prompt chaining is useful: Generating Marketing copy, then translating it into a different language. Writing an outline of a document, checking that the outline meets certain criteria, then writing the document based on the outline. Workflow: Routing Routing classifies an input and directs it to a specialized followup task. This workflow allows for separation of concerns, and building more specialized prompts. Without this workflow, optimizing for one kind of input can hurt performance on other inputs.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>提示链工作流</p>
+<p>何时使用此工作流：此工作流适合任务可以轻松、干净地分解为固定子任务的情形。主要目标是用延迟换更高准确率，方法是让每次 LLM 调用都变成更容易的任务。</p>
+<p>提示链有用的例子：</p>
+<p>生成营销文案，再将其译成另一种语言。</p>
+<p>写一份文档大纲，检查大纲是否满足某些标准，再基于大纲写文档。</p>
+<p>工作流：路由</p>
+<p>路由对输入分类，并将其导向专门的后续任务。此工作流允许关注点分离，并构建更专门的提示。没有此工作流，为一种输入优化可能损害其他输入上的性能。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给提示链适用条件，并引出路由：先分类，再送到不同提示 / 工具 / 模型。
+这很重要，因为它解释为何「一个万能提示」会互相伤害——优待退款单，技术支持就会变差。
+类比：医院分诊：发烧去内科，骨折去骨科，而不是让同一位医生用同一套问诊稿应付所有人。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The routing workflow When to use this workflow: Routing works well for complex tasks where there are distinct categories that are better handled separately, and where classification can be handled accurately, either by an LLM or a more traditional classification model/algorithm. Examples where routing is useful: Directing different types of customer service queries (general questions, refund requests, technical support) into different downstream processes, prompts, and tools. Routing easy/common questions to smaller, cost-efficient models like Claude Haiku 4.5 and hard/unusual questions to more capable models like Claude Sonnet 4.5 to optimize for best performance. Workflow: Parallelization LLMs can sometimes work simultaneously on a task and have their outputs aggregated programmatically. This workflow, parallelization, manifests in two key variations: Sectioning: Breaking a task into independent subtasks run in parallel. Voting: Running the same task multiple times to get diverse outputs.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>路由工作流</p>
+<p>何时使用此工作流：路由适用于存在明显类别、最好分开处理的复杂任务，且分类可以由 LLM 或更传统的分类模型 / 算法准确完成。</p>
+<p>路由有用的例子：</p>
+<p>将不同类型的客服查询（一般问题、退款请求、技术支持）导入不同的下游过程、提示与工具。</p>
+<p>将容易 / 常见问题路由到更小、更省成本的模型（如 Claude Haiku 4.5），将困难 / 罕见问题路由到更有能力的模型（如 Claude Sonnet 4.5），以优化最佳性能。</p>
+<p>工作流：并行化</p>
+<p>LLM 有时可以同时处理一项任务，并将其输出以程序方式聚合。此工作流——并行化——表现为两个关键变体：</p>
+<p>分段：将任务拆成并行运行的独立子任务。</p>
+<p>投票：多次运行同一任务以获得多样输出。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把路由落到客服分单和贵贱模型分流，再介绍并行：分段同时干不同事，投票同一件事跑多遍再汇总。
+这很重要，因为它把「多调几次」从浪费改成一种可设计的工作流。
+类比：分段像把翻译、核价、查库存分给三个人同时做；投票像请三位编辑各看一遍同一段代码，再数票。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The parallelization workflow When to use this workflow: Parallelization is effective when the divided subtasks can be parallelized for speed, or when multiple perspectives or attempts are needed for higher confidence results. For complex tasks with multiple considerations, LLMs generally perform better when each consideration is handled by a separate LLM call, allowing focused attention on each specific aspect. Examples where parallelization is useful: Sectioning: Implementing guardrails where one model instance processes user queries while another screens them for inappropriate content or requests. This tends to perform better than having the same LLM call handle both guardrails and the core response. Automating evals for evaluating LLM performance, where each LLM call evaluates a different aspect of the model’s performance on a given prompt. Voting: Reviewing a piece of code for vulnerabilities, where several different prompts review and flag the code if they find a problem. Evaluating whether a given piece of content is inappropriate, with multiple prompts evaluating different aspects or requiring different vote thresholds to balance false positives and negatives. Workflow: Orchestrator-workers</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>并行化工作流</p>
+<p>何时使用此工作流：当被划分的子任务可以为速度而并行，或当需要多种视角或尝试以获得更高置信结果时，并行化有效。对具有多方面考虑的复杂任务，当每项考虑由单独的 LLM 调用处理、从而能专注于每个特定方面时，LLM 通常表现更好。</p>
+<p>并行化有用的例子：</p>
+<p>分段：</p>
+<p>实现护栏：一个模型实例处理用户查询，另一个筛查不当内容或请求。这往往比让同一次 LLM 调用既处理护栏又处理核心响应表现更好。</p>
+<p>为评估 LLM 性能自动化评测，其中每次 LLM 调用评估模型在给定提示上性能的不同方面。</p>
+<p>投票：</p>
+<p>审查一段代码是否有漏洞，其中若干不同提示进行审查，若发现问题则标记代码。</p>
+<p>评估给定内容是否不当，用多个提示评估不同方面，或要求不同的投票阈值以平衡假阳性与假阴性。</p>
+<p>工作流：编排器–工作者</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给并行化的适用例子：护栏与主回答拆开、多提示审代码或评内容；然后引出编排器–工作者。
+这很重要，因为它说明「同一模型既当裁判又当选手」往往不如拆成两次调用。
+类比：安检和售票不要同一窗口——一个人既要笑脸迎客又要查违禁，两头都容易漏。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>In the orchestrator-workers workflow, a central LLM dynamically breaks down tasks, delegates them to worker LLMs, and synthesizes their results. The orchestrator-workers workflow When to use this workflow: This workflow is well-suited for complex tasks where you can’t predict the subtasks needed (in coding, for example, the number of files that need to be changed and the nature of the change in each file likely depend on the task). Whereas it’s topographically similar, the key difference from parallelization is its flexibility—subtasks aren&#x27;t pre-defined, but determined by the orchestrator based on the specific input. Example where orchestrator-workers is useful: Coding products that make complex changes to multiple files each time. Search tasks that involve gathering and analyzing information from multiple sources for possible relevant information. Workflow: Evaluator-optimizer In the evaluator-optimizer workflow, one LLM call generates a response while another provides evaluation and feedback in a loop.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>在编排器–工作者工作流中，一个中心 LLM 动态分解任务，将它们委派给工作者 LLM，并综合其结果。</p>
+<p>编排器–工作者工作流</p>
+<p>何时使用此工作流：此工作流适合你无法预知所需子任务的复杂任务（例如在编码中，需要更改的文件数量以及每个文件中变更的性质很可能取决于任务）。尽管在拓扑上与并行化相似，与并行化的关键差别是其灵活性——子任务不是预先定义的，而是由编排器基于具体输入决定。</p>
+<p>编排器–工作者有用的例子：</p>
+<p>每次对多个文件做复杂变更的编码产品。</p>
+<p>涉及从多个来源收集并分析信息以寻找可能相关信息的搜索任务。</p>
+<p>工作流：评估器–优化器</p>
+<p>在评估器–优化器工作流中，一次 LLM 调用生成响应，另一次在循环中提供评估与反馈。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页区分编排器–工作者与死并行：子任务由中心模型临场拆，适合改多文件、搜多源；再介绍评估器–优化器，即写手和编辑轮流改。
+这很重要，因为它把「动态拆工」从并行里单列出来，避免和固定分段混为一谈。
+类比：项目经理当场分活，而不是早上把工单打印死；旁边再坐一位只负责批红的编辑。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The evaluator-optimizer workflow When to use this workflow: This workflow is particularly effective when we have clear evaluation criteria, and when iterative refinement provides measurable value. The two signs of good fit are, first, that LLM responses can be demonstrably improved when a human articulates their feedback; and second, that the LLM can provide such feedback. This is analogous to the iterative writing process a human writer might go through when producing a polished document. Examples where evaluator-optimizer is useful: Literary translation where there are nuances that the translator LLM might not capture initially, but where an evaluator LLM can provide useful critiques. Complex search tasks that require multiple rounds of searching and analysis to gather comprehensive information, where the evaluator decides whether further searches are warranted. Agents Agents are emerging in production as LLMs mature in key capabilities— understanding complex inputs, engaging in reasoning and planning, using tools reliably, and recovering from errors. Agents begin their work with either a command from, or interactive discussion with, the human user. Once the task is clear, agents plan and operate independently, potentially returning to the human for further information or judgement. During execution, it&#x27;s crucial for the agents to gain “ground truth” from the environment at each step (such as tool call results or code execution) to assess its progress. Agents can then pause for human feedback at checkpoints or</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>评估器–优化器工作流</p>
+<p>何时使用此工作流：当我们有清晰的评估标准，且迭代精炼能提供可衡量的价值时，此工作流特别有效。良好契合的两个信号是：第一，当人类清楚表达其反馈时，LLM 响应可以被明显改善；第二，LLM 能够提供这样的反馈。这类似于人类作者在产出润色文档时可能经历的迭代写作过程。</p>
+<p>评估器–优化器有用的例子：</p>
+<p>文学翻译，其中存在译者 LLM 最初可能捕捉不到的细微差别，但评估器 LLM 可以提供有用批评。</p>
+<p>需要多轮搜索与分析以收集全面信息的复杂搜索任务，其中评估器决定是否有必要进一步搜索。</p>
+<p>智能体</p>
+<p>智能体正随着 LLM 在关键能力上成熟——理解复杂输入、进行推理与规划、可靠使用工具、并从错误中恢复——而在生产中出现。智能体以其工作开始，或来自人类用户的命令，或与其交互讨论。一旦任务明确，智能体独立规划并运作，可能回到人类处以获取进一步信息或判断。在执行期间，智能体在每一步从环境获得「地面真值」（例如工具调用结果或代码执行）以评估其进展，这一点至关重要。智能体随后可以在检查点或</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给评估器循环的适用信号，并第一次正定义「智能体」：任务清楚后自己规划，每步拿环境反馈当地面真值，必要时停下来问人。
+这很重要，因为它把智能体从工作流里抬出来——路径不再写死，信任与成本同时上升。
+类比：实习生拿到目标后自己决定先查日志还是先跑测试，每步以编译器和测试结果为准，卡死再来问你。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>when encountering blockers. The task often terminates upon completion, but it’s also common to include stopping conditions (such as a maximum number of iterations) to maintain control. Agents can handle sophisticated tasks, but their implementation is often straightforward. They are typically just LLMs using tools based on environmental feedback in a loop. It is therefore crucial to design toolsets and their documentation clearly and thoughtfully. We expand on best practices for tool development in Appendix 2 (&quot;Prompt Engineering your Tools&quot;). Autonomous agent When to use agents: Agents can be used for open-ended problems where it’s difficult or impossible to predict the required number of steps, and where you can’t hardcode a fixed path. The LLM will potentially operate for many turns, and you must have some level of trust in its decision-making. Agents&#x27; autonomy makes them ideal for scaling tasks in trusted environments. The autonomous nature of agents means higher costs, and the potential for compounding errors. We recommend extensive testing in sandboxed environments, along with the appropriate guardrails. Examples where agents are useful: The following examples are from our own implementations: A coding Agent to resolve SWE-bench tasks, which involve edits to many files based on a task description;</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>在遇到阻塞时暂停以获取人类反馈。任务常常在完成时终止，但纳入停止条件（例如最大迭代次数）以保持控制也很常见。</p>
+<p>智能体可以处理复杂任务，但其实现往往直截了当。它们通常只是在循环中基于环境反馈使用工具的 LLM。因此，清晰、周到地设计工具集及其文档至关重要。我们在附录 2（「对你的工具做提示工程」）中展开工具开发的最佳实践。</p>
+<p>自主智能体</p>
+<p>何时使用智能体：智能体可用于开放式问题，其中难以或不可能预测所需步数，且你无法硬编码固定路径。LLM 可能会运转许多轮，你必须对其决策有一定程度的信任。智能体的自主性使它们适合在受信任环境中规模化任务。</p>
+<p>智能体的自主性意味着更高成本，以及复合错误的可能。我们建议在沙箱环境中进行广泛测试，并配备适当的护栏。</p>
+<p>智能体有用的例子：</p>
+<p>以下例子来自我们自己的实现：</p>
+<p>一个编码智能体，用于解决 SWE-bench 任务，这些任务涉及基于任务描述对许多文件的编辑；</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把智能体收成一句：循环里用工具的 LLM，外加停止条件；并警告成本与复合错误，要沙箱和护栏。例子是 SWE-bench 编码智能体。
+这很重要，因为它打破「智能体=复杂框架」：实现可以很瘦，难的是工具和信任边界。
+类比：自动驾驶能自己打方向，但你仍要限速、划车道、准备急停——不是车越贵越该满街乱跑。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Our “computer use” reference implementation, where Claude uses a computer to accomplish tasks. High-level flow of a coding agent Combining and customizing these patterns These building blocks aren&#x27;t prescriptive. They&#x27;re common patterns that developers can shape and combine to fit different use cases. The key to success, as with any LLM features, is measuring performance and iterating on implementations. To repeat: you should consider adding complexity only when it demonstrably improves outcomes. Summary Success in the LLM space isn&#x27;t about building the most sophisticated system. It&#x27;s about building the right system for your needs. Start with simple prompts, optimize</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们的「计算机使用」参考实现，其中 Claude 使用计算机完成任务。</p>
+<p>编码智能体的高层流程</p>
+<p>组合与定制这些模式</p>
+<p>这些构建块不是规定性的。它们是开发者可以塑造并组合以适应不同用例的常见模式。成功的关键，与任何 LLM 功能一样，是衡量性能并迭代实现。重复一遍：你应当仅在它可证明地改善结果时才考虑增加复杂度。</p>
+<p>总结</p>
+<p>LLM 空间中的成功不在于构建最复杂的系统。而在于为你的需求构建正确的系统。从简单提示开始，用全面的评估优化它们，并且仅当更简单的方案不足时才加入多步智能体系统。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用计算机使用作第二例，并收束：模式可组合，但只在能量出收益时加复杂度；成功是选对系统，不是堆最炫的。
+这很重要，因为它把全文纪律再说一遍，防止读者把前面五张图都装进一个产品。
+类比：菜谱可以混着做，但每多一道工序都要能吃出差别，否则只是洗碗更多。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>them with comprehensive evaluation, and add multi-step agentic systems only when simpler solutions fall short. When implementing agents, we try to follow three core principles:</p>
+<p class="meta-line">1. Maintain simplicity in your agent&#x27;s design.</p>
+<p class="meta-line">2. Prioritize transparency by explicitly showing the agent’s planning steps.</p>
+<h1>3. Carefully craft your agent-computer interface (ACI) through thorough tool</h1>
+<p>documentation and testing. Frameworks can help you get started quickly, but don&#x27;t hesitate to reduce abstraction layers and build with basic components as you move to production. By following these principles, you can create agents that are not only powerful but also reliable, maintainable, and trusted by their users.</p>
+<h1>Acknowledgements</h1>
+<p class="lead"><strong>Written by Erik S.</strong> and Barry Zhang. This work draws upon our experiences building agents at Anthropic and the valuable insights shared by our customers, for which we&#x27;re deeply grateful. Appendix 1: Agents in practice Our work with customers has revealed two particularly promising applications for AI agents that demonstrate the practical value of the patterns discussed above. Both applications illustrate how agents add the most value for tasks that require both conversation and action, have clear success criteria, enable feedback loops, and integrate meaningful human oversight. A. Customer support Customer support combines familiar chatbot interfaces with enhanced capabilities through tool integration. This is a natural fit for more open-ended agents because: Support interactions naturally follow a conversation flow while requiring access to external information and actions;</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>用全面的评估优化它们，并且仅当更简单的方案不足时才加入多步智能体系统。</p>
+<p>在实现智能体时，我们试图遵循三条核心原则：</p>
+<p class="meta-line">1. 在智能体的设计中保持简单。</p>
+<p class="meta-line">2. 通过显式展示智能体的规划步骤来优先保证透明。</p>
+<p class="meta-line">3. 通过周到的工具文档与测试，仔细打造你的智能体–计算机接口（ACI）。</p>
+<p>框架可以帮助你迅速起步，但在走向生产时，不要犹豫去减少抽象层、用基本组件构建。遵循这些原则，你可以创建不仅强大、而且可靠、可维护、并受用户信任的智能体。</p>
+<h1>致谢</h1>
+<p>由 Erik S. 与 Barry Zhang 撰写。本工作借鉴我们在 Anthropic 构建智能体的经验以及客户分享的宝贵洞见，我们对此深表感谢。</p>
+<p>附录 1：实践中的智能体</p>
+<p>我们与客户的工作揭示了 AI 智能体两个特别有前景的应用，它们展示了上述模式的实践价值。两个应用都说明：智能体在既需要对话又需要行动、有清晰成功标准、能形成反馈环、并纳入有意义的人类监督的任务上，增加的价值最大。</p>
+<p>A. 客户支持</p>
+<p>客户支持将熟悉的聊天机器人界面与通过工具集成增强的能力相结合。这对更开放的智能体是自然契合，因为：</p>
+<p>支持交互自然遵循对话流，同时需要访问外部信息与行动；</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给出三条原则：简单、规划可见、把工具当 ACI 来打磨；附录用客服说明智能体何时值钱——能对话、能行动、能量成功、能让人插手。
+这很重要，因为它把「透明」写成产品要求：用户要看见智能体打算怎么走。
+类比：餐厅后厨开窗，客人看得到炒的是不是自己点的那道菜，才敢让厨师自己发挥。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Tools can be integrated to pull customer data, order history, and knowledge base articles; Actions such as issuing refunds or updating tickets can be handled programmatically; and Success can be clearly measured through user-defined resolutions. Several companies have demonstrated the viability of this approach through usagebased pricing models that charge only for successful resolutions, showing confidence in their agents&#x27; effectiveness. B. Coding agents The software development space has shown remarkable potential for LLM features, with capabilities evolving from code completion to autonomous problem-solving. Agents are particularly effective because: Code solutions are verifiable through automated tests; Agents can iterate on solutions using test results as feedback; The problem space is well-defined and structured; and Output quality can be measured objectively. In our own implementation, agents can now solve real GitHub issues in the SWEbench Verified benchmark based on the pull request description alone. However, whereas automated testing helps verify functionality, human review remains crucial for ensuring solutions align with broader system requirements. Appendix 2: Prompt engineering your tools No matter which agentic system you&#x27;re building, tools will likely be an important part of your agent. Tools enable Claude to interact with external services and APIs by specifying their exact structure and definition in our API. When Claude responds, it will include a tool use block in the API response if it plans to invoke a tool. Tool definitions and specifications should be given just as much prompt engineering attention as your overall prompts. In this brief appendix, we describe how to prompt engineer your tools.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>工具可以被集成以拉取客户数据、订单历史与知识库文章；</p>
+<p>诸如发放退款或更新工单等行动可以程序化处理；并且</p>
+<p>成功可以通过用户定义的解决来清晰衡量。</p>
+<p>若干公司已通过按成功解决收费的用量定价模型展示了这一方法的可行性，显示出对其智能体有效性的信心。</p>
+<p>B. 编码智能体</p>
+<p>软件开发领域已展示出 LLM 功能的显著潜力，能力从代码补全演进到自主问题解决。智能体特别有效，因为：</p>
+<p>代码方案可通过自动化测试验证；</p>
+<p>智能体可以使用测试结果作为反馈来迭代方案；</p>
+<p>问题空间定义良好且结构化；并且</p>
+<p>输出质量可以客观衡量。</p>
+<p>在我们自己的实现中，智能体现在可以仅基于拉取请求描述，在 SWE-bench Verified 基准中解决真实的 GitHub 议题。然而，尽管自动化测试有助于验证功能，人类审查对于确保方案与更广泛的系统要求对齐仍然至关重要。</p>
+<p>附录 2：对你的工具做提示工程</p>
+<p>无论你在构建哪一种智能体系统，工具都很可能是智能体的重要部分。工具使 Claude 能够通过在我们的 API 中指定其精确结构与定义，与外部服务和 API 交互。当 Claude 响应时，若它计划调用工具，API 响应中将包含一个工具使用块。工具定义与规范应当得到与你的整体提示同样多的提示工程关注。在本简短附录中，我们描述如何对你的工具做提示工程。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把客服和编码两个战场写完：前者能量「是否解决」，后者有测试当地面真值；然后强调工具定义要像提示一样打磨。
+这很重要，因为它解释为何这两类任务先跑通——反馈环是现成的，人仍要审系统要求。
+类比：有裁判的运动好练；没有哨声的辩论，智能体不知道自己赢没赢。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>There are often several ways to specify the same action. For instance, you can specify a file edit by writing a diff, or by rewriting the entire file. For structured output, you can return code inside markdown or inside JSON. In software engineering, differences like these are cosmetic and can be converted losslessly from one to the other. However, some formats are much more difficult for an LLM to write than others. Writing a diff requires knowing how many lines are changing in the chunk header before the new code is written. Writing code inside JSON (compared to markdown) requires extra escaping of newlines and quotes. Our suggestions for deciding on tool formats are the following: Give the model enough tokens to &quot;think&quot; before it writes itself into a corner. Keep the format close to what the model has seen naturally occurring in text on the internet. Make sure there&#x27;s no formatting &quot;overhead&quot; such as having to keep an accurate count of thousands of lines of code, or string-escaping any code it writes. One rule of thumb is to think about how much effort goes into human-computer interfaces (HCI), and plan to invest just as much effort in creating good agentcomputer interfaces (ACI). Here are some thoughts on how to do so: Put yourself in the model&#x27;s shoes. Is it obvious how to use this tool, based on the description and parameters, or would you need to think carefully about it? If so, then it’s probably also true for the model. A good tool definition often includes example usage, edge cases, input format requirements, and clear boundaries from other tools. How can you change parameter names or descriptions to make things more obvious? Think of this as writing a great docstring for a junior developer on your team. This is especially important when using many similar tools. Test how the model uses your tools: Run many example inputs in our workbench to see what mistakes the model makes, and iterate. Poka-yoke your tools. Change the arguments so that it is harder to make mistakes. While building our agent for SWE-bench, we actually spent more time optimizing our tools than the overall prompt. For example, we found that the model would make mistakes with tools using relative filepaths after the agent had moved out of the root</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>同一行动往往有若干指定方式。例如，你可以写一个 diff 来指定文件编辑，也可以重写整个文件。对于结构化输出，你可以在 markdown 中返回代码，或在 JSON 中返回。在软件工程中，这类差别是表面的，并且可以从一种无损转换到另一种。然而，某些格式对 LLM 来说比另一些难写得多。写 diff 需要在新代码写出来之前就知道块头里有多少行在变。在 JSON 里写代码（相对 markdown）需要对换行和引号做额外转义。</p>
+<p>我们对决定工具格式的建议如下：</p>
+<p>在模型把自己逼进死角之前，给它足够的标记去「思考」。</p>
+<p>让格式接近模型在互联网文本中自然见过的样子。</p>
+<p>确保没有格式「开销」，例如必须准确清点数千行代码，或对它写的任何代码做字符串转义。</p>
+<p>一条经验法则是：想想投入到人机接口（HCI）上的努力有多少，并计划在打造良好的智能体–计算机接口（ACI）上投入同样多的努力。以下是一些关于如何做的想法：</p>
+<p>把自己放在模型的位置。基于描述和参数，这个工具怎么用是否显而易见，还是你需要仔细想？若是后者，对模型大概也是如此。好的工具定义常常包括示例用法、边界情况、输入格式要求，以及与其他工具的清晰边界。</p>
+<p>你如何通过改变参数名或描述让事情更显而易见？把这想成在为团队里的初级开发者写一份出色的文档字符串。当使用许多相似工具时尤其重要。</p>
+<p>测试模型如何使用你的工具：在我们的 workbench 中运行许多示例输入，看模型犯什么错，并迭代。</p>
+<p>对你的工具做防呆（poka-yoke）。改变参数，使犯错更难。</p>
+<p>在为我们的 SWE-bench 智能体构建时，我们实际花在优化工具上的时间比花在整体提示上更多。例如，我们发现在智能体离开根目录后，模型会在使用相对文件路径的工具上犯错。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是附录的技术核：工具格式要迁就模型（少数行、少转义），ACI 要像 HCI 一样舍得花时间，参数要防呆。SWE-bench 上他们改工具比改总提示花得更多。
+这很重要，因为它把 harness 工程从「写系统提示」挪到「把工具做成不容易用错的接口」。
+类比：给实习生的扳手如果能反着套，说明扳手设计坏了，不是人不够聪明——后来他们改成只收绝对路径。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>directory. To fix this, we changed the tool to always require absolute filepaths—and we found that the model used this method flawlessly. Get the developer newsletter Product updates, how-tos, community spotlights, and more. Delivered monthly to your inbox. Enter your email Please provide your email address if you&#x27;d like to receive our monthly developer newsletter. You can unsubscribe at any time. Products Claude Claude Code Claude Code Enterprise Claude Cowork @Claude Claude Design Claude Science Claude Security Claude in Chrome Claude for Microsoft 365 Skills Download app</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>为修复这一点，我们把工具改为始终要求绝对文件路径——并且我们发现模型完美地使用了这一方法。</p>
+<p>获取开发者通讯</p>
+<p>产品更新、操作指南、社区焦点等。</p>
+<p>每月投递到你的收件箱。</p>
+<p>输入你的电子邮件</p>
+<p>若你希望收到我们的月度开发者通讯，请提供你的电子邮件地址。你可以随时退订。</p>
+<p>产品</p>
+<p>Claude</p>
+<p>Claude Code</p>
+<p>Claude Code Enterprise</p>
+<p>Claude Cowork</p>
+<p>@Claude</p>
+<p>Claude Design</p>
+<p>Claude Science</p>
+<p>Claude Security</p>
+<p>Claude in Chrome</p>
+<p>Claude for Microsoft 365</p>
+<p>Skills</p>
+<p>Download app</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页上半收束「绝对路径」的防呆例子，下半已是订阅框与产品导航。工程论述到 ACI 案例为止。
+类比：正文最后一句还在讲扳手怎么改，翻页就是杂志广告。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Pricing Log in to Claude Models Mythos Fable Opus Sonnet Haiku Solutions AI agents Code modernization Coding Customer support Cybersecurity Enterprise Financial services Government Healthcare Higher education K-12 teachers Legal Life sciences Nonprofits Small business Claude Platform Overview Developer docs Pricing</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>定价</p>
+<p>登录 Claude</p>
+<p>模型</p>
+<p>Mythos</p>
+<p>Fable</p>
+<p>Opus</p>
+<p>Sonnet</p>
+<p>Haiku</p>
+<p>解决方案</p>
+<p>AI 智能体</p>
+<p>代码现代化</p>
+<p>编程</p>
+<p>客户支持</p>
+<p>网络安全</p>
+<p>企业</p>
+<p>金融服务</p>
+<p>政府</p>
+<p>医疗</p>
+<p>高等教育</p>
+<p>K-12 教师</p>
+<p>法律</p>
+<p>生命科学</p>
+<p>非营利组织</p>
+<p>小型企业</p>
+<p>Claude 平台</p>
+<p>概览</p>
+<p>开发者文档</p>
+<p>定价</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是站点导航，不是智能体方法论。可跳过。
+类比：官网侧栏。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Ecosystem Marketplace Regional compliance Claude on AWS Google Cloud Microsoft Foundry Console login Resources Blog Claude partner network Community Connectors Courses Customer stories Engineering at Anthropic Events Plugins Powered by Claude Service partners Tutorials Use cases Programs Startups Research Labs Help and security Availability Status Support center</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>生态</p>
+<p>市场</p>
+<p>区域合规</p>
+<p>Claude on AWS</p>
+<p>Google Cloud</p>
+<p>Microsoft Foundry</p>
+<p>控制台登录</p>
+<p>资源</p>
+<p>博客</p>
+<p>Claude 合作伙伴网络</p>
+<p>社区</p>
+<p>连接器</p>
+<p>课程</p>
+<p>客户故事</p>
+<p>Anthropic 工程</p>
+<p>活动</p>
+<p>插件</p>
+<p>Powered by Claude</p>
+<p>服务合作伙伴</p>
+<p>教程</p>
+<p>用例</p>
+<p>项目</p>
+<p>初创公司</p>
+<p>研究实验室</p>
+<p>帮助与安全</p>
+<p>可用性</p>
+<p>状态</p>
+<p>支持中心</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续站点导航与资源入口，无新论述。
+类比：商场指示牌。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-18" data-page="18">
+  <div class="page-label">第 18 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-018.jpg" alt="PDF page 18" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Company Anthropic Careers Leadership Policy Economic Futures Research News Claude’s Constitution Claude Corps Keep thinking Policy on the AI Exponential Responsible Scaling Policy Security and compliance Transparency Terms and policies Privacy choices Privacy policy Consumer health data privacy policy Responsible disclosure policy Terms of service: Commercial Terms of service: Consumer Terms of Service: US K-12 Data Processing Agreement: US K-12 Usage policy © 2026 Anthropic PBC</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>公司</p>
+<p>Anthropic</p>
+<p>职业</p>
+<p>领导层</p>
+<p>政策</p>
+<p>Economic Futures</p>
+<p>研究</p>
+<p>新闻</p>
+<p>Claude’s Constitution</p>
+<p>Claude Corps</p>
+<p>Keep thinking</p>
+<p>Policy on the AI Exponential</p>
+<p>Responsible Scaling Policy</p>
+<p>安全与合规</p>
+<p>透明度</p>
+<p>条款与政策</p>
+<p>隐私选择</p>
+<p>隐私政策</p>
+<p>消费者健康数据隐私政策</p>
+<p>负责任披露政策</p>
+<p>服务条款：商业</p>
+<p>服务条款：消费者</p>
+<p>服务条款：美国 K-12</p>
+<p>数据处理协议：美国 K-12</p>
+<p>使用政策</p>
+<p>© 2026 Anthropic PBC</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是公司与法律页脚。读正文时可跳过。
+类比：书籍版权页。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-19" data-page="19">
+  <div class="page-label">第 19 / 19 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-019.jpg" alt="PDF page 19" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（待翻译）</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页为空白抓取，无正文。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>模式可组合，运行时仍不可逆</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完切词、五张图与附录 2 之后展开。</p>
+
+<h2>它解决的是「框架太厚」，不是「组件可卸载」</h2>
+<p>Anthropic 把成功收成简单模式：工作流走死路径，智能体在循环里用工具，工具要当 ACI 打磨。对 <strong>agent harness</strong>，这是少有的、可直接当检查表用的工程文——先问要不要智能体，再问该用链、路由还是循环。</p>
+<p>Cordiverse 要的是运行时保证：卸掉时把副作用干净收回，以及依赖能声明、能随变化自动协调。这篇没有这两刀。工作流图可以拼，MCP 可以把工具接上；没有「这条工具依赖那个服务器、卸掉时权限与记忆如何收回」的语义。可组合的是提示与控制流形状，不是带逆变换的组件。简单，是认知上的简单，不是时空可组合性。</p>
+
+<h2>当作论文读时要降权的</h2>
+<ul>
+  <li><strong>没有对照实验</strong>：「最成功的实现更简单」是现场观察，不是消融。</li>
+  <li><strong>客服按成功收费</strong>是商业叙事，不是基准。</li>
+  <li><strong>第 16–19 页</strong>是站点页脚，不要读成附录 3。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把智能体工程写成可选用的模式清单，并把复杂度、透明度和 ACI 立成纪律。<strong>缺口</strong>是：组合停在图与提示，没有卸载、没有依赖规约；MCP 被点名为接线，不是运行时。Cordiverse 要补的，仍是模式拼好之后如何热替换而不丢语义。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-2">第 2 页</a>的工作流 / 智能体切开，和 <a href="#page-14">附录 2</a>「改工具比改提示更久」。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'building-effective-agents-paper-cols-v1';
+const total = 19;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

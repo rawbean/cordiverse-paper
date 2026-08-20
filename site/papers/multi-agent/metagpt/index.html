@@ -1,0 +1,1599 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MetaGPT：面向多智能体协作框架的元编程 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="MetaGPT：面向多智能体协作框架的元编程">MetaGPT：面向多智能体协作框架的元编程</p>
+      <p class="paper-authors" title="S. Hong et al.">S. Hong et al.</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这篇容易被收成「又一个多智能体聊天框架」。下面先给出<strong>主张、机制、证据与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 把人类软件公司的<strong>标准作业程序（SOP）</strong>编进提示：角色交结构化文档（PRD、设计、任务单），经共享消息池订阅，再加运行时可执行反馈。闲聊会传话走样；SOP 让多智能体写出更连贯、更能跑的软件。</p>
+</div>
+
+<h2>和 AI 工程、智能体、Cordiverse 的关系</h2>
+<p>MetaGPT 是 harness 文献里「编排子智能体与多智能体工作流」的一张具体图纸：五角色流水线、发布–订阅、工程师自己跑单测。Cordiverse 把多智能体编排视为运行框架的职责之一；MetaGPT 证明<strong>结构化交接</strong>比 CAMEL / ChatDev 式对话更能压住级联幻觉。</p>
+<p>它没有处理角色或工具在运行时如何卸载、一次坏的自修改如何隔离。消息池只会越积越厚。展开判断见<a href="#commentary">读后评论</a>。</p>
+
+<h2>问题从哪来</h2>
+<p>LLM 多智能体已经会简单对话，一接到复杂软件就逻辑崩：幻觉级联、「吃了吗」式闲聊、助手重复指令、消息死循环。人类靠 SOP 规定谁交什么中间产物。缺的不是更多角色扮演，而是把 SOP 写成可执行的元编程——「为编程而编程」。</p>
+
+<h2>机制（SOP + 消息池 + 可执行反馈）</h2>
+<ul>
+  <li><strong>五角色</strong>：Product Manager → Architect → Project Manager → Engineer → QA Engineer；画像含目标与约束；行为遵循 ReAct 风格。</li>
+  <li><strong>结构化通信</strong>：交文档与图，不交无约束自然语言；订阅只取依赖，避免信息过载。</li>
+  <li><strong>可执行反馈</strong>：工程师对照 PRD / 设计跑单元测试，最多重试 3 次——不是只自我反思。</li>
+</ul>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>框架 MetaGPT</strong>：角色定义、消息共享、SOP 工作流，开源平台。</li>
+  <li><strong>数字</strong>：HumanEval 85.9%、MBPP 87.7% Pass@1；SoftwareDev 可执行性 3.75，人工修订 0.83。</li>
+  <li><strong>消融</strong>：去掉角色则代码不可用；去掉反馈则 Pass@1 掉 4.2% / 5.4%，修订升回 2.25。</li>
+  <li><strong>展望</strong>：跨项目自改进与 AgentStore 是附录，不是主实验。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>摘要与引言</td>
+      <td><a href="#page-1">1</a>–<a href="#page-3">3</a></td>
+      <td>为何闲聊会崩；图 1 对齐人类 SOP；三条贡献。</td>
+      <td>必读。先建立「结构化交接」。</td>
+    </tr>
+    <tr>
+      <td>§3 方法</td>
+      <td><a href="#page-4">4</a>–<a href="#page-6">6</a></td>
+      <td>图 2–3：角色、消息池、订阅、可执行反馈。</td>
+      <td>关心机制必读。</td>
+    </tr>
+    <tr>
+      <td>§4 实验</td>
+      <td><a href="#page-7">7</a>–<a href="#page-9">9</a></td>
+      <td>图 4、表 1–3：Pass@1、SoftwareDev 账本、能力表、角色消融。</td>
+      <td>对证据时精读表 1 与表 3。</td>
+    </tr>
+    <tr>
+      <td>结论与文献</td>
+      <td><a href="#page-9">9</a>–<a href="#page-14">14</a></td>
+      <td>模拟软件公司；书目（英文条目）。</td>
+      <td>收束；回溯 CAMEL / ChatDev / ReAct。</td>
+    </tr>
+    <tr>
+      <td>附录</td>
+      <td><a href="#page-15">15</a>+</td>
+      <td>自改进展望；AgentStore；画图 App 全流程；表 4/8/9。</td>
+      <td>想看 SOP 长什么样读 B；数字明细读 C。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的三条精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → 图 1（<a href="#page-2">第 2 页</a>）→ 图 2–3（<a href="#page-4">第 4–5 页</a>）→ 结论（<a href="#page-9">第 9 页</a>）。</p>
+  </div>
+  <div class="card">
+    <h3>核对工程账</h3>
+    <p>图 4 → 表 1（<a href="#page-8">第 8 页</a>）→ 表 3 角色消融（<a href="#page-9">第 9 页</a>）→ 表 4（<a href="#page-24">第 24 页</a>）。</p>
+  </div>
+  <div class="card">
+    <h3>关心多智能体 / harness</h3>
+    <p>§3.2 订阅（<a href="#page-6">第 6 页</a>）→ 附录 B 一份 PRD（<a href="#page-18">第 18 页</a>）→ <a href="#commentary">读后评论</a>：公司开起来了，岗位还卸不掉。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「订阅和一对一传话差在哪」「可执行反馈改的是代码还是提示」）。读完能用白话复述，这一轮就算过关。</p>
+<p>英文「文本抽取」列支持划词查词。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 METAGPT: META PROGRAMMING FOR A MULTI-AGENT COLLABORATIVE FRAMEWORK Sirui Hong1∗, Mingchen Zhuge2∗, Jiaqi Chen1, Xiawu Zheng3, Yuheng Cheng4, Ceyao Zhang4, Jinlin Wang1, Zili Wang, Steven Ka Shing Yau5, Zijuan Lin4, Liyang Zhou6, Chenyu Ran1, Lingfeng Xiao1,7, Chenglin Wu1†, J¨urgen Schmidhuber2,8 1DeepWisdom, 2AI Initiative, King Abdullah University of Science and Technology, 3Xiamen University, 4The Chinese University of Hong Kong, Shenzhen, 5Nanjing University, 6University of Pennsylvania, 7University of California, Berkeley, 8The Swiss AI Lab IDSIA/USI/SUPSI ABSTRACT Remarkable progress has been made on automated problem solving through societies of agents based on large language models (LLMs). Existing LLM-based multi-agent systems can already solve simple dialogue tasks. Solutions to more complex tasks, however, are complicated through logic inconsistencies due to cascading hallucinations caused by naively chaining LLMs. Here we introduce MetaGPT, an innovative meta-programming framework incorporating efficient human workflows into LLM-based multi-agent collaborations. MetaGPT encodes Standardized Operating Procedures (SOPs) into prompt sequences for more streamlined workflows, thus allowing agents with human-like domain expertise to verify intermediate results and reduce errors. MetaGPT utilizes an assembly line paradigm to assign diverse roles to various agents, efficiently breaking down complex tasks into subtasks involving many agents working together. On collaborative software engineering benchmarks, MetaGPT generates more coherent solutions than previous chat-based multi-agent systems. Our project can be found at https://github.com/geekan/MetaGPT. INTRODUCTION Autonomous agents utilizing Large Language Models (LLMs) offer promising opportunities to enhance and replicate human workflows. In real-world applications, however, existing systems (Park et al., 2023; Zhuge et al., 2023; Cai et al., 2023; Wang et al., 2023c; Li et al., 2023; Du et al., 2023; Liang et al., 2023; Hao et al., 2023; Zhou et al., 2023b) tend to oversimplify the complexities. They struggle to achieve effective, coherent, and accurate problem-solving processes, particularly when there is a need for meaningful collaborative interaction (Chen et al., 2024; Zhang et al., 2023a; Dong et al., 2023; Zhou et al., 2023a; Qian et al., 2023; Tang et al., 2023b; Hong et al., 2024). Through extensive collaborative practice, humans have developed widely accepted Standardized Operating Procedures (SOPs) across various domains (Belbin, 2012; Manifesto, 2001; DeMarco &amp; Lister, 2013). These SOPs play a critical role in supporting task decomposition and effective coordination. Furthermore, SOPs outline the responsibilities of each team member, while establishing standards for intermediate outputs. Well-defined SOPs improve the consistent and accurate execution of tasks that align with defined roles and quality standards (Belbin, 2012; Manifesto, 2001; DeMarco &amp; Lister, 2013; Wooldridge &amp; Jennings, 1998). For instance, in a software company, Product Managers analyze competition and user needs to create Product Requirements Documents (PRDs) using a standardized structure, to guide the developmental process. Inspired by such ideas, we design a promising GPT-based Meta-Programming framework called MetaGPT that significantly benefits from SOPs. Unlike other works (Li et al., 2023; Qian et al., 2023), MetaGPT requires agents to generate structured outputs, such as high-quality requirements ∗These authors contributed equally to this work. †Chenglin Wu (alexanderwu@fuzhi.ai) is the corresponding author, affiliated with DeepWisdom. arXiv:2308.00352v7 [cs.AI] 1 Nov 2024</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>MetaGPT：面向多智能体协作框架的元编程</p>
+<p>METAGPT: META PROGRAMMING FOR A MULTI-AGENT COLLABORATIVE FRAMEWORK</p>
+<p>Sirui Hong1∗, Mingchen Zhuge2∗, Jiaqi Chen1, Xiawu Zheng3, Yuheng Cheng4, Ceyao Zhang4, Jinlin Wang1, Zili Wang, Steven Ka Shing Yau5, Zijuan Lin4, Liyang Zhou6, Chenyu Ran1, Lingfeng Xiao1,7, Chenglin Wu1†, Jürgen Schmidhuber2,8</p>
+<p>1DeepWisdom, 2AI Initiative, King Abdullah University of Science and Technology, 3Xiamen University, 4The Chinese University of Hong Kong, Shenzhen, 5Nanjing University, 6University of Pennsylvania, 7University of California, Berkeley, 8The Swiss AI Lab IDSIA/USI/SUPSI</p>
+<h1>摘要</h1>
+<p>基于大语言模型（LLM）的智能体社会在自动解题上已有显著进展。现有 LLM 多智能体系统已能解决简单对话任务。然而更复杂任务的解法常因朴素串联 LLM 造成级联幻觉，出现逻辑不一致。本文提出 MetaGPT，一种创新的元编程框架，把高效的人类工作流纳入基于 LLM 的多智能体协作。</p>
+<p>MetaGPT 将标准作业程序（SOP）编码进提示序列，使工作流更顺畅，从而让具备类人领域专长的智能体能够核验中间结果并减少错误。MetaGPT 采用流水线范式，为不同智能体分配多样角色，把复杂任务高效拆成多个智能体共同完成的子任务。在协作软件工程基准上，MetaGPT 生成的解法比先前基于聊天的多智能体系统更连贯。项目见 https://github.com/geekan/MetaGPT。</p>
+<p>引言</p>
+<p>利用大语言模型（LLM）的自主智能体为增强并复现人类工作流提供了有前景的机会。然而在真实应用中，现有系统（Park et al., 2023; Zhuge et al., 2023; Cai et al., 2023; Wang et al., 2023c; Li et al., 2023; Du et al., 2023; Liang et al., 2023; Hao et al., 2023; Zhou et al., 2023b）往往过度简化复杂性。它们难以实现有效、连贯、准确的解题过程，尤其当需要有意义的协作交互时（Chen et al., 2024; Zhang et al., 2023a; Dong et al., 2023; Zhou et al., 2023a; Qian et al., 2023; Tang et al., 2023b; Hong et al., 2024）。</p>
+<p>通过广泛的协作实践，人类已在各领域发展出被广泛接受的标准作业程序（SOP）（Belbin, 2012; Manifesto, 2001; DeMarco &amp; Lister, 2013）。这些 SOP 对支持任务分解与有效协调至关重要。此外，SOP 勾勒每位团队成员的职责，并建立中间产出的标准。定义良好的 SOP 能提高与既定角色和质量标准相一致的任务执行的一致性与准确性（Belbin, 2012; Manifesto, 2001; DeMarco &amp; Lister, 2013; Wooldridge &amp; Jennings, 1998）。例如在软件公司中，产品经理分析竞争与用户需求，用标准化结构撰写产品需求文档（PRD），以指导开发过程。</p>
+<p>受此启发，我们设计了一个有前景的、基于 GPT 的元编程框架 MetaGPT，它显著受益于 SOP。与其他工作（Li et al., 2023; Qian et al., 2023）不同，MetaGPT 要求智能体生成结构化输出，例如高质量需求</p>
+<p>∗这些作者贡献同等。</p>
+<p>†通讯作者 Chenglin Wu (alexanderwu@fuzhi.ai)，所属 DeepWisdom。</p>
+<p>arXiv:2308.00352v7 [cs.AI] 1 Nov 2024</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开场：现有多智能体爱聊天，一串幻觉就逻辑崩。MetaGPT 把人类公司的标准作业程序写进提示，用流水线角色（产品经理、架构师等）交出结构化文档，而不是闲聊。项目开源，主张「为编程而编程」。
+这很重要，因为它把协作从对话改成交接物。
+类比：别让一群实习生在群里扯皮，按公司 SOP 交 PRD、再交设计、再写代码。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 1: The software development SOPs between MetaGPT and real-world human teams. In software engineering, SOPs promote collaboration among various roles. MetaGPT showcases its ability to decompose complex tasks into specific actionable procedures assigned to various roles (e.g., Product Manager, Architect, Engineer, etc.). documents, design artifacts, flowcharts, and interface specifications. The use of intermediate structured outputs significantly increases the success rate of target code generation. Because it helps maintain consistency in communication, minimizing ambiguities and errors during collaboration. More graphically, in a company simulated by MetaGPT, all employees follow a strict and streamlined workflow, and all their handovers must comply with certain established standards. This reduces the risk of hallucinations caused by idle chatter between LLMs, particularly in role-playing frameworks, like: “Hi, hello and how are you?” – Alice (Product Manager); “Great! Have you had lunch?” – Bob (Architect). Benefiting from SOPs, MetaGPT offers a promising approach to meta-programming. In this context, we adopt meta-programming1 as ”programming to program”, in contrast to the broader fields of meta learning and ”learning to learn” (Schmidhuber, 1987; 1993a; Hochreiter et al., 2001; Schmidhuber, 2006; Finn et al., 2017). This notion of meta-programming also encompasses earlier efforts like CodeBERT (Feng et al., 2020) and recent projects such as CodeLlama (Rozi`ere et al., 2023) and WizardCoder (Luo et al., 2023). However, MetaGPT stands out as a unique solution that allows for efficient metaprogramming through a well-organized group of specialized agents. Each agent has a specific role and expertise, following some established standards. This allows for automatic requirement analysis, system design, code generation, modification, execution, and debugging during runtime, highlighting how agent-based techniques can enhance meta-programming. To validate the design of MetaGPT, we use publicly available HumanEval (Chen et al., 2021a) and MBPP (Austin et al., 2021) for evaluations. Notably, in code generation benchmarks, MetaGPT achieves a new state-of-the-art (SoTA) with 85.9% and 87.7% in Pass@1. When compared to other popular frameworks for creating complex software projects, such as AutoGPT (Torantulino et al., 2023), LangChain (Chase, 2022), AgentVerse (Chen et al., 2023), and ChatDev (Qian et al., 2023). MetaGPT also stands out in handling higher levels of software complexity and offering extensive functionality. Remarkably, in our experimental evaluations, MetaGPT achieves a 100% task completion rate, demonstrating the robustness and efficiency (time and token costs) of our design. We summarize our contributions as follows: 1https://en.wikipedia.org/w/index.php?title=Metaprogramming</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 1：MetaGPT 与真实人类团队之间的软件开发标准作业程序（SOP）。在软件工程中，SOP 促进各角色协作。MetaGPT 展示其能把复杂任务分解为分配给各角色（如 Product Manager、Architect、Engineer 等）的具体可执行步骤。</p>
+<p>文档、设计产物、流程图与接口规格。使用中间结构化输出显著提高目标代码生成的成功率，因为它有助于保持沟通一致性，减少协作中的歧义与错误。</p>
+<p>更形象地说，在 MetaGPT 模拟的公司里，所有员工遵循严格而精简的工作流，所有交接必须符合既定标准。这降低了 LLM 之间闲聊造成的幻觉风险，尤其在角色扮演框架中，例如：「嗨，你好吗？」——Alice（产品经理）；「很好！吃午饭了吗？」——Bob（架构师）。</p>
+<p>得益于 SOP，MetaGPT 为元编程提供了有前景的路径。此处我们把元编程1理解为「为编程而编程」，以区别于更广的元学习与「学会学习」（Schmidhuber, 1987; 1993a; Hochreiter et al., 2001; Schmidhuber, 2006; Finn et al., 2017）。</p>
+<p>这一元编程概念也涵盖更早的 CodeBERT（Feng et al., 2020）以及近期的 CodeLlama（Rozière et al., 2023）与 WizardCoder（Luo et al., 2023）。然而 MetaGPT 作为独特方案脱颖而出：它通过一组组织良好的专职智能体实现高效元编程。每个智能体有特定角色与专长，并遵循既定标准。这使得运行时能自动完成需求分析、系统设计、代码生成、修改、执行与调试，凸显基于智能体的技术如何增强元编程。</p>
+<p>为验证 MetaGPT 的设计，我们使用公开的 HumanEval（Chen et al., 2021a）与 MBPP（Austin et al., 2021）评估。值得注意的是，在代码生成基准上，MetaGPT 以 Pass@1 85.9% 与 87.7% 达到新的最先进水平（SoTA）。与 AutoGPT（Torantulino et al., 2023）、LangChain（Chase, 2022）、AgentVerse（Chen et al., 2023）和 ChatDev（Qian et al., 2023）等用于创建复杂软件项目的流行框架相比，MetaGPT 在处理更高软件复杂度并提供广泛功能方面也更突出。在我们的实验评估中，MetaGPT 达到 100% 任务完成率，展示了设计的稳健性与效率（时间与 token 成本）。</p>
+<p>我们总结贡献如下：</p>
+<p class="meta-line">1https://en.wikipedia.org/w/index.php?title=Metaprogramming</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用图 1 对齐人类软件公司 SOP，并给数字：HumanEval 85.9%、MBPP 87.7% Pass@1，SoftwareDev 上任务完成率 100%。关键切口是结构化交接，禁止「吃了吗」式闲聊，中间产物必须是文档、图和接口规格。
+类比：流水线工位只收标准图纸，不收微信语音。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024</p>
+<ul>
+<li>We introduce MetaGPT, a meta-programming framework for multi-agent collaboration based on LLMs. It is highly convenient and flexible, with well-defined functions like role definition and message sharing, making it a useful platform for developing LLM-based multi-agent systems.</li>
+<li>Our innovative integration of human-like SOPs throughout MetaGPT’s design significantly enhances its robustness, reducing unproductive collaboration among LLM-based agents. Furthermore, we introduce a novel executive feedback mechanism that debugs and executes code during runtime, significantly elevating code generation quality (e.g., 5.4% absolute improvement on MBPP).</li>
+<li>We achieve state-of-the-art performance on HumanEval (Chen et al., 2021a) and MBPP (Austin et al., 2021). Extensive results convincingly validate MetaGPT, suggesting that it is a promising meta-programming framework for developing LLM-based multi-agent systems. RELATED WORK Automatic Programming The roots of automatic programming reach back deep into the previous century. In 1969, Waldinger &amp; Lee (1969) introduced “PROW,” a system designed to accept program specifications written in predicate calculus, generate algorithms, and create LISP implementations (McCarthy, 1978). Balzer (1985) and Soloway (1986) made efforts to advance automatic programming and identified potential methods to achieve it. Recent approaches use natural language processing (NLP) techniques (Ni et al., 2023; Skreta et al., 2023; Feng et al., 2020; Li et al., 2022; Chen et al., 2018; 2021b; Zhang et al., 2023a; Liu et al., 2023b; Tang et al., 2023a; Muennighoff et al., 2023). Automatic programming has grown into an industry delivering paid functions such as Microsoft Copilot. Lately, LLMs-based agents (Yao et al., 2022; Shinn et al., 2023; Lin et al., 2023) have advanced automatic programming development. Among them, ReAct (Yao et al., 2022) and Reflexion (Shinn et al., 2023) utilize a chain of thought prompts (Wei et al., 2022) to generate reasoning trajectories and action plans with LLMs. Both works demonstrate the effectiveness of the ReAct style loop of reasoning as a design paradigm for empowering automatic programming. Additionally, ToolFormer (Schick et al., 2023) and ToolLLM (Qin et al., 2023) can learn how to use external tools through simple APIs. The research most closely aligned with our work by Li et al. (2023) proposes a straightforward role-play framework for programming that involves communication between agents playing different roles. Qian et al. (2023) utilizes multiple agents for software development. Although existing papers (Li et al., 2023; Qian et al., 2023) have improved productivity, they have not fully tapped into effective workflows with structured output formats. This makes it harder to deal with complex software engineering issues. LLM-Based Multi-Agent Frameworks Recently, LLM-based autonomous agents have gained tremendous interest in both industry and academia (Wang et al., 2023b; Zhou et al., 2023b; Zhang et al., 2023b). Many works (Chen et al., 2024; Wang et al., 2023c; Du et al., 2023; Zhuge et al., 2023; Hao et al., 2023; Akata et al., 2023; Tang et al., 2023b) have improved the problem-solving abilities of LLMs by integrating discussions among multiple agents. Stable-Alignment (Liu et al., 2023a) creates instruction datasets by deriving consensus on value judgments through interactions across a sandbox with LLM agents. Other works focus on sociological phenomena. For example, Generative Agents (Park et al., 2023) creates a “town” of 25 agents to study language interaction, social understanding, and collective memory. In the Natural Language-Based Society of Mind (NLSOM) (Zhuge et al., 2023), agents with different functions interact to solve complex tasks through multiple rounds of “mindstorms.” Cai et al. (2023) propose a model for cost reduction by combining large models as tool makers and small models as tool users. Some works emphasize cooperation and competition related to planning and strategy (Bakhtin et al., 2022); others propose LLM-based economies (Zhuge et al., 2023). These works focus on openworld human behavior simulation, while MetaGPT aims to introduce human practice into multiagents frameworks. Besides, LLM-based agents face the challenges of “assistant repeated instruction” or “infinite loop of message” (Talebirad &amp; Nadiri, 2023; Li et al., 2023). These challenges become more urgent in task-oriented collaborations, which require consistent and mutually beneficial interactions (Elazar et al., 2021; Wang et al., 2022; Jiang et al., 2023). This motivates our focus on applying advanced concepts such as Standard Operating Procedures in software development to multi-agent frameworks.</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<ul>
+<li>我们提出 MetaGPT，一个基于 LLM 的多智能体协作元编程框架。它方便灵活，具备角色定义与消息共享等定义良好的功能，是开发 LLM 多智能体系统的有用平台。</li>
+<li>我们在 MetaGPT 设计中创新地融入类人 SOP，显著增强稳健性，减少 LLM 智能体之间的无效协作。此外，我们引入新颖的可执行反馈机制，在运行时调试并执行代码，显著提升代码生成质量（例如在 MBPP 上绝对提升 5.4%）。</li>
+<li>我们在 HumanEval（Chen et al., 2021a）与 MBPP（Austin et al., 2021）上达到最先进性能。大量结果有力验证 MetaGPT，表明它是开发 LLM 多智能体系统的有前景的元编程框架。</li>
+</ul>
+<p>相关工作</p>
+<p>自动编程</p>
+<p>自动编程的根可追溯到上世纪。1969 年，Waldinger &amp; Lee（1969）提出 “PROW”，接受谓词演算写的程序规格、生成算法并产生 LISP 实现（McCarthy, 1978）。Balzer（1985）与 Soloway（1986）推进自动编程并指出可能路径。近期方法使用自然语言处理技术（Ni et al., 2023; Skreta et al., 2023; Feng et al., 2020; Li et al., 2022; Chen et al., 2018; 2021b; Zhang et al., 2023a; Liu et al., 2023b; Tang et al., 2023a; Muennighoff et al., 2023）。自动编程已成长为交付付费功能的产业，例如 Microsoft Copilot。近来，基于 LLM 的智能体（Yao et al., 2022; Shinn et al., 2023; Lin et al., 2023）推进了自动编程发展。其中 ReAct（Yao et al., 2022）与 Reflexion（Shinn et al., 2023）利用思维链提示（Wei et al., 2022）生成推理轨迹与行动计划。两文都证明 ReAct 风格的推理循环作为赋能自动编程的设计范式有效。此外，ToolFormer（Schick et al., 2023）与 ToolLLM（Qin et al., 2023）能通过简单 API 学会使用外部工具。与我们最接近的是 Li et al.（2023）提出的简单角色扮演编程框架，以及 Qian et al.（2023）用多个智能体做软件开发。尽管现有论文提升了生产力，它们尚未充分挖掘带结构化输出格式的有效工作流，因而更难处理复杂软件工程问题。</p>
+<p>基于 LLM 的多智能体框架</p>
+<p>近来，基于 LLM 的自主智能体在工业与学界都引起巨大兴趣（Wang et al., 2023b; Zhou et al., 2023b; Zhang et al., 2023b）。许多工作（Chen et al., 2024; Wang et al., 2023c; Du et al., 2023; Zhuge et al., 2023; Hao et al., 2023; Akata et al., 2023; Tang et al., 2023b）通过多智能体讨论提升 LLM 解题能力。Stable-Alignment（Liu et al., 2023a）通过沙盒中 LLM 智能体交互形成价值判断共识来构造指令数据。其他工作关注社会现象。例如 Generative Agents（Park et al., 2023）创建 25 个智能体的「小镇」以研究语言交互、社会理解与集体记忆。在基于自然语言的心智社会（NLSOM）（Zhuge et al., 2023）中，不同功能的智能体通过多轮「头脑风暴」交互以解决复杂任务。Cai et al.（2023）提出用大模型当工具制造者、小模型当工具使用者来降本。</p>
+<p>有些工作强调与规划、策略相关的合作与竞争（Bakhtin et al., 2022）；另一些提出基于 LLM 的经济（Zhuge et al., 2023）。这些工作聚焦开放世界人类行为模拟，而 MetaGPT 旨在把人类实践引入多智能体框架。此外，LLM 智能体面临「助手重复指令」或「消息无限循环」（Talebirad &amp; Nadiri, 2023; Li et al., 2023）。这些挑战在面向任务的协作中更紧迫，因为后者需要一致且互利的交互（Elazar et al., 2021; Wang et al., 2022; Jiang et al., 2023）。这促使我们把软件开发中的标准作业程序等先进概念应用到多智能体框架。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页三条贡献，再把文献分成「自动编程」与「多智能体」。作者点名 ReAct / Reflexion / ChatDev / CAMEL：别人会聊天或会推理循环，缺的是带格式的 SOP 工作流，所以复杂软件工程仍然容易翻车。
+类比：相关工作像行业地图——左边是写代码的工具，右边是爱社交的智能体小镇，MetaGPT 要开一家公司。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 2: An example of the communication protocol (left) and iterative programming with executable feedback (right). Left: Agents use a shared message pool to publish structured messages. They can also subscribe to relevant messages based on their profiles. Right: After generating the initial code, the Engineer agent runs and checks for errors. If errors occur, the agent checks past messages stored in memory and compares them with the PRD, system design, and code files. METAGPT: A META-PROGRAMMING FRAMEWORK MetaGPT is a meta-programming framework for LLM-based multi-agent systems. Sec. 3.1 provides an explanation of role specialization, workflow and structured communication in this framework, and illustrates how to organize a multi-agent system within the context of SOPs. Sec. 3.2 presents a communication protocol that enhances role communication efficiency. We also implement structured communication interfaces and an effective publish-subscribe mechanism. These methods enable agents to obtain directional information from other roles and public information from the environment. Finally, we introduce executable feedback—a self-correction mechanism for further enhancing code generation quality during run-time in Sec. 3.3. 3.1 AGENTS IN STANDARD OPERATING PROCEDURES Specialization of Roles Unambiguous role specialization enables the breakdown of complex work into smaller and more specific tasks. Solving complex tasks or problems often requires the collaboration of agents with diverse skills and expertise, each contributing specialized outputs tailored to specific issues. In a software company, a Product Manager typically conducts business-oriented analysis and derives insights, while a software engineer is responsible for programming. We define five roles in our software company: Product Manager, Architect, Project Manager, Engineer, and QA Engineer, as shown in Figure 1. In MetaGPT, we specify the agent’s profile, which includes their name, profile, goal, and constraints for each role. We also initialize the specific context and skills for each role. For instance, a Product Manager can use web search tools, while an Engineer can execute code, as shown in Figure 2. All agents adhere to the React-style behavior as described in Yao et al. (2022). Every agent monitors the environment (i.e., the message pool in MetaGPT) to spot important observations (e.g.,, messages from other agents). These messages can either directly trigger actions or assist in finishing the job. Workflow across Agents By defining the agents’ roles and operational skills, we can establish basic workflows. In our work, we follow SOP in software development, which enables all agents to work in a sequential manner.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 2：通信协议（左）与带可执行反馈的迭代编程（右）示例。左：智能体用共享消息池发布结构化消息，也可按画像订阅相关消息。右：Engineer 智能体生成初始代码后运行并检查错误；若出错，则检查记忆中的历史消息，并与 PRD、系统设计及代码文件对照。</p>
+<p>METAGPT：一个元编程框架</p>
+<p>MetaGPT 是面向基于 LLM 的多智能体系统的元编程框架。第 3.1 节解释该框架中的角色专门化、工作流与结构化通信，并说明如何在 SOP 语境下组织多智能体系统。第 3.2 节给出提升角色通信效率的通信协议。我们还实现结构化通信接口与有效的发布–订阅机制。这些方法使智能体既能从其他角色获得定向信息，也能从环境获得公共信息。最后，第 3.3 节引入可执行反馈——一种在运行时进一步提升代码生成质量的自纠正机制。</p>
+<p class="meta-line">3.1 标准作业程序中的智能体</p>
+<p>角色专门化</p>
+<p>明确的角色专门化使复杂工作能拆成更小、更具体的任务。解决复杂任务或问题往往需要具备多样技能与专长的智能体协作，各自贡献针对特定问题的专门产出。</p>
+<p>在软件公司中，产品经理通常做面向业务的分析并形成洞见，软件工程师负责编程。我们在软件公司中定义五个角色：Product Manager、Architect、Project Manager、Engineer 与 QA Engineer，如图 1 所示。在 MetaGPT 中，我们为每个角色指定智能体画像，包括姓名、简介、目标与约束。我们也为每个角色初始化特定上下文与技能。例如，产品经理可以使用网页搜索工具，工程师可以执行代码，如图 2 所示。所有智能体遵循 Yao et al.（2022）所述的 ReAct 风格行为。每个智能体监视环境（即 MetaGPT 中的消息池）以发现重要观察（例如其他智能体的消息）。这些消息可以直接触发行动，或协助完成工作。</p>
+<p>跨智能体工作流</p>
+<p>通过定义智能体角色与操作技能，我们可以建立基本工作流。本文遵循软件开发中的 SOP，使所有智能体按顺序工作。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页进入机制：五角色流水线，人人按 ReAct 风格盯消息池。图 2 左边是发布–订阅，右边是工程师跑代码、对照 PRD 改错。画像里写明目标与约束，产品经理能搜网页，工程师能执行代码。
+类比：公司钉钉群是公共池，但架构师只订阅 PRD，不看测试闲聊；工程师写完必须自己跑一遍。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 3: A diagram showing the software development process in MetaGPT, emphasizing its significant dependence on SOPs. The more detailed demonstration can be found in Appendix B. Specifically, as shown in Figure 1, upon obtaining user requirements, the Product Manager undertakes a thorough analysis, formulating a detailed PRD that includes User Stories and Requirement Pool. This serves as a preliminary functional breakdown. The structured PRD is then passed to the Architect, who translates the requirements into system design components, such as File Lists, Data Structures, and Interface Definitions. Once captured in the system design, the information is directed towards the Project Manager for task distribution. Engineers proceed to execute the designated classes and functions as outlined (detailed in Figure 2). In the following stage, the QA Engineer formulates test cases to enforce stringent code quality. In the final step, MetaGPT produces a meticulously crafted software solution. We provide a detailed schematic (Figure 3) and a concrete instance (Appendix B) of the SOP workflow in MetaGPT. 3.2 COMMUNICATION PROTOCOL Structured Communication Interfaces Most current LLM-based multi-agent frameworks (Li et al., 2023; Zhuge et al., 2023; Zhang et al., 2023a; Park et al., 2023) utilize unconstrained natural language as a communication interface. However, despite the versatility of natural language, a question arises: does pure natural language communication suffice for solving complex tasks? For example, in the telephone game (or Chinese</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 3：展示 MetaGPT 软件开发过程的示意图，强调其对 SOP 的显著依赖。更详细演示见附录 B。</p>
+<p>具体而言，如图 1 所示，获得用户需求后，Product Manager 做彻底分析，形成包含 User Stories 与 Requirement Pool 的详细 PRD，作为初步功能拆解。结构化 PRD 再交给 Architect，把需求转成系统设计组件，如 File Lists、Data Structures 与 Interface Definitions。系统设计捕获后，信息交给 Project Manager 做任务分发。Engineer 按图 2 所述执行指定的类与函数。随后 QA Engineer 制定测试用例以强制严格的代码质量。最后一步，MetaGPT 产出精心制作的软件方案。我们提供详细示意（图 3）与 SOP 工作流的具体实例（附录 B）。</p>
+<p class="meta-line">3.2 通信协议</p>
+<p>结构化通信接口</p>
+<p>当前大多数基于 LLM 的多智能体框架（Li et al., 2023; Zhuge et al., 2023; Zhang et al., 2023a; Park et al., 2023）用无约束自然语言作为通信接口。</p>
+<p>然而，尽管自然语言通用，问题是：纯自然语言通信是否足以解决复杂任务？例如，在传话游戏（或中文里的「悄悄话」）2 中，</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把 SOP 画成流水线：需求→PRD→系统设计→分任务→写代码→测试。通信协议一节开始批评「纯聊天」——传话几轮就变样，自然语言接口通用却不足以做复杂软件。
+类比：需求像一张便签，若只靠口头转述，到工程师耳朵里已经不是原话。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 whispers)2, after several rounds of communication, the original information may be quite distorted. Inspired by human social structures, we propose using structured communication to formulate the communication of agents. We establish a schema and format for each role and request that individuals provide the necessary outputs based on their specific role and context. As shown in Figure 3, the Architect agent generates two outputs: the system interface design and a sequence flow diagram. These contain system module design and interaction sequences, which serve as important deliverables for Engineers. Unlike ChatDev (Zhao et al., 2023), agents in MetaGPT communicate through documents and diagrams (structured outputs) rather than dialogue. These documents contain all necessary information, preventing irrelevant or missing content. Publish-Subscribe Mechanism Sharing information is critical in collaboration. For instance, Architects and Engineers often need to reference PRDs. However, communicating this information each time in a one-to-one manner, as indicated by previous work (Li et al., 2023; Zhao et al., 2023; Zhang et al., 2023a), can complicate the communication topology, resulting in inefficiencies. To address this challenge, a viable approach is to store information in a global message pool. As shown in Figure 2 (left), we introduce a shared message pool that allows all agents to exchange messages directly. These agents not only publish their structured messages in the pool but also access messages from other entities transparently. Any agent can directly retrieve required information from the shared pool, eliminating the need to inquire about other agents and await their responses. This enhances communication efficiency. Sharing all information with every agent can lead to information overload. During task execution, an agent typically prefers to receive only task-related information and avoid distractions through irrelevant details. Effective management and dissemination of this information play a crucial role. We offer a simple and effective solution-subscription mechanism (in Figure 2 (left)). Instead of relying on dialogue, agents utilize role-specific interests to extract relevant information. They can select information to follow based on their role profiles. In practical implementations, an agent activates its action only after receiving all its prerequisite dependencies. As illustrated in Figure 3, the Architect mainly focuses on PRDs provided by the Product Manager, while documents from roles such as the QA Engineer might be of lesser concern. 3.3 ITERATIVE PROGRAMMING WITH EXECUTABLE FEEDBACK In daily programming tasks, the processes of debugging and optimization play important roles. However, existing methods often lack a self-correction mechanism, which leads to unsuccessful code generation. Previous work introduced non-executable code review and self-reflection (Zhao et al., 2023; Yao et al., 2022; Shinn et al., 2023; Dong et al., 2023). However, they still face challenges in ensuring code executability and runtime correctness. Our first MetaGPT implementations overlooked certain errors during the review process, due to LLM hallucinations (Manakul et al., 2023). To overcome this, after initial code generation, we introduce an executable feedback mechanism to improve the code iteratively. More specifically, as shown in Figure 2, the Engineer is asked to write code based on the original product requirements and design. This enables the Engineer to continuously improve code using its own historical execution and debugging memory. To obtain additional information, the Engineer writes and executes the corresponding unit test cases, and subsequently receives the test results. If satisfactory, additional development tasks are initiated. Otherwise the Engineer debugs the code before resuming programming. This iterative testing process continues until the test is passed or a maximum of 3 retries is reached. EXPERIMENTS 4.1 EXPERIMENTAL SETTING Datasets We use two public benchmarks, HumanEval (Chen et al., 2021a) and MBPP (Austin et al., 2021), and a self-generated, more challenging software development benchmark named Soft2https://en.wikipedia.org/wiki/Chinese whispers</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>经过几轮通信，原始信息可能已被严重扭曲。受人类社会结构启发，我们提出用结构化通信来组织智能体通信。我们为每个角色建立模式与格式，并要求个体按其特定角色与上下文提供必要产出。</p>
+<p>如图 3 所示，Architect 智能体生成两份产出：系统接口设计与顺序流程图。它们包含系统模块设计与交互序列，是给 Engineer 的重要交付物。与 ChatDev（Zhao et al., 2023）不同，MetaGPT 中的智能体通过文档与图表（结构化输出）而非对话通信。这些文档包含全部必要信息，避免无关或缺失内容。</p>
+<p>发布–订阅机制</p>
+<p>共享信息在协作中至关重要。例如，Architect 与 Engineer 常需参考 PRD。然而，如先前工作（Li et al., 2023; Zhao et al., 2023; Zhang et al., 2023a）所示，每次一对一传递会让通信拓扑变复杂，导致低效。</p>
+<p>为应对这一挑战，可行做法是把信息存在全局消息池。如图 2（左）所示，我们引入共享消息池，允许所有智能体直接交换消息。这些智能体不仅在池中发布结构化消息，也能透明访问其他实体的消息。任何智能体都可以直接从共享池检索所需信息，无需询问其他智能体并等待回复。这提升了通信效率。</p>
+<p>与每个智能体共享全部信息会导致信息过载。任务执行中，智能体通常只想收到与任务相关的信息，避免被无关细节分心。有效管理与分发这些信息很关键。我们提供简单有效的方案——订阅机制（图 2 左）。智能体不依赖对话，而用角色特定兴趣抽取相关信息。它们可按角色画像选择关注的信息。实际实现中，智能体仅在收到全部先决依赖后才激活其行动。如图 3 所示，Architect 主要关注 Product Manager 提供的 PRD，而 QA Engineer 等角色的文档可能较少被其关心。</p>
+<p class="meta-line">3.3 带可执行反馈的迭代编程</p>
+<p>在日常编程中，调试与优化很重要。然而现有方法常缺自纠正机制，导致代码生成失败。先前工作引入了不可执行的代码评审与自我反思（Zhao et al., 2023; Yao et al., 2022; Shinn et al., 2023; Dong et al., 2023）。但它们在保证代码可执行性与运行时正确性上仍面临挑战。</p>
+<p>我们最初的 MetaGPT 实现会在评审中因 LLM 幻觉（Manakul et al., 2023）而忽略某些错误。为克服这一点，在初始代码生成之后，我们引入可执行反馈机制以迭代改进代码。更具体地，如图 2 所示，Engineer 被要求基于原始产品需求与设计写代码。</p>
+<p>这使 Engineer 能用自己的历史执行与调试记忆持续改进代码。为获得额外信息，Engineer 编写并执行相应单元测试，随后接收测试结果。若满意，则启动后续开发任务；否则在恢复编程前调试代码。这一迭代测试过程持续到测试通过或最多重试 3 次。</p>
+<p>实验</p>
+<p class="meta-line">4.1 实验设定</p>
+<p>数据集</p>
+<p>我们使用两个公开基准 HumanEval（Chen et al., 2021a）与 MBPP（Austin et al., 2021），以及自建的、更具挑战的软件开发基准 Soft2https://en.wikipedia.org/wiki/Chinese_whispers</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把通信写死：交文档不交闲聊；全局消息池加订阅，避免一对一传话和信息过载。可执行反馈让工程师跑单测，最多重试 3 次——不是只「反思一下」，初版会因幻觉漏掉能跑出来的错。
+类比：看板加过滤器，再加一条「红灯必须自己修到绿灯」。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 wareDev: (1) HumanEval includes 164 handwritten programming tasks. These tasks encompass function specifications, descriptions, reference codes, and tests. (2) MBPP consists of 427 Python tasks. These tasks cover core concepts and standard library features and include descriptions, reference codes, and automated tests. (3) Our SoftwareDev dataset is a collection of 70 representative examples of software development tasks, each with its own task prompt (see Table 8). These tasks have diverse scopes (See Figure 5), such as mini-games, image processing algorithms, data visualization. They offer a robust testbed for authentic development tasks. Contrary to previous datasets (Chen et al., 2021a; Austin et al., 2021), SoftwareDev focuses on the engineering aspects. In the comparisons, we randomly select seven representative tasks for evaluation. Evaluation Metrics For HuamnEval and MBPP, we follow the unbiased version of Pass @k as presented by (Chen et al., 2021a; Dong et al., 2023), to evaluate the functional accuracy of the top-k generated codes: Pass @k = EProblems  1 −( n−c k ) ( n k)  . For SoftwareDev, we prioritize practical use and evaluate performance through human evaluations (A, E) or statistical analysis (B, C, D): (A) Executability: this metric rates code from 1 (failure/nonfunctional) to 4 (flawless). ‘1’ is for non-functional, ‘2’ for runnable but imperfect, ‘3’ for nearly perfect, and ‘4’ for flawless code. (B) Cost: the cost evaluations here include the (1) running time, (2) token usage, and (3) expenses. (C) Code Statistics: this includes (1) code files, (2) lines of code per file, and (3) total code lines. (D) Productivity: basically, it is defined as the number of token usage divided by the number of lines of code, which refers to the consumption of tokens per code line. (E) Human Revision Cost: refers to times of manual code corrections, which tackle problems like package import errors, incorrect class names, or incomplete reference paths. Typically, each correction involves up to 3 lines of code. Baselines We compare our method with recent domain-specific LLMs in the code generation field, including AlphaCode (Li et al., 2022), Incoder (Fried et al., 2022), CodeGeeX (Zheng et al., 2023), CodeGen (Nijkamp et al., 2023), CodeX (Chen et al., 2021a), and CodeT (Chen et al., 2022) and general domain LLMs such as PaLM (Chowdhery et al., 2022), and GPT-4 (OpenAI, 2023). Several results of baselines (such as Incoder, CodeGeeX) are provided by Dong et al. (2023). In HumanEval and MBPP, we slightly modified the prompts to align with response format requirements. These modifications aim to address format-specific issues (i.e., Python problems). With the SoftwareDev benchmark, we provide a comprehensive comparison between MetaGPT, AutoGPT (Torantulino et al., 2023), LangChain (Chase, 2022) with Python Read-Eval-Print Loop (REPL) tool3, AgentVerse (Chen et al., 2023), and ChatDev (Qian et al., 2023). 4.2 MAIN RESULT AlphaCode (1.1B) Incoder (6.7B) CodeGeeX (13B) 17.1 — 15.2 17.6 18.9 26.9 CodeGeeX-Mono (16.1B) 32.9 38.6 GPT-4 67.0 — MetaGPT (w/o Feedback) 81.7 82.3 Pass@1 of MBPP and HumanEval (%) PaLM Coder (540B) 36.0 47.0 Codex (175B) 47.0 58.1 Codex + CodeT 65.8 67.7 HumanEval MBPP MetaGPT 85.9 87.7 Figure 4: Pass rates on the MBPP and HumanEval with a single attempt. Performance Figure 4 demonstrates that MetaGPT outperforms all preceding approaches in both HumanEval and MBPP benchmarks. When MetaGPT collaborates with GPT-4, it significantly improves the Pass @k in the HumanEval benchmark compared to GPT-4. It achieves 85.9% and 87.7% 3https://en.wikipedia.org/wiki/Read–eval–print loop</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>wareDev：（1）HumanEval 含 164 道手写编程题，包括函数规格、描述、参考代码与测试。（2）MBPP 含 427 道 Python 题，覆盖核心概念与标准库，含描述、参考代码与自动测试。（3）我们的 SoftwareDev 数据集收集 70 个有代表性的软件开发任务，各有任务提示（见表 8）。这些任务范围多样（见图 5），如小游戏、图像处理算法、数据可视化，为真实开发任务提供稳健测试床。与先前数据集（Chen et al., 2021a; Austin et al., 2021）相反，SoftwareDev 聚焦工程方面。比较中我们随机选 7 个代表任务评估。</p>
+<p>评估指标</p>
+<p>对 HumanEval 与 MBPP，我们遵循 Chen et al.（2021a）与 Dong et al.（2023）提出的无偏 Pass@k，评估 top-k 生成代码的功能准确性。</p>
+<p>对 SoftwareDev，我们优先实际使用，通过人工评估（A, E）或统计分析（B, C, D）：（A）可执行性：代码从 1（失败/无功能）到 4（无瑕疵）。（B）成本：运行时间、token 用量与费用。（C）代码统计：代码文件数、每文件行数、总行数。（D）生产率：token 用量除以代码行数，即每行代码消耗的 token。（E）人工修订成本：手工改代码的次数，处理包导入错误、错误类名或不完整引用路径等，通常每次修订最多 3 行。</p>
+<p>基线</p>
+<p>我们与代码生成领域近期的领域特定 LLM 比较，包括 AlphaCode、Incoder、CodeGeeX、CodeGen、CodeX 与 CodeT，以及通用域 LLM 如 PaLM 与 GPT-4。若干基线结果由 Dong et al.（2023）提供。在 HumanEval 与 MBPP 上，我们略改提示以对齐响应格式要求。在 SoftwareDev 上，我们全面比较 MetaGPT、AutoGPT、带 Python REPL 工具的 LangChain、AgentVerse 与 ChatDev。</p>
+<p class="meta-line">4.2 主要结果</p>
+<p>图 4：MBPP 与 HumanEval 上单次尝试的通过率。MetaGPT（无反馈）HumanEval/MBPP 为 81.7% / 82.3%；加上反馈后达 85.9% / 87.7%，超过 GPT-4（67.0%）、Codex+CodeT（65.8% / 67.7%）等。</p>
+<p>性能</p>
+<p>图 4 表明 MetaGPT 在 HumanEval 与 MBPP 上都超过此前所有方法。当 MetaGPT 与 GPT-4 协作时，相对 GPT-4 显著提升 HumanEval 的 Pass@k。它在这两个公开基准上分别达到 85.9% 与 87.7%。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是评测设定加图 4：函数题用 Pass@1，工程题用可执行性 1–4 分和人工修订次数。MetaGPT+GPT-4 把 HumanEval 从 GPT-4 的 67% 拉到 85.9%，MBPP 到 87.7%，用来证明 SOP 不是只讲故事。
+类比：既考选择题（函数对不对），也考交一整套能跑的小项目。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 5: Demo softwares developed by MetaGPT. in these two public benchmarks. Moreover, as shown in Table 1, MetaGPT outperforms ChatDev on the challenging SoftwareDev dataset in nearly all metrics. For example, considering the executability, MetaGPT achieves a score of 3.75, which is very close to 4 (flawless). Besides, it takes less time (503 seconds), clearly less than ChatDev. Considering the code statistic and the cost of human revision, it also significantly outperforms ChatDev. Although MetaGPT requires more tokens (24,613 or 31,255 compared to 19,292), it needs only 126.5/124.3 tokens to generate one line of code. In contrast, ChatDev uses 248.9 tokens. These results highlight the benefits of SOPs in collaborations between multiple agents. Additionally, we demonstrate the autonomous software generation capabilities of MetaGPT through visualization samples (Figure 5). For additional experiments and analysis, please refer to Appendix C. Table 1: The statistical analysis on SoftwareDev. Statistical Index ChatDev MetaGPT w/o Feedback MetaGPT (A) Executability 2.25 3.67 3.75 (B) Cost#1: Running Times (s) (B) Cost#2: Token Usage 19,292 24,613 31,255 (C) Code Statistic#1: Code Files 1.9 4.6 5.1 (C) Code Statistic#2: Lines of Code per File 40.8 42.3 49.3 (C) Code Statistic#3: Total Code Lines 77.5 194.6 251.4 (D) Productivity 248.9 126.5 124.3 (E) Human Revision Cost 2.5 2.25 0.83 4.3 CAPABILITIES ANALYSIS Compared to open-source baseline methods such as AutoGPT and autonomous agents such as AgentVerse and ChatDev, MetaGPT offers functions for software engineering tasks. As presented in Table 2, our framework encompasses a wide range of abilities to handle complex and specialized development tasks efficiently. Incorporating SOPs (e.g., role-play expertise, structured communication, streamlined workflow) can significantly improve code generation. Other baseline methods</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 5：MetaGPT 开发的演示软件。</p>
+<p>在这两个公开基准上达到上述分数。此外，如表 1 所示，MetaGPT 在具有挑战的 SoftwareDev 数据集上几乎所有指标都超过 ChatDev。例如就可执行性而言，MetaGPT 得到 3.75，非常接近 4（无瑕疵）。此外耗时 503 秒，明显少于 ChatDev。代码统计与人工修订成本也显著优于 ChatDev。尽管 MetaGPT 需要更多 token（24,613 或 31,255，对比 19,292），它只需 126.5/124.3 个 token 生成一行代码，而 ChatDev 用 248.9。这些结果凸显 SOP 在多智能体协作中的益处。我们还通过可视化样本（图 5）展示 MetaGPT 的自主软件生成能力。更多实验与分析见附录 C。</p>
+<p>表 1：SoftwareDev 上的统计分析。</p>
+<p>统计指标 / ChatDev / MetaGPT w/o Feedback / MetaGPT</p>
+<p>（A）可执行性：2.25 / 3.67 / 3.75</p>
+<p>（B）成本#2 token：19,292 / 24,613 / 31,255</p>
+<p>（C）代码文件：1.9 / 4.6 / 5.1；每文件行数：40.8 / 42.3 / 49.3；总行数：77.5 / 194.6 / 251.4</p>
+<p>（D）生产率（token/行）：248.9 / 126.5 / 124.3</p>
+<p>（E）人工修订成本：2.5 / 2.25 / 0.83</p>
+<p class="meta-line">4.3 能力分析</p>
+<p>与 AutoGPT 以及 AgentVerse、ChatDev 等开源基线相比，MetaGPT 为软件工程任务提供功能。如表 2 所示，我们的框架涵盖处理复杂、专门开发任务的广泛能力。纳入 SOP（例如角色扮演专长、结构化通信、精简工作流）能显著改进代码生成。其他基线方法</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页表 1 是工程账本：可执行性 3.75 接近满分，人工修订从 ChatDev 的 2.5 降到 0.83；token 更多，但摊到每行更便宜。图 5 是演示软件截图，用来感觉「交出来的是多文件项目，不是一段对话」。
+类比：同一家外包，这家交的文件更多、返工更少，总工时更短。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Table 2: Comparison of capabilities for MetaGPT and other approaches. ‘!’ indicates the presence of a specific feature in the corresponding framework, ‘%’ its absence. Framework Capabiliy AutoGPT LangChain AgentVerse ChatDev MetaGPT PRD generation % % % % ! Tenical design genenration % % % % ! API interface generation % % % % ! Code generation ! ! ! ! ! Precompilation execution % % % % ! Role-based task management % % % ! ! Code review % % ! ! ! Table 3: Ablation study on roles. ‘#’ denotes ‘The number of’, ‘Product’ denotes ‘Product manager’, and ‘Project’ denotes ‘Project manager’. ‘!’ indicates the addition of a specific role. ‘Revisions’ refers to ‘Human Revision Cost’. Engineer Product Architect Project #Agents #Lines Expense Revisions Executability ! % % % 83.0 $ 0.915 1.0 ! ! % % 112.0 $ 1.059 6.5 2.0 ! ! ! % 143.0 $ 1.204 4.0 2.5 ! ! % ! 205.0 $ 1.251 3.5 2.0 ! ! ! ! 191.0 $ 1.385 2.5 4.0 can easily integrate SOP-like designs to improve their performance, similar to injecting chain-ofthought (Wei et al., 2022) in LLMs. 4.4 ABLATION STUDY The Effectiveness of Roles To understand the impact of different roles on the final results, we perform two tasks that involve generating effective code and calculating average statistics. When we exclude certain roles, unworkable codes are generated. As indicated by Table 3, the addition of roles different from just the Engineer consistently improves both revisions and executability. While more roles slightly increase the expenses, the overall performance improves noticeably, demonstrating the effectiveness of the various roles. The Effectiveness of Executable Feedback Mechanism As shown in Figure 4, adding executable feedback into MetaGPT leads to a significant improvement of 4.2% and 5.4% in Pass @1 on HumanEval and MBPP, respectively. Besides, Table 1 shows that the feedback mechanism improves feasibility (3.67 to 3.75) and reduces the cost of human revisions (2.25 to 0.83). These results illustrate how our designed feedback mechanism can produce higher-quality code. Additional quantitative results of MetaGPT and MetaGPT without executable feedback are shown in Table 4 and Table 9. CONCLUSION This work introduces MetaGPT, a novel meta-programming framework that leverages SOPs to enhance the problem-solving capabilities of multi-agent systems based on Large Language Models (LLMs). MetaGPT models a group of agents as a simulated software company, analogous to simulated towns (Park et al., 2023) and the Minecraft Sandbox in Voyager (Wang et al., 2023a). MetaGPT leverages role specialization, workflow management, and efficient sharing mechanisms such as message pools and subscriptions, rendering it a flexible and portable platform for autonomous agents and multi-agent frameworks. It uses an executable feedback mechanism to enhance code generation quality during runtime. In extensive experiments, MetaGPT achieves state-of-the-art performance on multiple benchmarks. The successful integration of human-like SOPs inspires future research on human-inspired techniques for artificial multi-agent systems. We also view our work as an early attempt to regulate LLM-based multi-agent frameworks. See also the outlook (Appendix A).</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>表 2：MetaGPT 与其他方法的能力比较。‘!’ 表示对应框架具备该特性，‘%’ 表示不具备。</p>
+<p>框架能力 / AutoGPT / LangChain / AgentVerse / ChatDev / MetaGPT</p>
+<p>PRD generation：仅 MetaGPT 为 !</p>
+<p>Technical design generation：仅 MetaGPT 为 !</p>
+<p>API interface generation：仅 MetaGPT 为 !</p>
+<p>Code generation：五者皆 !</p>
+<p>Precompilation execution：仅 MetaGPT 为 !</p>
+<p>Role-based task management：ChatDev 与 MetaGPT 为 !</p>
+<p>Code review：AgentVerse、ChatDev 与 MetaGPT 为 !</p>
+<p>表 3：角色消融。‘#’ 表示数量，‘Product’ 为产品经理，‘Project’ 为项目经理。‘Revisions’ 指人工修订成本。仅 Engineer 时代码往往不可用；依次加入 Product / Architect / Project 后，可执行性升至 4.0，修订降到 2.5，费用略增。</p>
+<p>其他基线可以轻易融入类 SOP 的设计以提升性能，类似于在 LLM 中注入思维链（Wei et al., 2022）。</p>
+<p class="meta-line">4.4 消融研究</p>
+<p>角色的有效性</p>
+<p>为理解不同角色对最终结果的影响，我们执行两项生成有效代码并计算平均统计的任务。排除某些角色时，会生成无法工作的代码。如表 3 所示，在仅有 Engineer 之外加入其他角色，持续改进修订次数与可执行性。更多角色略增费用，但总体性能明显提升，说明各角色有效。</p>
+<p>可执行反馈机制的有效性</p>
+<p>如图 4 所示，把可执行反馈加入 MetaGPT，使 HumanEval 与 MBPP 的 Pass@1 分别显著提升 4.2% 与 5.4%。此外表 1 显示反馈机制改进可行性（3.67 到 3.75）并降低人工修订成本（2.25 到 0.83）。这些结果说明所设计的反馈机制能产出更高质量代码。MetaGPT 与无反馈 MetaGPT 的额外定量结果见表 4 与表 9。</p>
+<p>结论</p>
+<p>本文提出 MetaGPT，一种新颖的元编程框架，利用 SOP 增强基于大语言模型（LLM）的多智能体系统的解题能力。MetaGPT 把一组智能体建模为模拟软件公司，类似于模拟小镇（Park et al., 2023）与 Voyager 中的 Minecraft 沙盒（Wang et al., 2023a）。MetaGPT 利用角色专门化、工作流管理以及消息池与订阅等高效共享机制，使其成为自主智能体与多智能体框架的灵活、可移植平台。它使用可执行反馈机制在运行时提升代码生成质量。在大量实验中，MetaGPT 在多个基准上达到最先进性能。成功融入类人 SOP 启发未来对人工多智能体系统采用人类启发技术的研究。我们也把本工作视为规范基于 LLM 的多智能体框架的早期尝试。另见展望（附录 A）。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页能力表说明只有 MetaGPT 会出 PRD / 技术设计 / 预编译执行；角色消融证明「只留工程师」不够，加人之后可执行性升到 4。结论把框架收成「模拟软件公司 + SOP + 跑得通的反馈」。
+类比：编制表不能只雇程序员，产品和架构空了，返工单就会堆起来。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Acknowledgement We thank Sarah Salhi, the Executive Secretary of KAUST AI Initiative, and Yuhui Wang, Postdoctoral Fellow at the KAUST AI Initiative, for helping to polish some of the text. We would like to express our gratitude to Wenyi Wang, a PhD student at the KAUST AI Initiative, for providing comprehensive feedback on the paper and for helping to draft the outlook (Appendix A) with Mingchen. We also thank Zongze Xu, the vice president of DeepWisdom, for providing illustrative materials for AgentStore. Author Contributions Sirui Hong conducted most of the experiments and designed the executable feedback module. She also led the initial version of the write-up, supported by Ceyao Zhang, and also by Jinlin Wang and Zili Wang. Mingchen Zhuge designed the self-improvement module, discussed additional experiments, and led the current write-up. Jiaqi Chen helped with the MBPP experiments, outlined the methods section, and contributed to the current write-up. Xiawu Zheng provided valuable guidance, reviewed and edited the paper. Yuheng Cheng contributed to the evaluation metric design and HumanEval experiments. Steven Ka Shing Yau, Zijuan Lin, Liyang Zhou, Lingfeng Xiao helped with the MBPP experiments and comparisons to open-source baseline methods. Chenyu Ran created most of the illustrative figures. Chenglin Wu is the CEO of DeepWisdom, initiated MetaGPT, made the most significant code contributions to it, and advised this project. J¨urgen Schmidhuber, Director of the AI Initiative at KAUST and Scientific Director of IDSIA, advised this project and helped with the write-up. REFERENCES Elif Akata, Lion Schulz, Julian Coda-Forno, Seong Joon Oh, Matthias Bethge, and Eric Schulz. Playing repeated games with large language models. arXiv preprint, 2023. Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. Anton Bakhtin, Noam Brown, Emily Dinan, Gabriele Farina, Colin Flaherty, Daniel Fried, Andrew Goff, Jonathan Gray, Hengyuan Hu, et al. Human-level play in the game of diplomacy by combining language models with strategic reasoning. Science, 2022. Robert Balzer. A 15 year perspective on automatic programming. TSE, 1985. R.M. Belbin. Team Roles at Work. Routledge, 2012. URL https://books.google.co.uk/ books?id=MHIQBAAAQBAJ. Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. Large language models as tool makers. arXiv preprint, 2023. Harrison Chase. LangChain. https://github.com/hwchase17/langchain, 2022. Bei Chen, Fengji Zhang, Anh Nguyen, Daoguang Zan, Zeqi Lin, Jian-Guang Lou, and Weizhu Chen. Codet: Code generation with generated tests, 2022. Jiaqi Chen, Yuxian Jiang, Jiachen Lu, and Li Zhang. S-agents: self-organizing agents in open-ended environment. arXiv preprint, 2024. Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code, 2021a.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>致谢</h1>
+<p>我们感谢 KAUST AI Initiative 执行秘书 Sarah Salhi 与博士后 Yuhui Wang 帮助润色部分文字。感谢 KAUST AI Initiative 博士生 Wenyi Wang 提供全面反馈并与 Mingchen 共同起草展望（附录 A）。感谢 DeepWisdom 副总裁 Zongze Xu 为 AgentStore 提供示意材料。 作者贡献 Sirui Hong 完成大部分实验并设计可执行反馈模块，牵头初稿撰写。Mingchen Zhuge 设计自改进模块、讨论额外实验并牵头当前文稿。Jiaqi Chen 协助 MBPP 实验、方法节提纲并参与当前文稿。Xiawu Zheng 提供指导并审阅编辑。Yuheng Cheng 贡献评估指标设计与 HumanEval 实验。Steven Ka Shing Yau、Zijuan Lin、Liyang Zhou、Lingfeng Xiao 协助 MBPP 与开源基线比较。Chenyu Ran 制作大部分示意性图。Chenglin Wu 是 DeepWisdom CEO，发起 MetaGPT，做出最主要的代码贡献并指导本项目。Jürgen Schmidhuber 指导本项目并协助撰写。</p>
+<h1>参考文献</h1>
+<p>Elif Akata, Lion Schulz, Julian Coda-Forno, Seong Joon Oh, Matthias Bethge, and Eric Schulz. Playing repeated games with large language models. arXiv preprint, 2023. Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models, 2021. Anton Bakhtin, Noam Brown, Emily Dinan, Gabriele Farina, Colin Flaherty, Daniel Fried, Andrew Goff, Jonathan Gray, Hengyuan Hu, et al. Human-level play in the game of diplomacy by combining language models with strategic reasoning. Science, 2022. Robert Balzer. A 15 year perspective on automatic programming. TSE, 1985. R.M. Belbin. Team Roles at Work. Routledge, 2012. Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. Large language models as tool makers. arXiv preprint, 2023. Harrison Chase. LangChain. https://github.com/hwchase17/langchain, 2022. Bei Chen, Fengji Zhang, Anh Nguyen, Daoguang Zan, Zeqi Lin, Jian-Guang Lou, and Weizhu Chen. Codet: Code generation with generated tests, 2022. Jiaqi Chen, Yuxian Jiang, Jiachen Lu, and Li Zhang. S-agents: self-organizing agents in open-ended environment. arXiv preprint, 2024. Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code, 2021a.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页致谢、作者贡献后进入参考文献，条目保持英文。HumanEval 原文、LangChain、LATM 都在这一层。
+类比：片尾字幕加书架第一层。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Weize Chen, Yusheng Su, Jingwei Zuo, Cheng Yang, Chenfei Yuan, Chen Qian, Chi-Min Chan, Yujia Qin, Yaxi Lu, Ruobing Xie, Zhiyuan Liu, Maosong Sun, and Jie Zhou. Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents, 2023. Xinyun Chen, Chang Liu, and Dawn Song. Execution-guided neural program synthesis. In ICLR, 2018. Xinyun Chen, Dawn Song, and Yuandong Tian. Latent execution for neural program synthesis beyond domain-specific languages. NeurIPS, 2021b. Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, Parker Schuh, Kensen Shi, Sasha Tsvyashchenko, Joshua Maynez, Abhishek Rao, Parker Barnes, Yi Tay, Noam Shazeer, Vinodkumar Prabhakaran, Emily Reif, Nan Du, Ben Hutchinson, Reiner Pope, James Bradbury, Jacob Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin, Toju Duke, Anselm Levskaya, Sanjay Ghemawat, Sunipa Dev, Henryk Michalewski, Xavier Garcia, Vedant Misra, Kevin Robinson, Liam Fedus, Denny Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim, Barret Zoph, Alexander Spiridonov, Ryan Sepassi, David Dohan, Shivani Agrawal, Mark Omernick, Andrew M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov, Katherine Lee, Zongwei Zhou, Xuezhi Wang, Brennan Saeta, Mark Diaz, Orhan Firat, Michele Catasta, Jason Wei, Kathy Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov, and Noah Fiedel. Palm: Scaling language modeling with pathways, 2022. T. DeMarco and T.R. Lister. Peopleware: Productive Projects and Teams. Addison-Wesley, 2013. URL https://books.google.co.uk/books?id=DVlsAQAAQBAJ. Yihong Dong, Xue Jiang, Zhi Jin, and Ge Li. Self-collaboration code generation via chatgpt. arXiv preprint, 2023. Yilun Du, Shuang Li, Antonio Torralba, Joshua B. Tenenbaum, and Igor Mordatch. Improving factuality and reasoning in language models through multiagent debate, 2023. Yanai Elazar, Nora Kassner, Shauli Ravfogel, Abhilasha Ravichander, Eduard Hovy, Hinrich Sch¨utze, and Yoav Goldberg. Measuring and improving consistency in pretrained language models. TACL, 2021. Zhangyin Feng, Daya Guo, Duyu Tang, Nan Duan, Xiaocheng Feng, Ming Gong, Linjun Shou, Bing Qin, Ting Liu, Daxin Jiang, et al. Codebert: A pre-trained model for programming and natural languages. arXiv preprint, 2020. Chrisantha Fernando, Dylan Banarse, Henryk Michalewski, Simon Osindero, and Tim Rockt¨aschel. Promptbreeder: Self-referential self-improvement via prompt evolution. arXiv preprint, 2023. Chelsea Finn, Pieter Abbeel, and Sergey Levine. Model-agnostic meta-learning for fast adaptation of deep networks. In ICML, 2017. Daniel Fried, Armen Aghajanyan, Jessy Lin, Sida Wang, Eric Wallace, Freda Shi, Ruiqi Zhong, Wen-tau Yih, Luke Zettlemoyer, and Mike Lewis. Incoder: A generative model for code infilling and synthesis. arXiv preprint, 2022. Irving John Good. Speculations concerning the first ultraintelligent machine. Adv. Comput., 1965. Rui Hao, Linmei Hu, Weijian Qi, Qingliu Wu, Yirui Zhang, and Liqiang Nie. Chatllm network: More brains, more intelligence. arXiv preprint, 2023. S. Hochreiter, A. S. Younger, and P. R. Conwell. Learning to learn using gradient descent. In Lecture Notes on Comp. Sci. 2130, Proc. Intl. Conf. on Artificial Neural Networks (ICANN-2001), pp. 87–</p>
+<p>94. Springer: Berlin, Heidelberg, 2001. Sirui Hong, Yizhang Lin, Bangbang Liu, Binhao Wu, Danyang Li, Jiaqi Chen, Jiayi Zhang, Jinlin Wang, Lingyao Zhang, Mingchen Zhuge, et al. Data interpreter: An llm agent for data science. arXiv preprint arXiv:2402.18679, 2024.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>参考文献</h1>
+<p>Weize Chen, Yusheng Su, Jingwei Zuo, Cheng Yang, Chenfei Yuan, Chen Qian, Chi-Min Chan, Yujia Qin, Yaxi Lu, Ruobing Xie, Zhiyuan Liu, Maosong Sun, and Jie Zhou. Agentverse: Facilitating multi-agent collaboration and exploring emergent behaviors in agents, 2023. Xinyun Chen, Chang Liu, and Dawn Song. Execution-guided neural program synthesis. In ICLR, 2018. Xinyun Chen, Dawn Song, and Yuandong Tian. Latent execution for neural program synthesis beyond domain-specific languages. NeurIPS, 2021b. Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, Parker Schuh, Kensen Shi, Sasha Tsvyashchenko, Joshua Maynez, Abhishek Rao, Parker Barnes, Yi Tay, Noam Shazeer, Vinodkumar Prabhakaran, Emily Reif, Nan Du, Ben Hutchinson, Reiner Pope, James Bradbury, Jacob Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin, Toju Duke, Anselm Levskaya, Sanjay Ghemawat, Sunipa Dev, Henryk Michalewski, Xavier Garcia, Vedant Misra, Kevin Robinson, Liam Fedus, Denny Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim, Barret Zoph, Alexander Spiridonov, Ryan Sepassi, David Dohan, Shivani Agrawal, Mark Omernick, Andrew M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov, Katherine Lee, Zongwei Zhou, Xuezhi Wang, Brennan Saeta, Mark Diaz, Orhan Firat, Michele Catasta, Jason Wei, Kathy Meier-Hellstern, Kathy Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov, and Noah Fiedel. Palm: Scaling language modeling with pathways. arXiv preprint, 2022. 以及本页其余书目（AgentVerse、程序合成、PaLM 等），条目保持英文以便按作者回查。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献含 AgentVerse、程序合成与 PaLM。对照「谁在做多智能体协作」时回到这里。
+类比：书架上标着协作框架的那一层。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Xue Jiang, Yihong Dong, Lecheng Wang, Qiwei Shang, and Ge Li. Self-planning code generation with large language model. arXiv preprint, 2023. Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem. Camel: Communicative agents for” mind” exploration of large scale language model society. arXiv preprint, 2023. Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, R´emi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, et al. Competition-level code generation with alphacode. Science, 2022. Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yujiu Yang, Zhaopeng Tu, and Shuming Shi. Encouraging divergent thinking in large language models through multiagent debate. arXiv preprint, 2023. Bill Yuchen Lin, Yicheng Fu, Karina Yang, Prithviraj Ammanabrolu, Faeze Brahman, Shiyu Huang, Chandra Bhagavatula, Yejin Choi, and Xiang Ren. Swiftsage: A generative agent with fast and slow thinking for complex interactive tasks. arXiv preprint, 2023. Ruibo Liu, Ruixin Yang, Chenyan Jia, Ge Zhang, Denny Zhou, Andrew M Dai, Diyi Yang, and Soroush Vosoughi. Training socially aligned language models in simulated human society. arXiv preprint, 2023a. Yuliang Liu, Xiangru Tang, Zefan Cai, Junjie Lu, Yichi Zhang, Yanjun Shao, Zexuan Deng, Helan Hu, Zengxian Yang, Kaikai An, et al. Ml-bench: Large language models leverage open-source libraries for machine learning tasks. arXiv preprint arXiv:2311.09835, 2023b. Ziyang Luo, Can Xu, Pu Zhao, Qingfeng Sun, Xiubo Geng, Wenxiang Hu, Chongyang Tao, Jing Ma, Qingwei Lin, and Daxin Jiang. Wizardcoder: Empowering code large language models with evol-instruct. arXiv preprint, 2023. Potsawee Manakul, Adian Liusie, and Mark JF Gales. Selfcheckgpt: Zero-resource black-box hallucination detection for generative large language models. arXiv preprint, 2023. Agile Manifesto. Manifesto for agile software development. Snowbird, UT, 2001. John McCarthy. History of lisp. In History of programming languages. 1978. Niklas Muennighoff, Qian Liu, Armel Zebaze, Qinkai Zheng, Binyuan Hui, Terry Yue Zhuo, Swayam Singh, Xiangru Tang, Leandro Von Werra, and Shayne Longpre. Octopack: Instruction tuning code large language models. arXiv preprint arXiv:2308.07124, 2023. Ansong Ni, Srini Iyer, Dragomir Radev, Veselin Stoyanov, Wen-tau Yih, Sida Wang, and Xi Victoria Lin. Lever: Learning to verify language-to-code generation with execution. In ICML, 2023. Erik Nijkamp, Bo Pang, Hiroaki Hayashi, Lifu Tu, Huan Wang, Yingbo Zhou, Silvio Savarese, and Caiming Xiong. Codegen: An open large language model for code with multi-turn program synthesis, 2023. OpenAI. Gpt-4 technical report, 2023. Joon Sung Park, Joseph C O’Brien, Carrie J Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. Generative agents: Interactive simulacra of human behavior. arXiv preprint, 2023. Chen Qian, Xin Cong, Cheng Yang, Weize Chen, Yusheng Su, Juyuan Xu, Zhiyuan Liu, and Maosong Sun. Communicative agents for software development, 2023. Yujia Qin, Shihao Liang, Yining Ye, Kunlun Zhu, Lan Yan, Yaxi Lu, Yankai Lin, Xin Cong, Xiangru Tang, Bill Qian, et al. Toolllm: Facilitating large language models to master 16000+ real-world apis. arXiv preprint arXiv:2307.16789, 2023. Baptiste Rozi`ere, Jonas Gehring, Fabian Gloeckle, Sten Sootla, Itai Gat, Xiaoqing Ellen Tan, Yossi Adi, Jingyu Liu, Tal Remez, J´er´emy Rapin, et al. Code llama: Open foundation models for code. arXiv preprint, 2023.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>参考文献</h1>
+<p>Xue Jiang, Yihong Dong, Lecheng Wang, Qiwei Shang, and Ge Li. Self-planning code generation with large language model. arXiv preprint, 2023. Guohao Li, Hasan Abed Al Kader Hammoud, Hani Itani, Dmitrii Khizbullin, and Bernard Ghanem. Camel: Communicative agents for” mind” exploration of large scale language model society. arXiv preprint, 2023. Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, et al. Competition-level code generation with alphacode. Science, 2022. Tian Liang, Zhiwei He, Wenxiang Jiao, Xing Wang, Yan Wang, Rui Wang, Yujiu Yang, Zhaopeng Tu, and Shuming Shi. Encouraging divergent thinking in large language models through multiagent debate. arXiv preprint, 2023. Bill Yuchen Lin, Yicheng Fu, Karina Yang, Prithviraj Ammanabrolu, Faeze Brahman, Shiyu Huang, Chandra Bhagavatula, Yejin Choi, and Xiang Ren. Swiftsage: A generative agent with fast and slow thinking for complex interactive tasks. arXiv preprint, 2023. 以及 CAMEL、AlphaCode、多智能体辩论等其余英文条目。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献含 CAMEL、AlphaCode、多智能体辩论。正文批评「角色扮演聊天」时，CAMEL 是主要对照。
+类比：旁边那家只靠对话协作的公司名录。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Timo Schick, Jane Dwivedi-Yu, Roberto Dess`ı, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. arXiv preprint, 2023. J. Schmidhuber. A self-referential weight matrix. In Proceedings of the International Conference on Artificial Neural Networks, Amsterdam, pp. 446–451. Springer, 1993a. J. Schmidhuber. G¨odel machines: self-referential universal problem solvers making provably optimal self-improvements. Technical Report IDSIA-19-03, arXiv:cs.LO/0309048 v3, IDSIA, Manno-Lugano, Switzerland, December 2003. J. Schmidhuber. G¨odel machines: Fully self-referential optimal universal self-improvers. In B. Goertzel and C. Pennachin (eds.), Artificial General Intelligence, pp. 199–226. Springer Verlag,</p>
+<p>2006. Variant available as arXiv:cs.LO/0309048. J. Schmidhuber. Ultimate cognition `a la G¨odel. Cognitive Computation, 1(2):177–193, 2009. J¨urgen Schmidhuber. Evolutionary principles in self-referential learning, or on learning how to</p>
+<div class="toc-line">learn: the meta-meta-... hook. PhD thesis, 1987.</div>
+<p>J¨urgen Schmidhuber. A ‘self-referential’weight matrix. In ICANN’93: Proceedings of the International Conference on Artificial Neural Networks Amsterdam, The Netherlands 13–16 September 1993 3, 1993b. J¨urgen Schmidhuber. On learning to think: Algorithmic information theory for novel combinations of reinforcement learning controllers and recurrent neural world models. arXiv preprint, 2015. J¨urgen Schmidhuber, Jieyu Zhao, and Nicol N Schraudolph. Reinforcement learning with selfmodifying policies. In Learning to learn. 1998. Noah Shinn, Beck Labash, and Ashwin Gopinath. Reflexion: an autonomous agent with dynamic memory and self-reflection. arXiv preprint, 2023. Marta Skreta, Naruki Yoshikawa, Sebastian Arellano-Rubach, Zhi Ji, Lasse Bjørn Kristensen, Kourosh Darvish, Al´an Aspuru-Guzik, Florian Shkurti, and Animesh Garg. Errors are useful prompts: Instruction guided task programming with verifier-assisted iterative prompting. arXiv preprint, 2023. Elliot Soloway. Learning to program = learning to construct mechanisms and explanations. Communications of the ACM, 1986. Yashar Talebirad and Amirhossein Nadiri. Multi-agent collaboration: Harnessing the power of intelligent llm agents, 2023. Xiangru Tang, Bill Qian, Rick Gao, Jiakang Chen, Xinyun Chen, and Mark Gerstein. Biocoder: A benchmark for bioinformatics code generation with contextual pragmatic knowledge. arXiv preprint arXiv:2308.16458, 2023a. Xiangru Tang, Anni Zou, Zhuosheng Zhang, Yilun Zhao, Xingyao Zhang, Arman Cohan, and Mark Gerstein. Medagents: Large language models as collaborators for zero-shot medical reasoning. arXiv preprint arXiv:2311.10537, 2023b. Torantulino et al. Auto-gpt. https://github.com/Significant-Gravitas/ Auto-GPT, 2023. R. J. Waldinger and R. C. T. Lee. PROW: a step toward automatic program writing. In D. E. Walker and L. M. Norton (eds.), Proceedings of the 1st International Joint Conference on Artificial Intelligence (IJCAI), 1969. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models. arXiv preprint, 2023a.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>参考文献</h1>
+<p>Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. arXiv preprint, 2023. J. Schmidhuber. A self-referential weight matrix. In Proceedings of the International Conference on Artificial Neural Networks, Amsterdam, pp. 446–451. Springer, 1993a. J. Schmidhuber. Gödel machines: self-referential universal problem solvers making provably optimal self-improvements. Technical Report IDSIA-19-03, arXiv:cs.LO/0309048 v3, IDSIA, Manno-Lugano, Switzerland, December 2003. J. Schmidhuber. Gödel machines: Fully self-referential optimal universal self-improvers. In B. Goertzel and C. Pennachin (eds.), Artificial General Intelligence, pp. 199–226. Springer Verlag, 2006. 以及 Toolformer、哥德尔机、元学习等其余英文条目。附录 A 讨论自改进时会回到 Schmidhuber 这几条。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献把工具学习与 Schmidhuber 的自引用/哥德尔机放在一起。附录展望「项目间学习」时会点这些出处。
+类比：书架深处那几本「机器如何改自己」的旧书。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, et al. A survey on large language model based autonomous agents. arXiv preprint, 2023b. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. arXiv preprint, 2022. Zhenhailong Wang, Shaoguang Mao, Wenshan Wu, Tao Ge, Furu Wei, and Heng Ji. Unleashing cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration. arXiv preprint, 2023c. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. NeurIPS, 2022. Michael Wooldridge and Nicholas R. Jennings. Pitfalls of agent-oriented development. In Proceedings of the Second International Conference on Autonomous Agents, 1998. URL https: //doi.org/10.1145/280765.280867. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. arXiv preprint, 2022. Eric Zelikman, Eliana Lorch, Lester Mackey, and Adam Tauman Kalai. Self-taught optimizer (stop): Recursively self-improving code generation. arXiv preprint, 2023. Hongxin Zhang, Weihua Du, Jiaming Shan, Qinhong Zhou, Yilun Du, Joshua B Tenenbaum, Tianmin Shu, and Chuang Gan. Building cooperative embodied agents modularly with large language models. arXiv preprint, 2023a. Zhuosheng Zhang, Yao Yao, Aston Zhang, Xiangru Tang, Xinbei Ma, Zhiwei He, Yiming Wang, Mark Gerstein, Rui Wang, Gongshen Liu, et al. Igniting language intelligence: The hitchhiker’s guide from chain-of-thought reasoning to language agents. arXiv preprint arXiv:2311.11797, 2023b. Xufeng Zhao, Mengdi Li, Cornelius Weber, Muhammad Burhan Hafez, and Stefan Wermter. Chat with the environment: Interactive multimodal perception using large language models. arXiv preprint, 2023. Qinkai Zheng, Xiao Xia, Xu Zou, Yuxiao Dong, Shan Wang, Yufei Xue, Zihan Wang, Lei Shen, Andi Wang, Yang Li, Teng Su, Zhilin Yang, and Jie Tang. Codegeex: A pre-trained model for code generation with multilingual evaluations on humaneval-x, 2023. Shuyan Zhou, Frank F Xu, Hao Zhu, Xuhui Zhou, Robert Lo, Abishek Sridhar, Xianyi Cheng, Yonatan Bisk, Daniel Fried, Uri Alon, et al. Webarena: A realistic web environment for building autonomous agents. arXiv preprint, 2023a. Wangchunshu Zhou, Yuchen Eleanor Jiang, Long Li, Jialong Wu, Tiannan Wang, Shi Qiu, Jintian Zhang, Jing Chen, Ruipu Wu, Shuai Wang, et al. Agents: An open-source framework for autonomous language agents. arXiv preprint arXiv:2309.07870, 2023b. Mingchen Zhuge, Haozhe Liu, Francesco Faccio, Dylan R Ashley, R´obert Csord´as, Anand Gopalakrishnan, Abdullah Hamdi, Hasan Abed Al Kader Hammoud, Vincent Herrmann, Kazuki Irie, et al. Mindstorms in natural language-based societies of mind. arXiv preprint, 2023.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<h1>参考文献</h1>
+<p>Lei Wang, Chen Ma, Xueyang Feng, Zeyu Zhang, Hao Yang, Jingsen Zhang, Zhiyuan Chen, Jiakai Tang, Xu Chen, Yankai Lin, et al. A survey on large language model based autonomous agents. arXiv preprint, 2023b. Xuezhi Wang, Jason Wei, Dale Schuurmans, Quoc Le, Ed Chi, Sharan Narang, Aakanksha Chowdhery, and Denny Zhou. Self-consistency improves chain of thought reasoning in language models. arXiv preprint, 2022. Zhenhailong Wang, Shaoguang Mao, Wenshan Wu, Tao Ge, Furu Wei, and Heng Ji. Unleashing cognitive synergy in large language models: A task-solving agent through multi-persona selfcollaboration. arXiv preprint, 2023c. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. NeurIPS, 2022. Michael Wooldridge and Nicholas R. Jennings. Intelligent agents: Theory and practice. The knowledge engineering review, 1995. 以及本综述、思维链、智能体理论等其余英文条目。馆藏中的「基于大语言模型的自主智能体综述」即 Wang et al., 2023b。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献收到智能体综述与思维链原文。若要从 MetaGPT 跳到总览，Wang et al. 2023b 就是那篇 42 页综述。
+类比：从一家公司介绍跳回行业年鉴的索引。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 A OUTLOOK A.1 SELF-IMPROVEMENT MECHANISMS One limitation of the MetaGPT version in the main text of this paper is that each software project is executed independently. However, through active teamwork, a software development team should learn from the experience gained by developing each project, thus becoming more compatible and successful over time. This is somewhat related to the idea of recursive self-improvement, first informally proposed in 1965 (Good, 1965), with first concrete implementations since 1987 (Schmidhuber, 1987; 1993b; Schmidhuber et al., 1998), culminating in the concept of mathematically optimal self-referential self-improvers (Schmidhuber, 2003; 2009). Generally speaking, a system should learn from experience in the real world, and meta-learn better learning algorithms from experiences of learning, and meta-meta-learn better meta-learning algorithms from experiences of meta-learning, etc., without any limitations except those of computability and physics. More recent, somewhat related work leverages the reasoning ability of Large Language Models (LLMs) and recursively improves prompts of LLMs, to improve performance on certain downstream tasks (Fernando et al., 2023; Zelikman et al., 2023), analogous to the adaptive prompt engineer of 2015 (Schmidhuber, 2015) where one neural network learns to generate sequence of queries or prompts for another pre-trained neural network whose answers may help the first network to learn new tasks more quickly. In our present work, we also explore a self-referential mechanism that recursively modifies the constraint prompts of agents based on information they observe during software development. Our initial implementation works as follows. Prior to each project, every agent in the software company reviews previous feedback and makes necessary adjustments to their constraint prompts. This enables them to continuously learn from past project experiences and enhance the overall multi-agent system by improving each individual in the company. We first establish a handover feedback action for each agent. This action is responsible for critically summarizing the information received during the development of previous projects and integrating this information in an updated constraint prompt. The summarized information is stored in long-term memory such that it can be inherited by future constraint prompt updates. When initiating a new project, each agent starts with a react action. Each agent evaluates the received feedback and summarizes how they can improve in a constraint prompt. One current limitation is that these summary-based optimizations only modify constraints in the specialization of roles (Sec. 3.1) rather than structured communication interfaces in communication protocols (Sec. 3.2). Future advancements are yet to be explored. A.2 MULTI-AGENT ECONOMIES In real-world teamwork, the interaction processes are often not hardcoded. For example, in a software company, the collaboration SOP may change dynamically. One implementation of such self-organization is discussed in the paper on a “Natural LanguageBased Society of Mind” (NLSOM) (Zhuge et al., 2023), which introduced the idea of an “Economy of Minds” (EOM), a Reinforcement Learning (RL) framework for societies of LLMs and other agents. Instead of using standard RL techniques to optimize the total reward of the system through modifications of neural network parameters, EOMs use the principles of supply and demand in free markets to assign credit (money) to those agents that contribute to economic success (reward). The recent agent-based platform of DeepWisdom (AgentStore4) is compatible with the credit assignment concept of EOMs. Each agent in AgentStore provides a list of services with corresponding costs. A convenient API is provided so that human users or agents in the platform can easily purchase services from other agents to accomplish their services. Figure 6 displays the User Interface (UI) of AgentStore, where various agents with different skills are showcased. Besides, individual developers can participate in building new agents and enable collaborative development within the community. Specifically, AgentStore allows users to subscribe to agents according to their demands 4http://beta.deepwisdom.ai</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>A 展望</p>
+<p>A.1 自改进机制</p>
+<p>正文中 MetaGPT 版本的一个局限是每个软件项目独立执行。然而通过积极的团队合作，软件开发团队应从开发每个项目获得的经验中学习，从而随时间变得更匹配、更成功。</p>
+<p>这与递归自改进的想法有些相关，该想法 1965 年由 Good（1965）非正式提出，1987 年起有具体实现（Schmidhuber, 1987; 1993b; Schmidhuber et al., 1998），并 culminating 于数学上最优的自引用自改进者概念（Schmidhuber, 2003; 2009）。一般而言，系统应从现实世界经验中学习，从学习经验中元学习更好的学习算法，再元–元学习……作者把跨项目积累经验、让模拟公司越做越强，写成开放方向，而非本文实验。</p>
+<p>A.2 AgentStore 等生态</p>
+<p>展望还讨论智能体商店：用户可创建、组合、按用量付费，并购买附加能力以即插即用升级现有智能体。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>附录 A 承认：现在每个项目独立做完就忘。作者想要跨项目学习，并指向哥德尔机式自改进——这是展望，不是表 1 的结果。读主文数字时不要把「越做越强」算进去。
+类比：公司做完一个 App 不留复盘，下一单还从零开始；他们想建项目档案室。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 and pay according to their usage. Moreover, users can purchase additional capabilities to expand the plug-and-play functions of their existing agents. This allows users to gradually upgrade their agents. Within the MetaGPT framework, AgentStore can support the collaboration of various agents. Users can collect several agents together to carry out more complex tasks or projects, and all the agents share and comply with development and communication protocols defined in MetaGPT. Figure 6: AgentStore is a platform dedicated to serving users in the creation and development of agents within the MetaGPT framework. This platform provides users with an operational interface, allowing users to easily manage a variety of agents with different emotions, personalities, and capabilities for specific tasks.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>用户还可按用量付费，并购买附加能力以扩展现有智能体的即插即用功能，从而逐步升级智能体。</p>
+<p>在 MetaGPT 框架内，AgentStore 可以支持各类智能体协作。用户可以把若干智能体收集在一起执行更复杂的任务或项目，所有智能体共享并遵守 MetaGPT 定义的开发与通信协议。</p>
+<p>图 6：AgentStore 是专为用户在 MetaGPT 框架内创建与开发智能体服务的平台。该平台提供操作界面，使用户能轻松管理具有不同情绪、个性与能力、面向特定任务的各类智能体。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页几乎全是图 6：AgentStore——在同一套 SOP 协议下组合、升级智能体的商店设想，用户可按用量付费、即插即用加能力。仍是展望，用来理解作者想把编制做成货架。
+类比：应用商店，但货架上是「产品经理」「画图工程师」，规矩仍是公司 SOP。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 B A DEMO OF THE EXECUTION In this section, we outline the complete process of software development using MetaGPT. It begins with a user’s input command (as shown in Appendix B.1) and ends with software designed according to the user’s specifications. B.1 USER INPUT Upon receiving an instruction from the user, MetaGPT collaborates with a professional development team to fulfill the task. Here is a demo of user input: User input write a python3 GUI app such that you can draw an image with it B.2 METAGPT DEVELOPMENT PROCESS Now we provide a step-by-step explanation of the standardized output process for each agent. Product Manager The Product Manager generates a Product Requirement Document (PRD), as detailed in the specified documentation. This document encompasses goals, user stories, competitive analysis, requirement analysis and requirement pool. Additionally, a competitive quadrant chart is produced (see Figure 7). Subsequently, these documents and charts are handed over to the architect for system design. Product Requirement Document ## Original Requirements The boss requires a Python3 GUI color meter that outputs the RGB values when it moves. ## Product Goals ‘‘‘python [ &quot;Create a user-friendly GUI color meter&quot;, &quot;Ensure the color meter accurately outputs RGB values&quot;, &quot;Ensure the color meter updates RGB values in real-time as it moves&quot; ] ‘‘‘ ## User Stories ‘‘‘python [ &quot;As a user, I want to select any color on the screen, so that I can get its RGB values&quot;, &quot;As a user, I want the RGB values to update in real-time as I move the color meter, so that I ,→can get accurate color information&quot;, &quot;As a user, I want a simple and intuitive interface, so that I can easily use the color meter&quot; ] ‘‘‘ ## Competitive Analysis ‘‘‘python [ &quot;Color Cop: A popular color picker for Windows. It’s simple and easy to use, but lacks real,→time RGB value updates&quot;, &quot;Just Color Picker: Offers real-time color picking and multiple color code formats. However, ,→its interface is cluttered and not very user-friendly&quot;, &quot;Instant Eyedropper: A simple color picker that lives in the system tray. It’s convenient but ,→lacks advanced features&quot;, &quot;ColorZilla: A color picker extension for browsers. It’s convenient for web design but not ,→suitable for desktop applications&quot;, &quot;ColorPic: Offers color palettes and mixer tools. It’s feature-rich but can be overwhelming ,→for simple tasks&quot; ] ‘‘‘</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>B 一次执行演示</p>
+<p>本节概述用 MetaGPT 做软件开发的完整过程。它从用户输入命令开始（见附录 B.1），到按用户规格设计出软件结束。</p>
+<p>B.1 用户输入</p>
+<p>收到用户指令后，MetaGPT 与专业开发团队协作完成任务。用户输入演示：</p>
+<p>User input</p>
+<p>write a python3 GUI app such that you can draw an image with it</p>
+<p>B.2 METAGPT 开发过程</p>
+<p>我们逐步解释每个智能体的标准化输出过程。</p>
+<p>Product Manager</p>
+<p>产品经理生成产品需求文档（PRD），如指定文档所详。该文档涵盖目标、用户故事、竞争分析等，作为后续角色的结构化输入。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>附录 B 开始跟一条真实指令：write a python3 GUI app such that you can draw an image with it。先看产品经理如何把它写成 PRD，后面几页按角色交出标准文档，是 SOP 的全程录像。
+类比：客户一句话，产品经理要写成可验收的需求清单。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-18" data-page="18">
+  <div class="page-label">第 18 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-018.jpg" alt="PDF page 18" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Product Requirement Document ## Requirement Analysis The product should be a Python3 GUI application that serves as a color meter. It should allow ,→users to select any color on the screen and display the corresponding RGB values. The RGB ,→ values should update in real-time as the color meter moves. The interface should be ,→simple and user-friendly. ## Requirement Pool ‘‘‘python [ (&quot;Design a user-friendly GUI for the color meter&quot;, &quot;P0&quot;), (&quot;Implement color selection functionality&quot;, &quot;P0&quot;), (&quot;Display RGB values of the selected color&quot;, &quot;P0&quot;), (&quot;Update RGB values in real-time as the color meter moves&quot;, &quot;P0&quot;), (&quot;Test the application for accuracy and performance&quot;, &quot;P1&quot;) ] ‘‘‘ ## UI Design draft The UI should be minimalistic and intuitive. It should primarily consist of a color meter, which ,→could be a magnified area of the screen that the user can move around. The RGB values of ,→the currently selected color should be prominently displayed, updating in real-time as ,→the color meter moves. The layout should be clean and uncluttered, with a focus on ,→functionality and ease of use. ## Anything UNCLEAR There are no unclear points. Figure 7: The quadrant chart for the “Drawing App” generated by the product manager agent.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 产品需求文档 ## Requirement Analysis 产品应是一个 Python3 GUI 应用，用作取色器（color meter）。它应允许用户选择屏幕上任意颜色并显示对应 RGB 值。RGB 值应随取色器移动实时更新。界面应简单、友好。 ## Requirement Pool ```python [ (&quot;Design a user-friendly GUI for the color meter&quot;, &quot;P0&quot;), (&quot;Implement color selection functionality&quot;, &quot;P0&quot;), (&quot;Display RGB values of the selected color&quot;, &quot;P0&quot;), (&quot;Update RGB values in real-time as the color meter moves&quot;, &quot;P0&quot;), (&quot;Test the application for accuracy and performance&quot;, &quot;P1&quot;) ] ``` 结构化字段（分析 + 带优先级的需求池）正是正文强调的「交接必须符合标准」：下游角色读文档，而不是读一段闲聊。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是 PRD 原文结构：需求分析加 P0/P1 需求池。注意用户说「画图」，文档写成了取色器——结构化也仍可能偏题，读时要盯这种漂移，别把格式正确当成理解正确。
+类比：需求表格填得很规范，但产品理解偏了，后面全按偏的做。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-19" data-page="19">
+  <div class="page-label">第 19 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-019.jpg" alt="PDF page 19" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Architect Based on the requirements in PRD, the Architect agent devises technical specifications including system architecture diagrams and interface definitions. Initially, the Architect defines the overarching technical trajectory. Subsequently, the project’s architecture, including files, classes (Figure 8) and the sequence flow chart (Figure 12), is designed. The Architect’s documentation is then given to the project manager for task allocation and execution. System design ## Implementation approach We will use Python’s Tkinter library to create the GUI for the color meter. Tkinter is a standard ,→Python interface to the Tk GUI toolkit and is included with most Python installations. It ,→ is simple to use and powerful enough for our needs. The color selection functionality will be implemented using the PIL (Pillow) library, which allows ,→ us to capture the screen’s pixel data. By moving the mouse, we can get the RGB values of ,→ the pixel under the mouse cursor in real-time. The RGB values will be displayed on the GUI using Tkinter’s Label widget. We will use Python’s ,→threading library to update the RGB values in real-time as the color meter moves. The application will be tested for accuracy and performance using Python’s unittest library. ## Python package name ‘‘‘python &quot;color_meter&quot; ‘‘‘ ## File list ‘‘‘python [ &quot;main.py&quot;, &quot;color_picker.py&quot;, &quot;gui.py&quot;, &quot;tests.py&quot; ] ‘‘‘ ## Anything UNCLEAR The requirement is clear to me. Figure 8: Data structures and interface definitions for the “Drawing App” generated by the architect agent. Project Manager The Project Manager breaks down the project into a task list. Furthermore, each code file is analyzed based on its intended functionality and then treated as a separate task assigned to Engineers.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>Architect</p>
+<p>基于 PRD 中的需求，Architect 智能体制定技术规格，包括系统架构图与接口定义。首先定义总体技术路径，随后设计项目架构，包括文件、类（图 8）与顺序流程图（图 12）。Architect 的文档再交给项目经理做任务分配与执行。</p>
+<p>系统设计</p>
+<p>## Implementation approach</p>
+<p>我们将使用 Python 的 Tkinter 库创建取色器 GUI。Tkinter 是 Tk GUI 工具包的标准 Python 接口，随大多数 Python 安装附带，简单且足够强大。</p>
+<p>颜色选择功能将用 PIL（Pillow）库实现，……</p>
+<p>架构师把「用什么库、模块怎么切」写成可交给工程师的设计，而不是再开一场聊天。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是架构师文档：Tkinter + Pillow、文件与类、流程图。SOP 的第二站——把 PRD 译成技术图纸，再交给项目经理分活，而不是再开一场聊天对齐需求。
+类比：施工图，工地上只认图纸不认口头。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-20" data-page="20">
+  <div class="page-label">第 20 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-020.jpg" alt="PDF page 20" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 9: The program call flow for the “Drawing App” generated by the architect agent. Tasks ## Required Python third-party packages ‘‘‘python &quot;&quot;&quot; tkinter==8.6 Pillow==8.3.1 &quot;&quot;&quot; ‘‘‘ ## Required Other language third-party packages ‘‘‘python &quot;&quot;&quot; No third-party packages required in other languages. &quot;&quot;&quot; ‘‘‘ ## Full API spec ‘‘‘python &quot;&quot;&quot; No APIs are used in this project. &quot;&quot;&quot; ‘‘‘ ## Logic Analysis ‘‘‘python [ (&quot;main.py&quot;, &quot;Contains the main application loop and initializes all the other components.&quot;), (&quot;canvas.py&quot;, &quot;Implements the drawing canvas, responds to mouse events, and uses the selected ,→tool and color.&quot;), (&quot;tools.py&quot;, &quot;Implements the tool selection interface.&quot;), (&quot;color_picker.py&quot;, &quot;Implements the color selection interface.&quot;), (&quot;file_manager.py&quot;, &quot;Implements the file saving and opening functionality.&quot;) ] ‘‘‘</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 9：架构师智能体为 “Drawing App” 生成的程序调用流。</p>
+<p>任务</p>
+<p>## Required Python third-party packages</p>
+<p>```python</p>
+<p>&quot;&quot;&quot;</p>
+<p>tkinter==8.6</p>
+<p>Pillow==8.3.1</p>
+<p>&quot;&quot;&quot;</p>
+<p>```</p>
+<p>## Required Other language third-party packages</p>
+<p>无需其他语言第三方包。</p>
+<p>## Full API spec</p>
+<p>（随后给出 API 规格字段，供工程师按接口实现。）</p>
+<p>项目经理据此把依赖与接口写进任务单。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是依赖清单与调用流图：tkinter、Pillow 版本写死，API 规格留给工程师按接口实现。看 SOP 如何把「用什么库」变成可执行任务，避免每人自己去猜依赖。
+类比：开工单上先列材料型号，避免工地各自去买。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-21" data-page="21">
+  <div class="page-label">第 21 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-021.jpg" alt="PDF page 21" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Product Requirement Document ## Task list ‘‘‘python [ &quot;main.py&quot;, &quot;canvas.py&quot;, &quot;tools.py&quot;, &quot;color_picker.py&quot;, &quot;file_manager.py&quot; ] ‘‘‘ ## Shared Knowledge ‘‘‘python &quot;&quot;&quot; The ’Tkinter’ library is used for creating the GUI of the application. It provides various widgets ,→ like frames and canvases which are used in this project. The ’Pillow’ library is used for handling image files. It is used in the ’file_manager.py’ for ,→saving and opening image files. The ’main.py’ file is the entry point of the application. It initializes all the other components ,→and starts the application loop. &quot;&quot;&quot; ‘‘‘ ## Anything UNCLEAR The project requirements and implementation approach are clear. However, we need to ensure that ,→all team members are familiar with the Tkinter and Pillow libraries. If not, they may ,→need some time to learn these libraries before starting the development.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>产品需求文档（任务列表续）</p>
+<p>## Task list</p>
+<p>```python</p>
+<p>[</p>
+<p>&quot;main.py&quot;,</p>
+<p>&quot;canvas.py&quot;,</p>
+<p>&quot;tools.py&quot;,</p>
+<p>&quot;color_picker.py&quot;,</p>
+<p>&quot;file_manager.py&quot;</p>
+<p>]</p>
+<p>```</p>
+<p>## Shared Knowledge</p>
+<p>Tkinter 用于创建应用 GUI，提供 frame、canvas 等本项目使用的控件。</p>
+<p>文件清单与共享知识供 Engineer 按文件认领，而不必再问产品经理「要写几个文件」。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是文件任务列表：main.py、canvas.py、tools.py、color_picker.py、file_manager.py，外加共享知识。项目经理的分活单就长这样，工程师按文件认领即可。
+类比：看板上一列文件名，每人领一张，不必再问产品经理写几个文件。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-22" data-page="22">
+  <div class="page-label">第 22 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-022.jpg" alt="PDF page 22" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Engineer Given the provided file structure and function definitions, an Engineer agent requires only fundamental development skills to complete the development tasks. Due to the large number of files, we present only one auto-generated code file here. Generated code (color picker.py) import tkinter as tk from tkinter import colorchooser class ColorPicker: def __init__(self, root: tk.Tk, color: str = ’black’): self.frame = tk.Frame(root) self.color = color self.color_button = tk.Button(self.frame, text=’Color’, command=self.select_color) self.color_button.pack(fill=’x’) def select_color(self): color = colorchooser.askcolor()[1] if color is not None: self.color = color def pack(self, **kwargs): self.frame.pack(**kwargs) def get_color(self): return self.color QA Engineer Upon receiving the code output from the Engineer, the QA Engineer generates unit test code and reviews it to identify and fix any bugs, ensuring high-quality software. Generated Unit tests (test.py) import unittest import tkinter as tk # You might want to move the ColorPicker class to another file, let’s say color_picker.py # from color_picker import ColorPicker class TestColorPicker(unittest.TestCase): def setUp(self): self.root = tk.Tk() self.cp = ColorPicker(self.root) def tearDown(self): # This is important to close the tk window after tests self.root.destroy() def test_initial_color(self): # Test the default color during initialization self.assertEqual(self.cp.get_color(), ’black’) def test_set_and_get_color(self): # Test setting a new color and retrieving it new_color = ’#ffffff’ # white color self.cp.color = new_color self.assertEqual(self.cp.get_color(), new_color) if __name__ == ’__main__’: unittest.main() Output Ultimately, as shown in Figure 10, MetaGPT generates a functional application named “Drawing App”.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 Engineer 给定所提供的文件结构与函数定义，Engineer 智能体只需基本开发技能即可完成开发任务。由于文件很多，这里只展示一份自动生成的代码文件。 生成代码（color_picker.py） ```python import tkinter as tk from tkinter import colorchooser class ColorPicker: def __init__(self, root: tk.Tk, color: str = &#x27;black&#x27;): self.frame = tk.Frame(root) self.color = color self.color_button = tk.Button(self.frame, text=&#x27;Color&#x27;, command=self.select_color) self.color_button.pack(fill=&#x27;x&#x27;) def select_color(self): color = colorchooser.askcolor()[1] if color is not None: self.color = color ``` 代码标识符保持原样。这是 SOP 流水线落到可执行文件的一站。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页展示自动生成的 color_picker.py：类名、按钮、取色回调都在。用来感觉「结构化设计之后，工程师还剩多少自由度」——大部分是按图纸填实现，不是从零发明取色。
+类比：按图纸焊好的一块电路板，接口已经在上一页定死。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-23" data-page="23">
+  <div class="page-label">第 23 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-023.jpg" alt="PDF page 23" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 10: The “Drawing App” generated by MetaGPT. C EXPERIMENTS C.1 DETAILS OF THE SOFTWAREDEV DATASET The SoftwareDev dataset includes 70 diverse software development tasks. Table 8 displays the names and detailed prompts of 11 tasks within the dataset. Note that the first seven tasks listed are used in the main experiments of this paper. C.2 ADDITIONAL RESULTS Quantitative results of MetaGPT As shown in Table 4, MetaGPT achieves an average score of 3.9, surpassing ChatDev’s score of 2.1 Zhao et al. (2023), which is based on the Chat chain. Compare the scores of general intelligent algorithms, including AutoGPT Torantulino et al. (2023), which all score 1.0, failing to generate executable code. We observe that the generated code is often short, lacks comprehensive logic, and tends to fail to handle cross-file dependencies correctly. While models such as AutoGPT (Torantulino et al., 2023), Langchain (Chase, 2022), and AgentVerse (Chen et al., 2023) display robust general problem-solving capabilities, they lack an essential element for developing complex systems: systematically deconstructing requirements. Conversely, MetaGPT simplifies the process of transforming abstract requirements into detailed class and function designs through a specialized division of labor and SOPs workflow. When compared to ChatDev (Zhao et al., 2023), MetaGPT’s structured messaging and feedback mechanisms not only reduce loss of communication information but also improve the execution of code. Quantitative results of MetaGPT w/o executable feedback Table 9 presents the performance of MetaGPT with GPT-4 32K on 11 tasks within the SoftwareDev dataset. It also shows the average performance across all 70 tasks (in the last line). Note that the version of MetaGPT used here is the basic version without the executable feedback mechanism. Quantitative results of MetaGPT with different LLMs To verify the performance of MetaGPT on different LLMs, we randomly selected 5 SoftwareDev tasks and conducted experiments using GPT-3.5 and Deepseek Coder 33B5 as backends. As shown in Table 5, the results indicate that although MetaGPT can complete tasks with these LLMs, using GPT-4 as the backend yields superior performance. 5https://deepseekcoder.github.io</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 10：MetaGPT 生成的 “Drawing App”。</p>
+<p>C 实验</p>
+<p>C.1 SOFTWAREDEV 数据集细节</p>
+<p>SoftwareDev 数据集包含 70 个多样的软件开发任务。表 8 展示其中 11 个任务的名称与详细提示。注意列出的前七个任务用于本文主实验。</p>
+<p>C.2 额外结果</p>
+<p>MetaGPT 的定量结果</p>
+<p>如表 4 所示，MetaGPT 平均分 3.9，超过基于 Chat chain 的 ChatDev 的 2.1（Zhao et al., 2023）。通用智能算法包括 AutoGPT（Torantulino et al., 2023）均得 1.0，未能生成可执行代码。我们观察到生成的代码往往短、缺乏完整逻辑，并且倾向无法正确处理跨文件依赖。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页图 10 是画出来的 App 截图，附录 C 开始补实验：70 题工程集上，只会聊天的框架经常交出跑不动的短代码，跨文件依赖尤其容易断。
+类比：展览柜里的成品，背后是 70 道「请做个能玩的游戏」考题。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-24" data-page="24">
+  <div class="page-label">第 24 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-024.jpg" alt="PDF page 24" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Table 4: Executability comparison. The executability scores are on a grading system ranging from ’1’ to ’4’. A score of ’1’ signifies complete failure, ’2’ denotes executable code, ’3’ represents largely satisfying expected workflow, and ’4’ indicates a perfect match with expectations. Task AutoGPT LangChain AgentVerse ChatDev MetaGPT Flappy bird Tank battle game 2048 game Snake game Brick breaker game Excel data process CRUD manage Average score 1.0 1.0 1.0 2.1 3.9 Table 5: Performance of MetaGPT on SoftwareDev using different LLMs as agent backends. Model Open source Time(/s) # Lines Executability Revisions MetaGPT (w/ GPT-3.5) % 75.18 161.6 2.8 2.4 MetaGPT (w/ GPT-4) % 552.94 178.2 3.8 1.2 MetaGPT (w/ Deepseek Coder 33B) &quot; 1186.20 120.2 1.4 2.6 Impact of Instruction Levels (High-level v.s. Detailed Instructions) Does the variation in the level of initial input from humans significantly influence performance outcomes? For examples:</p>
+<p class="meta-line">1. High-level prompt: Create a brick breaker game.</p>
+<p>2. Detailed prompt: Creating a brick breaker game. In a brick breaker game, the player typically controls a paddle at the bottom of the screen to bounce a ball towards a wall of bricks. The goal is to break all the bricks by hitting them with the ball. Additional experiments were conducted to investigate this aspect: we selected 5 tasks from SoftwareDev, and constructed detailed prompts for them. Here are the experimental results: Table 6: Impact of Instruction Levels. The executability is scored on a grading system ranging from ‘1’ to ‘4’. A score of ‘1’ signifies complete failure, ‘2’ denotes runnable code, ‘3’ represents largely expected workflow, and ‘4’ indicates a perfect match to expectations. Model # Word Time(/s) Token usage # Lines Executability Productivity Reversions High-level 13.2 552.9 28384.2 178.2 3.8 163.8 1.2 Detailed 42.2 567.8 29657.0 257.0 4.0 118.0 1.6 We observe that: detailed prompts lead to better software projects with lower productivity ratios because of clearer requirements and functions, while simple inputs can still generate good enough software using MetaGPT with an executability rating of 3.8, which is comparable to the detailed prompt scenario. (Note that, Productivity = Token usage / Total Code Lines. The lower this ratio, the better.) The performance of GPT variants in HumanEval benchmark We use the GPT-4’s 67% HumanEval score (OpenAI, 2023) as our baseline, acknowledging its acceptance in the HumanEval benchmark. We further extend to experiments(five times) with GPT-4 (gpt-4-0613) and GPT-3.5- Turbo (gpt-3.5-turbo-0613) under various conditions to assess performance. (A) We directly called the OpenAI API with the prompt in HumanEval. (B) We called the OpenAI API and parsed the code with regex in the response. (C) We added an additional system prompt, then called the OpenAI API. The prompt is ”You are an AI that only responds with Python code, NOT ENGLISH. You will</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>表 4：可执行性比较。分数 1 到 4：1 完全失败，2 代码可执行，3 大体满足预期工作流，4 与期望完美匹配。</p>
+<p>任务行包括 Flappy bird、Tank battle game、2048 game、Snake game、Brick breaker game、Excel data process、CRUD manage，以及 Average score。列对照 AutoGPT、LangChain、AgentVerse、ChatDev、MetaGPT。正文写 MetaGPT 平均约 3.9，ChatDev 约 2.1，AutoGPT 等常为 1.0。</p>
+<p>表用来支撑「SOP + 结构化产出」在跨文件小游戏与工具上，比聊天链更常跑通。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页表 4：七个小项目打分，从 Flappy bird 到 CRUD。AutoGPT 一类经常 1 分（交不出能跑的），MetaGPT 平均接近 4。用来支撑「SOP + 结构化产出」比聊天链更常跑通。
+类比：验收单，同一栏「贪吃蛇 / 2048」，有的连窗口都弹不出来。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-25" data-page="25">
+  <div class="page-label">第 25 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-025.jpg" alt="PDF page 25" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 be given a function signature and its docstring by the user. Write your full implementation (restate the function signature).” As shown in Table 7, GPT-4 is more sensitive to prompt, code parser, and post-processing results on the HumanEval data set. It is difficult for GPT-3.5-Turbo to return the correct completion code without prompt words. Table 7: Performance of GPT models on HumanEval. Experiments were conducted five times using gpt-4-0613 and gpt-3.5-turbo-0613 with different settings. Settings Model Avg. Std. A gpt-4-0613 0.732 0.707 0.732 0.713 0.738 0.724 0.013 A gpt-3.5-turbo-0613 0.360 0.366 0.360 0.348 0.354 0.357 0.007 B gpt-4-0613 0.787 0.811 0.817 0.829 0.817 0.812 0.016 B gpt-3.5-turbo-0613 0.348 0.354 0.348 0.335 0.348 0.346 0.007 C gpt-4-0613 0.805 0.805 0.817 0.793 0.780 0.800 0.014 C gpt-3.5-turbo-0613 0.585 0.567 0.573 0.579 0.579 0.577 0.007 Qualitative results Figure 11 and Figure 12 illustrate the outcomes of the Architect agent’s efforts to design a complex recommender system. These figures showcase the comprehensive system interface design and program call flow. The latter is essential for creating a sophisticated automated system. It is crucial to emphasize the importance of this division of labor in developing an automated software framework. D LIMITATION AND ETHICS CONCERNS D.1 LIMITATION System side At present, our system cannot fully cater to specific scenarios, such as UI and frontend, as we have yet to incorporate such agents and multimodal tools. Furthermore, despite generating the most amount of code among comparable frameworks, it remains challenging to fulfill real-world applications’ diverse and complex requirements. Human user side A key challenge for users is to interrupt the running process of each agent, or set the starting running point (checkpoint) for each agent. D.2 ETHICS CONCERNS Unemployment and Skill Obsolescence MetaGPT enables more people to program in natural languages, thereby making it easier for engineers to get started. Over the years, programming languages have evolved from punched cards to assembly, C, Java, Python, and now natural language. As a result, humans have become more proficient at programming, increasing the demand for programming-related positions. Furthermore, programming with natural language may offer a significantly easier learning curve, making programming more accessible to a broader audience. Transparency and Accountability MetaGPT is an open-source framework that facilitates interactive communication between multiple agents through natural language. Humans can initiate, observe, and stop running with the highest level of control. It provides real-time interpretation and operation of the natural language, displayed on the screen and logs, ensuring transparency. MetaGPT enhances “natural language programming” capabilities, and human engineers are the users and responsible for the outcomes. Privacy and Data Security MetaGPT operates locally, ensuring user data privacy and security. It does not collect user data. For interactions with third-party LLMs, such as those by OpenAI, users are encouraged to refer to the respective privacy policies (e.g., OpenAI Privacy Policy). However, we provide the option of open-source LLMs as backends.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>用户会给出函数签名及其 docstring。「写出你的完整实现（重述函数签名）。」如表 7 所示，GPT-4 在 HumanEval 上对提示、代码解析器与后处理结果更敏感。没有提示词时，GPT-3.5-Turbo 很难返回正确的补全代码。</p>
+<p>表 7：GPT 模型在 HumanEval 上的表现。实验用 gpt-4-0613 与 gpt-3.5-turbo-0613 在不同设置下各跑五次。Settings A 下 gpt-4-0613 平均约 0.73，带标准差。说明「框架分数」部分来自提示与解析，而不只是角色分工。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页提醒：HumanEval 分数对提示和解析很敏感；GPT-3.5 没提示词就补不全。读 85.9% 时要把框架与底座模型、提示绑在一起看，不能理解成五顶帽子套上任意小模型就行。
+类比：同一套考题，卷面说明换一句，高手分数也会抖。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-26" data-page="26">
+  <div class="page-label">第 26 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-026.jpg" alt="PDF page 26" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 11: The system interface design for “recommendation engine development” is generated by the architect agent (zoom in for a better view). E MORE DISCUSSIONS E.1 DEEP-SEATED CHALLENGES MetaGPT also alleviates or solves these challenges with its unique designs: Use Context Efficiently Two sub-challenges are present. First, unfolding short natural language descriptions accurately to eliminate ambiguity. Second, maintaining information validity in lengthy contexts, enables LLMs to concentrate on relevant data without distraction. Reduce Hallucinations Using LLMs to generate entire software programs faces code hallucination problems—-including incomplete implementation of functions, missing dependencies, and potential undiscovered bugs, which may be more serious. LLMs often struggle with software generation due to vague task definitions. Focusing on granular tasks like requirement analysis and package selection offers guided thinking, which LLMs lack in broad task solving. E.2 INFORMATION OVERLOAD In MetaGPT, we use a global message pool and a subscription mechanism to address “information overload,” which refers to the problem of receiving excessive or irrelevant information. This issue is dependent on specific applications. MetaGPT employs a message pool to streamline communication, ensuring efficiency. Additionally, a subscription mechanism filters out irrelevant contexts, enhancing the relevance and utility of the information. This design is particularly crucial in soft-</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 11：架构师智能体为「推荐引擎开发」生成的系统接口设计（请放大查看）。</p>
+<p>E 更多讨论</p>
+<p>E.1 深层挑战</p>
+<p>MetaGPT 也用其独特设计缓解或解决这些挑战：</p>
+<p>高效使用上下文</p>
+<p class="lead"><strong>两个子挑战。</strong>第一，把短自然语言描述准确展开以消除歧义。第二，在冗长上下文中保持信息有效，使 LLM 能专注相关数据而不分心。</p>
+<p>减少幻觉</p>
+<p>用 LLM 生成整套软件程序面临代码幻觉——包括函数实现不完整、依赖缺失、潜在未发现缺陷，问题可能更严重。LLM 常因任务定义含糊而难以生成软件。聚焦 SOP 与结构化中间产物，有助于把模糊一句话钉成可检查的规格。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页图 11 是另一张架构图；讨论节承认上下文膨胀与代码幻觉仍在。SOP 能把模糊一句话钉成规格，但长上下文里过期信息和半截函数仍然会出现。
+类比：流程再标准，长会议纪要里仍会混进过期信息。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-27" data-page="27">
+  <div class="page-label">第 27 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-027.jpg" alt="PDF page 27" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Figure 12: The program call flow for “recommendation engine development” generated by the architect agent (zoom in for a better view). ware design scenarios and standard operating procedures (SOPs) where effective communication is essential.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>图 12：架构师智能体为「推荐引擎开发」生成的程序调用流（请放大查看）。</p>
+<p>在软件设计场景与标准作业程序（SOP）中，有效通信至关重要。本页几乎为图，呼应第 3.2 节：用图表而非对话传递模块调用顺序。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页几乎是一张调用流图，说明架构师交付物长什么样，呼应第 3.2 节：用图表而非对话传递模块调用顺序。没有新数字，用来建立「交接物」的直觉。
+类比：只看一张时序图，也能感觉交接比聊天记录硬。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-28" data-page="28">
+  <div class="page-label">第 28 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-028.jpg" alt="PDF page 28" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Table 8: Examples of SoftwareDev dataset. Task ID Task Prompt Snake game Create a snake game. Brick breaker game Create a brick breaker game. 2048 game Create a 2048 game for the web. Flappy bird game Write p5.js code for Flappy Bird where you control a yellow bird continuously flying between a series of green pipes. The bird flaps every time you left click the mouse. If it falls to the ground or hits a pipe, you lose. This game goes on indefinitely until you lose; you get points the further you go. Tank battle game Create a tank battle game. Excel data process Write an excel data processing program based on streamlit and pandas. The screen first shows an excel file upload button. After the excel file is uploaded, use pandas to display its data content. The program is required to be concise, easy to maintain, and not over-designed. It uses streamlit to process web screen displays, and pandas is sufficient to process excel reading and display. Please make sure others can execute directly without introducing additional packages. CRUD manage Write a management program based on the crud addition, deletion, modification and query processing of the customer business entity. The customer needs to save this information: name, birthday, age, sex, and phone. The data is stored in client.db, and there is a judgement whether the customer table exists. If it doesn’t, it needs to be created first. Querying is done by name; same for deleting. The program is required to be concise, easy to maintain, and not over-designed. The screen is realized through streamlit and sqlite—no need to introduce other additional packages. Music transcriber Develop a program to transcribe sheet music into a digital format; providing error-free transcribed symbolized sheet music intelligence from audio through signal processing involving pitch and time slicing then training a neural net to run Onset Detected CWT transforming scalograms to chromagrams decoded with Recursive Neural Network focused networks. Custom press releases Create custom press releases; develop a Python script that extracts relevant information about company news from external sources, such as social media; extract update interval database for recent changes. The program should create press releases with customizable options and export writings to PDFs, NYTimes API JSONs, media format styled with interlink internal fixed character-length metadata. Gomoku game Implement a Gomoku game using Python, incorporating an AI opponent with varying difficulty levels. Weather dashboard Create a Python program to develop an interactive weather dashboard.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文 表 8：SoftwareDev 数据集示例。 Task ID / Task / Prompt Snake game — Create a snake game. Brick breaker game — Create a brick breaker game. 2048 game — Create a 2048 game for the web. Flappy bird game — Write p5.js code for Flappy Bird where you control a yellow bird continuously flying between a series of green pipes. The bird flaps every time you left click the mouse. If it falls to the ground or hits a pipe, you lose. This game goes on indefinitely until you lose; you get points the further you go. Tank battle game — Create a tank battle game. Excel data process — Write an excel data processing program based on streamlit and pandas. … 提示保持英文，因它们是评测输入原文。前七题用于主实验。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页表 8：工程考题原文，从贪吃蛇到 Flappy Bird 到 Excel 处理，提示保持英文因为它们是评测输入。主实验只用了前七个，其余供附录对照。
+类比：比赛题目册，评分时要对着原题而不是译文。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-29" data-page="29">
+  <div class="page-label">第 29 / 29 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-029.jpg" alt="PDF page 29" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Published as a conference paper at ICLR 2024 Table 9: Additional results of pure MetaGPT w/o feedback on SoftwareDev. Averages (Avg.) of 70 tasks are calculated and 10 randomly selected tasks are included. ‘#’ denotes ‘The number of’, while ‘ID’ is ‘Task ID’. ID Code statistics Doc statistics Cost statistics Cost of revision Code executability #code files #lines of code #lines per code file #doc files #lines of doc #lines per doc file #prompt tokens #completion tokens time costs money costs 5.00 196.00 39.20 3.00 210.00 70.00 24087.00 6157.00 582.04 $ 1.09</p>
+<h1>1. TypeError</h1>
+<p class="meta-line">6.00 191.00 31.83 3.00 230.00 76.67 32517.00 6238.00 566.30 $ 1.35</p>
+<h1>1. TypeError</h1>
+<p>3.00 198.00 66.00 3.00 235.00 78.33 21934.00 6316.00 553.11 $ 1.04 1. lack @app.route(’/’) 5.00 32.80 3.00 202.00 67.33 22951.00 5312.00 481.34 $ 1.01 1. PNG file missing 2. Compile bug fixes 6.00 203.00 33.83 3.00 210.00 70.00 30087.00 6567.00 599.58 $ 1.30 1. PNG file missing 2. Compile bug fixes 3. pygame.surface not initialize 6.00 219.00 36.50 3.00 294.00 96.00 35590.00 7336.00 585.10 $ 1.51 1. dependency error 2. ModuleNotFoundError 4.00 73.00 18.25 3.00 261.00 87.00 25673.00 5832.00 398.83 $ 0.90 4.00 316.00 79.00 3.00 332.00 110.67 29139.00 7104.00 435.83 $ 0.92 5.00 215.00 43.00 3.00 301.00 100.33 29372.00 6499.00 621.73 $ 1.27 1. tensorflow version error 2. model training method not implement 5.00 215.00 43.00 3.00 270.00 90.00 24799.00 5734.00 550.88 $ 1.27 1. dependency error 2. URL 403 error 3.00 93.00 31.00 3.00 254.00 84.67 24109.00 5363.00 438.50 $ 0.92 1. dependency error 2. missing main func. Avg. 4.71 191.57 42.98 3.00 240.00 80.00 26626.86 6218.00 516.71 $1.12 0.51 (only consider item scored 2, 3 or 4) 3.36</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>发表于 ICLR 2024 会议论文</p>
+<p>表 9：无反馈的纯 MetaGPT 在 SoftwareDev 上的额外结果。计算 70 题平均，并列出 10 个随机任务。‘#’ 表示数量，‘ID’ 为任务编号。</p>
+<p>列包括代码统计（#code files、#lines of code、#lines per code file）、文档统计、成本统计（#prompt tokens、#completion tokens、time costs、money costs）、修订成本与代码可执行性。示例行：5.00 个代码文件、196.00 行代码、每文件 39.20 行、3.00 个文档、210.00 行文档、24087 prompt tokens、6157 completion tokens。</p>
+<p>表用来对照「去掉可执行反馈」后的工程账：文件更多、token 仍高，修订与可执行性需与表 1 有反馈版本并读。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>最后一页表 9：70 题平均的文件数、token、钱、能否跑，是去掉可执行反馈后的明细。用来核对「反馈到底省了多少返工」，需与表 1 有反馈版本并读。
+类比：财务附录，主文表 1 的明细账。
+读这一页时先问它在证明什么、为何值得停，再用生活类比把机制卡住。
+数字和专名对照译文即可，不必把公式背下来；能向别人转述就算过关。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>SOP 管住了闲聊，还没有管住卸载</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完 §3、表 1 与附录 A 之后展开。</p>
+
+<h2>它解决的是「传话走样」，不是「可组合的运行时」</h2>
+<p>MetaGPT 的现场很清楚：五个角色按标准作业程序交 PRD、系统设计、任务单；消息池发布、按画像订阅；工程师对照文档跑单测，最多三轮。这比 CAMEL / ChatDev 的自由对话更能压住「吃了吗」式幻觉，表 1 的可执行性 3.75 与修订 0.83 不是装饰。</p>
+<p>Cordiverse 要的是时间可组合性（卸掉时副作用收回）与空间可组合性（依赖可声明、拓扑一变能协调）。这篇几乎不谈卸载。消息池是越积越厚的全局黑板；角色是开跑前焊死的编制。一次坏的工程师自修改，没有隔离爆炸半径的语义。SOP 因此是多智能体编排的<strong>半截</strong>：交接发生了，回收还没有。</p>
+
+<h2>和 Cordiverse 的接口</h2>
+<p>运行框架要把「编排子智能体」写成职责。MetaGPT 提供一份可复现的编排：结构化中间产物 + 发布订阅 + 可执行反馈。它甚至让每个智能体走 ReAct 风格循环。Cordiverse 会问：这些角色和文档进入长跑服务之后，如何热替换一个岗位、如何让依赖方发现接口变了、如何在不重启整家「公司」的情况下撤掉一条坏技能。附录 A 的跨项目自改进与 AgentStore，把问题推向「越做越强」和「上架新智能体」，仍然不是卸载与依赖规约。</p>
+
+<h2>作者已点名、但仍开放</h2>
+<ul>
+  <li><strong>项目彼此遗忘</strong>（附录 A）：每个软件项目独立执行，团队不从上一单学习。递归自改进只是展望。</li>
+  <li><strong>上下文与幻觉</strong>（附录 E）：短需求要展开，长上下文要防过期；代码幻觉（缺依赖、半截函数）SOP 只能缓解。</li>
+  <li><strong>分数绑底座</strong>（表 7）：HumanEval 对提示与解析敏感；85.9% 是框架加 GPT-4，不是任意小模型套上五顶帽子就行。</li>
+  <li><strong>需求漂移</strong>（附录 B）：用户说画图，PRD 写成取色器——结构化格式正确，理解仍可偏。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把标准作业程序写成可运行的元编程：结构化交接 + 订阅 + 跑得通的反馈，并在函数题与小型工程上压过聊天式多智能体。<strong>缺口</strong>是：编制焊死、消息池只增不减、跨项目学习与卸载未做。Cordiverse 要补的，正是这家模拟公司还没写进员工手册的那一页：岗位如何卸得干净。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-6">第 6 页</a>的订阅与可执行反馈，和 <a href="#page-15">附录 A</a> 作者自己写下的「项目之间不学习」。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'metagpt-paper-cols-v1';
+const total = 29;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

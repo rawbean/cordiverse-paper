@@ -1,3 +1,0 @@
-7.  Related Work
-Dynamic composability intersects several established research areas. We survey the most 
-relevant lines of work and distinguish our contribution from each of them.

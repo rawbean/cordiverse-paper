@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>论文对照阅读</title>
+<style>
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+html, body { margin: 0; width: 100%; }
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+}
+.top .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+.top .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+.top .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+.top .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.top .tagline {
+  margin: 0;
+  color: var(--muted);
+  font-size: .78rem;
+  font-weight: 400;
+  line-height: 1.4;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.top .bookmark {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: .28rem .7rem;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--accent);
+  font-size: .8rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  cursor: pointer;
+}
+.top .bookmark:hover {
+  background: #e8f2f6;
+}
+main { flex: 1; width: 100%; padding: 1.25rem 1.1rem 2rem; }
+.cat {
+  margin: 1.7rem 0 .7rem;
+  font-size: 1.02rem;
+  font-weight: 650;
+  color: var(--accent);
+}
+.cat:first-child { margin-top: 0; }
+.list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: .85rem;
+}
+article.card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.15rem 1.1rem;
+}
+article.card h2 {
+  margin: 0 0 .35rem;
+  font-size: 1.12rem;
+  color: var(--accent);
+  line-height: 1.35;
+}
+article.card .en { margin: 0 0 .4rem; font-size: .88rem; color: #444; }
+article.card .meta { margin: 0 0 .2rem; font-size: .8rem; color: var(--muted); }
+article.card .date { margin: 0 0 .75rem; font-size: .78rem; color: var(--muted); }
+article.card .actions { display: flex; flex-wrap: wrap; gap: .45rem; }
+article.card .actions a {
+  display: inline-block;
+  padding: .4rem .8rem;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: .88rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+article.card .actions a.primary {
+  background: var(--accent);
+  color: #fff;
+}
+article.card .actions a.ghost {
+  background: #fff;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+.empty { color: var(--muted); }
+footer {
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+</style>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <a class="home" href="index.html" aria-current="page">
+      <img class="mark" src="assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <p class="tagline">学术论文中英对照阅读，辅以白话导读与相关文献</p>
+  </div>
+  <button type="button" class="bookmark" id="bookmark-site">收藏本站</button>
+</header>
+<main>
+  <section id="papers">
+    <div id="paper-list">
+      <p class="empty">正在载入…</p>
+    </div>
+  </section>
+</main>
+<footer>
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+<script>
+(function () {
+  const list = document.getElementById("paper-list");
+  const bookmark = document.getElementById("bookmark-site");
+  const mac = /Mac|iPhone|iPad/.test(navigator.platform || "");
+  const shortcut = mac ? "⌘+D" : "Ctrl+D";
+  if (bookmark) {
+    bookmark.title = "浏览器不允许脚本直接写入收藏夹，请按 " + shortcut;
+    bookmark.addEventListener("click", function () {
+      const hint = "请按 " + shortcut + " 收藏";
+      const done = function (label) {
+        bookmark.textContent = label;
+        setTimeout(function () { bookmark.textContent = "收藏本站"; }, 2200);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(location.href).then(function () {
+          done("已复制地址，" + hint);
+        }).catch(function () { done(hint); });
+      } else {
+        done(hint);
+      }
+    });
+  }
+
+  function curatedLabel(s) {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(s || ""));
+    if (!m) return "";
+    return "整理 " + m[1] + "年" + Number(m[2]) + "月";
+  }
+
+  function card(p) {
+    const reader = p.path ? p.path.replace(/\/?$/, "/index.html") : "";
+    const actions = [];
+    if (reader) {
+      actions.push('<a class="primary" href="' + esc(reader) + '">进入阅读</a>');
+      actions.push('<a class="ghost" href="' + esc(reader) + '#guide">先看导读</a>');
+    }
+    if (p.source) {
+      actions.push('<a class="ghost" href="' + esc(p.source) + '" target="_blank" rel="noopener">原文</a>');
+    }
+    const date = curatedLabel(p.curated);
+    return (
+      '<article class="card">' +
+        "<h2>" + esc(p.titleZh || p.title) + "</h2>" +
+        (p.title && p.titleZh ? '<p class="en">' + esc(p.title) + "</p>" : "") +
+        (p.authors ? '<p class="meta">' + esc(p.authors) + "</p>" : "") +
+        (date ? '<p class="date">' + esc(date) + "</p>" : "") +
+        (actions.length ? '<div class="actions">' + actions.join("") + "</div>" : "") +
+      "</article>"
+    );
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, function (ch) {
+      return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+    });
+  }
+
+  function fallback() {
+    return {
+      categories: [{ id: "featured", titleZh: "推荐阅读" }],
+      papers: [{
+        id: "cordiverse",
+        category: "runtime",
+        title: "A Programming Paradigm for Spatiotemporal Composability",
+        titleZh: "一种面向时空可组合性的编程范式",
+        authors: "石一凡, 张伟, 崔天一 / Peking University, DeepSeek-AI",
+        path: "papers/featured/cordiverse/",
+        source: "https://github.com/cordiverse/paper",
+        curated: "2026-08"
+      }]
+    };
+  }
+
+  function render(data) {
+    const papers = (data && data.papers) || [];
+    const cats = (data && data.categories) || [];
+    const byCat = {};
+    papers.forEach(function (p) {
+      const key = p.category || "other";
+      (byCat[key] || (byCat[key] = [])).push(p);
+    });
+    const order = cats.length ? cats : Object.keys(byCat).map(function (id) { return { id: id, titleZh: id }; });
+    const html = [];
+    order.forEach(function (c) {
+      const items = c.id === "featured"
+        ? papers.filter(function (p) { return p.path; })
+        : byCat[c.id];
+      if (!items || !items.length) return;
+      html.push("<h2 class=\"cat\">" + esc(c.titleZh || c.title || c.id) + "</h2>");
+      html.push('<div class="list">' + items.map(card).join("") + "</div>");
+    });
+    list.innerHTML = html.join("") || '<p class="empty">暂无文档</p>';
+  }
+
+  fetch("papers.json")
+    .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+    .then(function (data) { render(data && data.papers ? data : fallback()); })
+    .catch(function () { render(fallback()); });
+})();
+</script>
+</body>
+</html>

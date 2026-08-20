@@ -1,0 +1,1947 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Live-SWE-agent：软件工程智能体能否在运行中自演化？ — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="Live-SWE-agent：软件工程智能体能否在运行中自演化？">Live-SWE-agent：软件工程智能体能否在运行中自演化？</p>
+      <p class="paper-authors" title="C. S. Xia et al.">C. S. Xia et al.</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+    <p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+    <h1>全文导读</h1>
+    <p class="lead">这篇是软件工程智能体论文，数字好看，但主张容易被收成「又刷了一遍 SWE-bench」。下面先给出<strong>主张、机制、证据与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+    <div class="claim">
+      <p><strong>一句话主张。</strong> 软件智能体也是软件，不必离线演化脚手架；从 bash-only 起步，在修 issue 的循环里当场造/改工具。</p>
+    </div>
+
+    <h2>和 AI 工程、智能体的关系</h2>
+    <p>这篇首先是<strong>脚手架 / harness</strong>工作：不训新权重，只改「模型在环境里能做什么」。对 AI 工程的用处可以收成一句：把工具从「人手写进框架的固定套件」变成「修这个 bug 时现场长出来的脚本」。</p>
+    <p>它和 DGM / SICA / HGM 不是同一条路。那些在基准上离线改自己的脚手架，DGM 一轮 SWE-bench 据原文约 2.2 万美元、上千小时；学完往往绑死特定模型和基准。LIVE-SWE-AGENT 把演化挪到<strong>当前这条轨迹里</strong>，离线成本为零。它和 LATM（Large Language Models as Tool Makers）都让模型造工具：LATM 造的是一类推理题的通用函数并缓存；这里造的是当前仓库的编辑器、搜索器、甚至 MARC 分析器，任务结束可以扔掉。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：当场组合有了，卸载与依赖语义还没有。</p>
+
+    <h2>问题从哪来</h2>
+    <p>SWE-agent、OpenHands 给人终端、编辑器、搜索，能端到端交补丁；Agentless / Moatless 则说复杂脚手架很多是幻觉，工作流也能打。两边都有一个共同点：<strong>行动空间在开跑前就固定了</strong>。人手穷举「最优脚手架」几乎不可能。</p>
+    <p>离线自改进看似能搜这个空间，但贵、而且泛化差。作者的洞察是：现代软件智能体<strong>已经有改自己实现的能力</strong>——缺的只是把它变成和「跑测试」并列的一等决策。</p>
+
+    <h2>机制（初始提示 + 每步反思）</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>初始提示：你也可以造工具</h3>
+        <p>工具定义为<strong>环境里可执行的脚本</strong>。提示说：造工具是为了更好完成本任务；不必通用。创建 = 写文件，使用 = 带参数跑脚本。</p>
+      </div>
+      <div class="card">
+        <h3>每步反思：要不要造一个？</h3>
+        <p>环境反馈之后多贴一句：回顾轨迹，想想有没有值得新造或改写的工具。消融表明：只在开场提一句，远不如步步提醒（50 题子集 64% → 76%）。</p>
+      </div>
+    </div>
+    <p>不改智能体主循环，不加规定工作流，不离线训练。作者强调：工具合成不是开场一次性预处理，而是和读代码、跑测试交错的迭代——一开始并不知道自己会需要 MARC 分析器。</p>
+
+    <h2>作者实际贡献了什么</h2>
+    <ul>
+      <li><strong>第一个 live 软件智能体</strong>：运行中改自己的脚手架（本文聚焦造工具），无需离线管线。</li>
+      <li><strong>最小实现</strong>：叠在 ~100 行的 mini-SWE-agent 上；兼容任意循环 / 模型。</li>
+      <li><strong>当时开源与商业脚手架上的领先数字</strong>：Verified 77.4%（Gemini 3 Pro）、Pro 45.8%（Claude Sonnet 4.5）；Verified-60 上 65.0% vs DGM 53.3%，且无离线成本。</li>
+      <li><strong>分析</strong>：工具既有通用编辑 / 搜索，也有仓库特化；弱模型（GPT-5-Nano）造工具会掉点。</li>
+      <li><strong>统一排行榜</strong>：开放脚手架，方便以后苹果对苹果比模型，而不是比私有 harness。</li>
+    </ul>
+
+    <h2>章节地图：去哪找什么</h2>
+    <table class="map">
+      <thead>
+        <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>摘要 · 图 1</td>
+          <td><a href="#page-1">1</a></td>
+          <td>主张与两张榜：Verified / Pro 的单次解决率。</td>
+          <td>先看数，再问「凭什么不是堆工具」。</td>
+        </tr>
+        <tr>
+          <td>§1 引言</td>
+          <td><a href="#page-2">2</a></td>
+          <td>固定脚手架的困境；离线自演化约 2.2 万美元；当场造工具的洞察。</td>
+          <td>必读。对照 DGM 的离线代价。</td>
+        </tr>
+        <tr>
+          <td>图 2 · 贡献</td>
+          <td><a href="#page-3">3</a></td>
+          <td>五项贡献；总览循环：读 issue → 跑命令或写自定义工具。</td>
+          <td>看图建立心理模型。</td>
+        </tr>
+        <tr>
+          <td>§2 方法</td>
+          <td><a href="#page-4">4</a>–<a href="#page-5">5</a></td>
+          <td>初始提示 + 每步反思；编辑工具 vs <code>sed</code>；MARC 例；为何不能开场一次造齐。</td>
+          <td>关心机制必读。对照图 3。</td>
+        </tr>
+        <tr>
+          <td>§3 设置 · 表 1–2</td>
+          <td><a href="#page-6">6</a></td>
+          <td>叠在 mini-SWE-agent 上；Verified 全表；Verified-60 对 SICA / DGM / HGM。</td>
+          <td>盯「无测试时缩放」和离线小时。</td>
+        </tr>
+        <tr>
+          <td>§4 评估 / 消融</td>
+          <td><a href="#page-7">7</a>–<a href="#page-11">11</a></td>
+          <td>Pro 45.8%；工具 t-SNE；搜索 / Go 分析器；表 4–6；弱模型翻车；讨论与展望。</td>
+          <td>看「反思是否必要」和「GPT-5-Nano 为何崩」。</td>
+        </tr>
+        <tr>
+          <td>§5 相关工作 · 结论</td>
+          <td><a href="#page-12">12</a></td>
+          <td>ChatRepair → Devin → 离线自改进；基准谱系；结论回收主张。</td>
+          <td>收束定位；对照你熟悉的系统。</td>
+        </tr>
+        <tr>
+          <td>参考文献 · 附录</td>
+          <td><a href="#page-13">13</a>–<a href="#page-20">20</a></td>
+          <td>[1]–[49]；超参与温度；消融题号；初始提示与每步反馈（图 7–8）。</td>
+          <td>文献可快翻；要复现或核对提示再读附录。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>建议的三条精读路径</h2>
+    <div class="paths">
+      <div class="card">
+        <h3>只想抓住思想</h3>
+        <p>本导读 → <a href="#page-2">第 2 页</a>洞察 → <a href="#page-4">第 4–5 页</a>循环 → <a href="#page-12">第 12 页</a>结论。用白话列扫完全文。</p>
+      </div>
+      <div class="card">
+        <h3>关心数字与对比</h3>
+        <p>图 1 → 表 1–3 → 表 2 对 DGM → 表 4–5 消融。盯「无测试时缩放」和弱模型掉点。</p>
+      </div>
+      <div class="card">
+        <h3>关心怎么落地 / 自演化</h3>
+        <p>§2.2 编辑 / 搜索 / 特化工具 → 图 5 的 bash 对照 → §4.4 还想改提示与工作流 → <a href="#commentary">读后评论</a>「造得了卸不卸得掉」。</p>
+      </div>
+    </div>
+
+    <h2>读正文时的一条纪律</h2>
+    <p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「反思提示到底加在哪」「为何开场一次造齐工具反而不好」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列，而不是从头重读。</p>
+    <p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+    <div class="cta">
+      <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+      <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+      <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+    </div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>LIVE-SWE-AGENT: Can Software Engineering Agents Self-Evolve on the Fly? Chunqiu Steven Xia Zhe Wang Yan Yang† Yuxiang Wei Lingming Zhang University of Illinois Urbana-Champaign {chunqiu2, zhe36, ywei40, lingming}@illinois.edu †yanyang826@outlook.com</p>
+<h1>Abstract</h1>
+<p>Large Language Models (LLMs) are reshaping almost all industries, including software engineering. In recent years, a number of LLM agents have been proposed to solve real-world software problems. Such software agents are typically equipped with a suite of coding tools and can autonomously decide the next actions to form complete trajectories to solve end-to-end software tasks. While promising, they typically require dedicated design and may still be suboptimal, since it can be extremely challenging and costly to exhaust the entire agent scaffold design space. Recognizing that software agents are inherently software themselves that can be further refined/modified, researchers have proposed a number of self-improving software agents recently, including the Darwin-Gödel Machine (DGM). Meanwhile, such self-improving agents require costly offline training on specific benchmarks and may not generalize well across different LLMs or benchmarks. In this paper, we propose LIVE-SWE-AGENT, the first live software agent that can autonomously and continuously evolve itself on-the-fly during runtime when solving real-world software problems. More specifically, LIVE-SWE-AGENT starts with the most basic agent scaffold with only access to bash tools (e.g., mini-SWE-agent), and autonomously evolves its own scaffold implementation while solving real-world software problems. Our evaluation on the widely studied SWE-bench Verified benchmark shows that LIVE-SWE-AGENT can achieve an impressive solve rate of 77.4% without test-time scaling, outperforming all existing software agents, including the best proprietary solution. Moreover, LIVE-SWE-AGENT outperforms state-of-the-art manually crafted software agents on the recent SWE-Bench Pro benchmark, achieving the best-known solve rate of 45.8%. More details at: https://github.com/OpenAutoCoder/live-swe-agent Resolve Rate (%) 77.4 69.8 70.6 70.6 71.3 71.8 72.6 74.2 66.0 72.8 74.5 76.2 76.3 77.2 Live-SWE-agent Gemini 3 Pro Preview SWE-agent Claude Sonnet 4.5 mini-SWE-agent Claude Sonnet 4.5 trae Doubao-Seed-Code SWE-Agent* Kimi-K2-Thinking mini-SWE-agent-plus Claude Sonnet 4.5 OpenHands Grok 4 mini-SWE-agent Gemini 3 Pro Preview DeepSeek Deepseek-V3.1-Terminus OpenAI** GPT-5(High) Anthropic Claude Opus 4.1 Google Gemini-3-Pro-Preview OpenAI** GPT-5.1(High) Anthropic Claude Sonnet 4.5 Open Scaffold Proprietary Resolve Rate (%) 45.8 27.7 34.5 36.3 39.5 43.7 43.9 45.1 29.0 40.8 Live-SWE-agent Claude Sonnet 4.5 SWE-agent Kimi K2 Instruct SWE-agent SWE-1.5 SWE-agent GPT-5 High SWE-agent Haiku 4.5 SWE-agent Claude Sonnet 4.5 II-Agent GPT-5 II-Agent Claude Sonnet 4.5 Claude Code SWE-1.5 Cascade SWE-1.5 Open Scaffold Proprietary SWE-bench Verified SWE-Bench Pro *Customized SWE-agent [2] **JSON-based apply_patch tool plus dynamic thinking time [1] Figure 1: SWE-bench Verified and SWE-Bench Pro results (single attempt w/o test-time scaling) †Work done as a research intern at the University of Illinois Urbana-Champaign. arXiv:2511.13646v3 [cs.SE] 24 Nov 2025</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>LIVE-SWE-AGENT：软件工程智能体能否在运行中自演化？</p>
+<p>Chunqiu Steven Xia Zhe Wang Yan Yang† Yuxiang Wei Lingming Zhang</p>
+<p>University of Illinois Urbana-Champaign</p>
+<p>{chunqiu2, zhe36, ywei40, lingming}@illinois.edu †yanyang826@outlook.com</p>
+<h1>摘要</h1>
+<p>大语言模型（LLM）正在重塑几乎所有行业，包括软件工程。近年来，已有多种 LLM 智能体被提出，用以解决真实世界的软件问题。这类软件智能体通常配备一套编码工具，并能自主决定下一步动作，从而形成完整轨迹以完成端到端软件任务。尽管前景可观，它们通常需要专门设计，且仍可能次优，因为穷尽整个智能体脚手架（scaffold）设计空间极为困难且代价高昂。鉴于软件智能体本质上也是软件、因而可以被进一步精炼/修改，研究者近来提出了若干自改进软件智能体，包括 Darwin-Gödel Machine（DGM）。然而，这类自改进智能体需要在特定基准上做代价高昂的离线训练，且在不同 LLM 或基准之间未必能很好泛化。本文提出 LIVE-SWE-AGENT，首个能够在解决真实世界软件问题的运行过程中自主、持续地即时自演化的在线软件智能体。具体而言，LIVE-SWE-AGENT 从仅能访问 bash 工具的最基本脚手架出发（例如 mini-SWE-agent），并在解决真实软件问题的同时自主演化其自身的脚手架实现。我们在广泛研究的 SWE-bench Verified 基准上的评估表明，LIVE-SWE-AGENT 在无测试时扩展的情况下即可达到 77.4% 的可观解决率，优于包括最佳专有方案在内的所有现有软件智能体。此外，LIVE-SWE-AGENT 在近期的 SWE-Bench Pro 基准上优于最先进的人工打造软件智能体，取得迄今已知最佳的 45.8% 解决率。更多细节见：https://github.com/OpenAutoCoder/live-swe-agent</p>
+<p>解决率（%）</p>
+<p class="meta-line">77.4</p>
+<p class="meta-line">69.8 70.6 70.6 71.3 71.8 72.6 74.2</p>
+<p class="meta-line">66.0</p>
+<p class="meta-line">72.8</p>
+<p class="meta-line">74.5</p>
+<p class="meta-line">76.2 76.3 77.2</p>
+<p>Live-SWE-agent / Gemini 3 Pro Preview</p>
+<p>SWE-agent / Claude Sonnet 4.5</p>
+<p>mini-SWE-agent / Claude Sonnet 4.5</p>
+<p>trae / Doubao-Seed-Code</p>
+<p>SWE-Agent* / Kimi-K2-Thinking</p>
+<p>mini-SWE-agent-plus / Claude Sonnet 4.5</p>
+<p>OpenHands / Grok 4</p>
+<p>mini-SWE-agent / Gemini 3 Pro Preview</p>
+<p class="meta-line">DeepSeek / Deepseek-V3.1-Terminus</p>
+<p>OpenAI** / GPT-5(High)</p>
+<p>Anthropic / Claude Opus 4.1</p>
+<p>Google / Gemini-3-Pro-Preview</p>
+<p>OpenAI** / GPT-5.1(High)</p>
+<p>Anthropic / Claude Sonnet 4.5</p>
+<p>开放脚手架 专有</p>
+<p>解决率（%）</p>
+<p class="meta-line">45.8</p>
+<p class="meta-line">27.7</p>
+<p class="meta-line">34.5</p>
+<p class="meta-line">36.3</p>
+<p class="meta-line">39.5</p>
+<p class="meta-line">43.7 43.9 45.1</p>
+<p class="meta-line">29.0</p>
+<p class="meta-line">40.8</p>
+<p>Live-SWE-agent / Claude Sonnet 4.5</p>
+<p>SWE-agent / Kimi K2 Instruct</p>
+<p>SWE-agent / SWE-1.5</p>
+<p>SWE-agent / GPT-5 High</p>
+<p>SWE-agent / Haiku 4.5</p>
+<p>SWE-agent / Claude Sonnet 4.5</p>
+<p>II-Agent / GPT-5</p>
+<p>II-Agent / Claude Sonnet 4.5</p>
+<p>Claude Code / SWE-1.5</p>
+<p>Cascade / SWE-1.5</p>
+<p>开放脚手架 专有</p>
+<p>SWE-bench Verified</p>
+<p>SWE-Bench Pro</p>
+<p>*定制版 SWE-agent [2]</p>
+<p>**基于 JSON 的 apply_patch 工具加动态思考时间 [1]</p>
+<p>图 1：SWE-bench Verified 与 SWE-Bench Pro 结果（单次尝试、无测试时扩展）</p>
+<p>†工作完成于伊利诺伊大学厄巴纳-香槟分校研究实习期间。</p>
+<p>arXiv:2511.13646v3 [cs.SE] 24 Nov 2025</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是封面、摘要和总成绩图，先把全文主张钉死。人手设计的软件智能体脚手架几乎无法穷尽，离线自改进又贵又容易绑死在特定基准和模型上。作者提出 LIVE-SWE-AGENT：从只会命令行的最小脚手架出发，在修真实问题的循环里当场造工具、改自己。无测试时扩展时，已验证基准单次解决率百分之七十七点四，专业基准百分之四十五点八，压过当时开源与专有方案。类比：不是赛前把工具箱焊死，而是边修车边按故障现做扳手。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Introduction Large Language Models (LLMs) have rapidly progressed from simple code autocompletion [7, 12, 22, 38] to interactive agents capable of navigating repositories, running tests, and submitting patches end-to-end [42, 34, 47, 37, 10, 23]. Early conversational repair systems leveraged environment feedback to iteratively refine candidate fixes [40], while subsequent agentic frameworks (such as SWE-agent [42] and OpenHands [34]) augmented LLMs with terminals, editors, and search, enabling multi-step tool use on complex repositories. At the same time, complementary “more agentless” pipelines (e.g., Moatless [49] and Agentless [37]) argue that much of the perceived complexity in agent scaffold design can be replaced by dedicated prompting and workflow design. Despite this progress, most existing agents have fixed designs and are limited in their static action space, where the scaffold implementation (including tools) is preset even when a task could benefit from more customization. In addition, manually designing an optimal software agent scaffold is extremely challenging and costly due to the infinite design space. As a result, more recently, the community has begun to explore self-evolving software agents [45, 30, 33], which iteratively modify their own scaffold implementations and empirically validate each change using offline evaluation signals from coding benchmarks. However, these approaches add significant additional cost. For example, a single run of DGM on SWE-bench costs around $22,000 according to the original paper [45]. Furthermore, they rely heavily on offline evolution, where improvements are typically learned on certain benchmarks and then baked into a static agent. In this way, the learned agents may become specialized to the given benchmarks and underlying LLMs, and may not generalize well beyond that. To bridge this gap, we introduce LIVE-SWE-AGENT, the first live, runtime self-evolving software engineering agent that expands and revises its own capabilities on the fly while working on a realworld issue. Our key insight is that software agents are themselves software systems, and modern LLM-based software agents already possess the intrinsic capability to extend or modify their own implementation at runtime. While our idea of enabling on-the-fly self-evolution applies to all parts of the agent scaffold implementation, as a first step, we focus primarily on tool creation, as it is one of the most essential parts of a software agent. LIVE-SWE-AGENT starts from a simplistic agent with only bash tool access (e.g., mini-SWE-agent [42]). During the regular issue-solving loop, the agent can synthesize, modify, and execute custom tools such as editors, code search utilities, and domain-specific analyzers. A lightweight step-reflection prompt repeatedly asks the agent whether creating or revising a tool would accelerate progress, thereby turning tooling into a first-class decision alongside ordinary actions like running tests. This mechanism leaves the underlying scaffold unchanged, requires no offline training, and is agnostic to the underlying LLM. By elevating tool creation to an explicit, iterative decision point, we unlock this hidden on-the-fly self-improvement ability. LIVE-SWE-AGENT addresses the limitations of existing research. First, with tool creation, the agent action space adapts to the problem at hand, producing task-relevant tools that precisely capture the needs to accomplish the current task. Furthermore, by shifting improvement from offline training to online evolution, LIVE-SWE-AGENT alleviates tedious scaffold engineering because new abilities emerge from the encountered issues themselves. Importantly, tool synthesis is not a one-shot preprocessing action but a continuous iterative process interleaved with problem solving. The agent can refine tools as their understanding of the failure mode evolves. Despite its minimal and simplistic design, LIVE-SWE-AGENT is generalizable to different agent scaffolds and LLMs, with state-of-the-art open results on software issue solving. We have evaluated LIVE-SWE-AGENT on the widely used SWE-bench Verified benchmark [26] and the more challenging SWE-Bench Pro [4]. Without any test-time scaling, LIVE-SWE-AGENT achieves 77.4% resolve rate on Verified and 45.8% on Pro, surpassing state-of-the-art open-source baselines and even the best commercial agent systems. Our ablations and tooling analyses reveal that (1) custom tool creation materially improves effectiveness (higher solve rates) with minimal overhead, (2) benefits persist across different state-of-the-art LLM backends, with better results on stronger models, demonstrating its promising future as LLMs’ capabilities rapidly evolve, and (3) synthesized tools include both generic utilities and task-aligned specializations that benefit issue-specific problem-solving. In summary, we make the following contributions:</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>引言</p>
+<p>大语言模型（LLM）已从简单的代码自动补全 [7, 12, 22, 38] 迅速进展为能够导航代码仓库、运行测试并端到端提交补丁的交互式智能体 [42, 34, 47, 37, 10, 23]。早期的对话式修复系统利用环境反馈迭代精炼候选修复 [40]；随后的智能体框架（如 SWE-agent [42] 与 OpenHands [34]）为 LLM 配备终端、编辑器与搜索，使其能在复杂仓库上多步使用工具。与此同时，互补的「少智能体化」流水线（例如 Moatless [49] 与 Agentless [37]）主张：智能体脚手架设计中许多看似必要的复杂性，可用专门的提示与工作流设计替代。</p>
+<p>尽管有这些进展，现有智能体大多设计固定，并受限于静态动作空间：即便某项任务本可从更多定制中获益，脚手架实现（包括工具）仍被预先设定。此外，由于设计空间近乎无限，人工设计最优软件智能体脚手架极为困难且代价高昂。因此，社区近来开始探索自演化软件智能体 [45, 30, 33]：它们迭代修改自身脚手架实现，并用编码基准上的离线评估信号经验地验证每一次改动。然而，这些方法带来显著额外成本。例如，据原论文 [45]，DGM 在 SWE-bench 上单次运行大约花费 22,000 美元。并且它们严重依赖离线演化：改进通常在某些基准上习得，再固化进一个静态智能体。由此，学得的智能体可能专化于给定基准与底层 LLM，超出该范围则未必能很好泛化。</p>
+<p>为弥合这一差距，我们提出 LIVE-SWE-AGENT，首个在线、运行时自演化的软件工程智能体：它在处理真实世界议题的同时，即时扩展并修订自身能力。我们的关键洞见是：软件智能体本身就是软件系统，而基于现代 LLM 的软件智能体已具备在运行时扩展或修改自身实现的内在能力。尽管即时自演化的想法适用于智能体脚手架实现的各个部分，作为第一步，我们主要聚焦工具创建，因为它是软件智能体最关键的部分之一。LIVE-SWE-AGENT 从仅有 bash 工具访问的简朴智能体出发（例如 mini-SWE-agent [42]）。在常规的议题求解循环中，智能体可以合成、修改并执行自定义工具，例如编辑器、代码搜索实用程序以及领域专用分析器。一个轻量的步级反思提示反复询问智能体：创建或修订某工具是否会加快进展，从而把「做工具」提升为与运行测试等普通动作并列的一等决策。该机制不改动底层脚手架、无需离线训练，且与底层 LLM 无关。通过把工具创建提升为显式、迭代的决策点，我们解锁了这种被隐藏的即时自改进能力。</p>
+<p>LIVE-SWE-AGENT 针对现有研究的局限。首先，借助工具创建，智能体动作空间随当前问题自适应，产出精确捕捉当前任务需求的任务相关工具。此外，通过把改进从离线训练转到在线演化，LIVE-SWE-AGENT 减轻了繁琐的脚手架工程，因为新能力从所遇到的议题本身涌现。重要的是，工具合成不是一次性预处理，而是与问题求解交错的持续迭代过程。智能体可随其对失效模式理解的演进而精炼工具。尽管设计最小而简朴，LIVE-SWE-AGENT 可推广到不同智能体脚手架与 LLM，并在软件议题求解上取得最先进的开放结果。</p>
+<p>我们在广泛使用的 SWE-bench Verified 基准 [26] 以及更具挑战的 SWE-Bench Pro [4] 上评估了 LIVE-SWE-AGENT。在无任何测试时扩展的情况下，LIVE-SWE-AGENT 在 Verified 上达到 77.4% 解决率，在 Pro 上达到 45.8%，超过最先进的开源基线乃至最佳商业智能体系统。消融与工具分析表明：（1）自定义工具创建以极小开销实质提升有效性（更高解决率）；（2）收益在不同最先进 LLM 后端上持续存在，且更强模型上效果更好，显示随着 LLM 能力迅速演进其前景可观；（3）合成的工具既包括通用实用程序，也包括有利于议题特定求解的任务对齐特化。</p>
+<p>总之，我们作出如下贡献：</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页讲问题从哪里来，以及作者为什么不走离线自演化。现有智能体能端到端交补丁，但动作空间开跑前就固定；少智能体流水线用工作流代替复杂脚手架，一样焊死。离线自演化一次基准评测约两万两千美元，还容易特化到给定模型和题集。本文主张当场自演化，先从造工具做起：轻量反思反复问要不要造或改，把工具化变成和跑测试并列的一等决策，而且不改底层脚手架、不离线训练。类比：不要先花半年开模具再量产，而是看坏了哪颗螺丝，现场再做夹具。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Issue Description Project Codebase $ cat file.c $ python tool.py $ grep -r x Tools Agent #!/usr/bin/env python3 import sys # Import other packages if needed def main(): # main tool logic __. if __name__ _= &quot;__main__&quot;: main() $_ 201 static rtx 202 widen_operand (rtx op, 203 int unsignedp, bool no_exten) Custom Tool Feedback I noticed that to solve the issue I</p>
+<div class="toc-line">need to ... therefore I should create a</div>
+<div class="toc-line">custom tool to help me ...</div>
+<p>THOUGHT: custom_tool.py ├─ testbed │ ├─ config │ ├─ src</p>
+<div class="toc-line">...</div>
+<p>│ └─</p>
+<div class="toc-line">...</div>
+<p>└─ tools ├─ tool.py └─ custom_tool.py Reflect and think if there are any tools you can create to help you with the current task. REFLECT: environmental_feedback Complement doesn&#x27;t work when input is a mixture of Symbols and numbers &gt;&gt;&gt; a=FiniteSet(x,y,2) &gt;&gt;&gt; b=Interval(-10,10) &gt;&gt;&gt; Complement(a,b) {x, y} ISSUE DESCRIPTION: You can also create your own tools to help with your workflow INITIAL PROMPT: config src testing .gitignore README pyproject.toml project/codebase developer &lt;&gt; Code main Patch +12 -20 submitted patch Environment Figure 2: Overview of LIVE-SWE-AGENT</p>
+<ul>
+<li>The first live software agent. We present LIVE-SWE-AGENT, the first live software agent that can autonomously self-evolve its own scaffold implementation on the fly when solving real-world issues, without any offline training or extra pipelines.</li>
+<li>Minimal and general implementation. Our current implementation adopts a minimal and general design, where the agent starts from a minimal bash-only scaffold (e.g., mini-SWE-agent) and self-improves on the fly by creating general or customized tools. The design is compatible with any existing software agent loop or LLM with negligible overhead, has been publicly available at: https://github.com/OpenAutoCoder/live-swe-agent.</li>
+<li>State-of-the-art performance. On SWE-bench Verified and SWE-Bench Pro, LIVE-SWE-AGENT reaches 77.4% and 45.8% solve rates (without any test-time scaling), respectively, outperforming all existing open-source agents and commercial systems at the time of writing. To our knowledge, our SWE-Bench Pro result is also the best reported to date.</li>
+<li>Comprehensive analysis. We include detailed studies of when and why on-the-fly tool creation helps, how it improves efficiency, and how it compares to other designs like fixed-tool agents, workflow-based systems, and offline self-improving methods. Notably, compared to existing self-improving agents, we achieve much better performance (65.0% solve rate on the SWEbench Verified-60 subset vs. DGM’s 53.3%) while being significantly less costly (no offline cost).</li>
+<li>Unified leaderboard. For software tasks, recent LLMs are often benchmarked using manually engineered, proprietary agent scaffolds, making fair model comparison hard. LIVE-SWE-AGENT offers an open, unified, and powerful scaffold that enables genuinely fair, apples-to-apples comparison for future model releases. We are maintaining a leaderboard of recent models evaluated on real-world software tasks using LIVE-SWE-AGENT at: http://live-swe-agent.github.io Approach LIVE-SWE-AGENT is a live, self-evolving agent that improves and expands its capabilities on the fly while solving an issue. Our key insight is recognizing that agents themselves can be iteratively improved, just like the software issues they are designed to solve. The space in which an agent can evolve includes not only the tools it uses but also the underlying agent scaffold itself. In this work, we start from a simple agent scaffold and focus primarily on self-evolution for tool creation and usage, as tools represent one of the most critical components of an agent. We now describe how LIVE-SWE-AGENT provides a framework for LLMs to develop and use their own tools on the fly. Figure 2 presents an overview of LIVE-SWE-AGENT. First, 1 we take in both the project codebase and the description of the issue to be solved. We then provide this information to the agent and initialize it with a set of tools. In the beginning, the agent may only have access to a limited set of tools (e.g., bash commands) and the goal of LIVE-SWE-AGENT is to allow the agent to generate and use its own tools on the fly while solving the issue. As the agent is solving the issue, at each step,it can choose to either 2 output a command (e.g., to use a tool) or 3 create a custom tool that can help</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>议题描述</p>
+<p>项目代码库</p>
+<p>$ cat file.c $ python tool.py $ grep -r x</p>
+<p>工具</p>
+<p>智能体</p>
+<p>#!/usr/bin/env python3</p>
+<p>import sys</p>
+<p># 如需可导入其他包</p>
+<p>def main():</p>
+<p># 主工具逻辑</p>
+<div class="toc-line">...</div>
+<p>if __name__ == &quot;__main__&quot;:</p>
+<p>main()</p>
+<p>自定义工具</p>
+<p>反馈</p>
+<p>我注意到要解决该议题需要……因此我应当创建一个自定义工具来帮助我……</p>
+<p>THOUGHT:</p>
+<p>custom_tool.py</p>
+<p>├─ testbed</p>
+<p>│ ├─ config</p>
+<p>│ ├─ src</p>
+<div class="toc-line">...</div>
+<p>└─ tools</p>
+<p>├─ tool.py</p>
+<p>└─ custom_tool.py</p>
+<p>反思并思考：是否有你可以创建的工具，以帮助完成当前任务。</p>
+<p>REFLECT:</p>
+<p>环境反馈</p>
+<p>当输入是符号与数字的混合时 Complement 不能工作</p>
+<p>&gt;&gt;&gt; a=FiniteSet(x,y,2)</p>
+<p>&gt;&gt;&gt; b=Interval(-10,10)</p>
+<p>&gt;&gt;&gt; Complement(a,b)</p>
+<p>{x, y}</p>
+<p>议题描述：</p>
+<p>你也可以创建自己的工具来帮助工作流</p>
+<p>初始提示：</p>
+<p>config</p>
+<p>src</p>
+<p>testing</p>
+<p>.gitignore</p>
+<p>README</p>
+<p>pyproject.toml</p>
+<p>project/codebase</p>
+<p>开发者</p>
+<p>&lt;&gt; Code</p>
+<p>main</p>
+<p>补丁 +12 -20</p>
+<p>已提交补丁</p>
+<p>环境</p>
+<p>图 2：LIVE-SWE-AGENT 概览</p>
+<ul>
+<li>首个在线软件智能体。我们提出 LIVE-SWE-AGENT，首个能在解决真实世界议题时即时自主自演化其脚手架实现、且无需任何离线训练或额外流水线的在线软件智能体。</li>
+<li>最小且通用的实现。当前实现采用最小而通用的设计：智能体从仅有 bash 的最小脚手架出发（例如 mini-SWE-agent），并通过创建通用或定制工具即时自改进。该设计可与任何现有软件智能体循环或 LLM 兼容，开销可忽略，已公开于：https://github.com/OpenAutoCoder/live-swe-agent。</li>
+<li>最先进性能。在 SWE-bench Verified 与 SWE-Bench Pro 上，LIVE-SWE-AGENT 分别达到 77.4% 与 45.8% 的解决率（无任何测试时扩展），优于写作时所有现有开源智能体与商业系统。据我们所知，SWE-Bench Pro 结果也是迄今报道的最佳。</li>
+<li>全面分析。我们详细研究了即时工具创建何时、为何有帮助，它如何提升效率，以及它与固定工具智能体、基于工作流的系统、离线自改进方法的比较。值得注意的是，相对现有自改进智能体，我们取得更好性能（在 SWE-bench Verified-60 子集上解决率 65.0%，对比 DGM 的 53.3%），同时代价显著更低（无离线成本）。</li>
+<li>统一排行榜。对软件任务，近期 LLM 常以人工工程化的专有智能体脚手架评测，使公平的模型比较变得困难。LIVE-SWE-AGENT 提供开放、统一且强大的脚手架，使未来模型发布能够真正公平、对等地比较。我们维护一份用 LIVE-SWE-AGENT 在真实软件任务上评测近期模型的排行榜：http://live-swe-agent.github.io</li>
+</ul>
+<p>方法</p>
+<p>LIVE-SWE-AGENT 是一个在线、自演化智能体，在求解议题的同时即时改进并扩展自身能力。我们的关键洞见是：智能体本身可以像它们所要解决的软件议题一样被迭代改进。智能体可演化的空间不仅包括所用工具，也包括底层智能体脚手架本身。本文从简单脚手架出发，主要聚焦工具创建与使用上的自演化，因为工具是智能体最关键的组件之一。下面说明 LIVE-SWE-AGENT 如何为 LLM 提供即时开发并使用自有工具的框架。</p>
+<p>图 2 给出 LIVE-SWE-AGENT 概览。首先，① 我们同时接收项目代码库与待解决问题的议题描述，将信息提供给智能体并以一组工具初始化。起初智能体可能只拥有有限工具（例如 bash 命令），而 LIVE-SWE-AGENT 的目标是让智能体在求解议题的同时即时生成并使用自有工具。随着智能体求解议题，每一步它都可以选择 ② 输出一条命令（例如使用某工具），或 ③ 创建一个有助于</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是总览图和五项贡献，方法从这里起笔。贡献分别是第一个实时智能体、极简通用实现、当时领先数字、全面分析、以及开放统一排行榜。作者强调智能体也是软件，演化空间本包括整个脚手架，本文先聚焦工具创建与使用。图二画出循环：读问题描述与代码库，每一步要么输出命令，要么写自定义工具，再带着环境反馈继续。类比：先只带一把瑞士军刀进现场，缺什么再现场焊什么，而不是出发前先装一辆工具车。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>it solve the issue. In LIVE-SWE-AGENT, we define a custom tool as a script that can be executed in the environment. This provides an intuitive and straightforward tool-usage interface for the agent, allowing it to output a command to use any custom tool. Next, different from existing approaches that 4 directly provide the environmental feedback output to the agent, 5 we specifically ask the agent to reflect upon the past steps and decide whether a tool should be created in the feedback message. This loop is repeated until the agent has submitted a solution 6 to the initial problem. Unlike prior agentic setups where the set of tools and possible actions available to the agent is fixed, LIVE-SWE-AGENT allows the agent to perform live self-evolution by creating and using custom tools on the fly. 2.1 On-the-fly Self Evolution The key idea of LIVE-SWE-AGENT is to enable the agent self-improve by modifying its own scaffold, such as creating custom tools based on the problem and previous trajectories. To support tool creation, we apply several simple modifications to the initial prompt of the agent. Specifically, we provide instructions and examples illustrating how a tool should be created and used. More importantly, we indicate to the agent that: (1) the goal of any tools it creates should be to help it better solve the tasks and (2) the created tools can be for any purpose and do not need to be general. In addition to introducing the ability for agents to create tools through the initial prompt, we also explicitly ask the agent to reflect on its past trajectory to determine if it should create any tools after each step. This is done by appending a simple reflection message after each environmental feedback. In our experiments, we found that this reflection process is necessary to remind the agents to design tools that are useful and specific for the particular issue. It is important to point out that the modifications made to a regular agentic framework by LIVE-SWEAGENT are extremely simple (See Appendix D for both the initial prompt and reflection message). LIVE-SWE-AGENT does not make any changes to the agentic loop, impose a particular workflow, or require any costly offline training. Instead, the focus is on allowing and extending the ability for agents to create their own custom tools at runtime to improve performance and reduce manual tool-creation effort. This allows LIVE-SWE-AGENT to be extremely general and applicable across a wide-range of different tasks, LLMs, and agent scaffolds. Furthermore, we also note that software agents, in essence, are also software. As such, they can be modified and updated on the fly by software agents (themselves) no different than any other software repository. In LIVE-SWE-AGENT, we leverage this insight for on-the-fly self-improvement by enabling the agents to create their own custom tools depending on the problem at hand. We next describe the custom tools agents create in more detail. 2.2 Custom Tool Synthesis In LIVE-SWE-AGENT, we define a custom tool as a script that can be executed in the environment. This allows the agents to both easily create tools (by creating a script file) and use the created tools (by running the script with arguments). We believe this is a general and intuitive interface that is suitable for a wide range of tasks. Example editing tool. Figure 3a shows an example of a custom tool created by the agent. This is an editing tool that allows the agent to edit a file by replacing, inserting, or deleting code. We see that it contains the necessary tool logic as well as clear instructions on how the tool can be used. Compared with bash commands which can potentially overwhelm the agent with many different arguments and flags, the tools that agents create themselves have a straightforward purpose and are easy to use. Furthermore, in the example, we see that the editing tool also provides relevant feedback messages such as indicating whether the replacement edit was successful or not. This feedback can be critically important to inform the next actions taken by the agents. On the other hand, a bash editing command like sed does not indicate the result of the edit such that a replacement operation where the string to be replaced does not exist will produce no warning message but still return a success code. As such, the agent may be misguided into thinking that the edit was successful when, in fact, no changes have been made to the file. LIVE-SWE-AGENT also encourages agents to create tools that can improve the efficiency of their workflows. For example, a common step in solving an issue is to identify the locations of relevant code snippets in order to understand the root cause. In this case, a custom search tool can be useful for searching code within certain directories and displaying their surrounding context. While it is possible to achieve the same outcome of a custom search tool using a combination of different bash commands</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>求解该议题的自定义工具。在 LIVE-SWE-AGENT 中，我们将自定义工具定义为可在环境中执行的脚本。这为智能体提供直观而直接的工具使用接口，使其只需输出一条命令即可调用任意自定义工具。接下来，不同于现有方法 ④ 直接把环境反馈输出交给智能体，我们 ⑤ 在反馈消息中专门要求智能体反思以往步骤，并决定是否应当创建工具。该循环重复，直到智能体提交对初始问题的解 ⑥。与先前智能体设定中工具集与可能动作固定不同，LIVE-SWE-AGENT 允许智能体通过即时创建并使用自定义工具进行在线自演化。</p>
+<p class="meta-line">2.1 即时自演化</p>
+<p>LIVE-SWE-AGENT 的关键想法是让智能体通过修改自身脚手架来自改进，例如根据问题与既往轨迹创建自定义工具。为支持工具创建，我们对智能体的初始提示做了若干简单修改。具体而言，我们提供说明与示例，展示工具应如何创建与使用。更重要的是，我们向智能体表明：（1）它所创建的任何工具，目标都应是更好地求解任务；（2）所创建工具可用于任何目的，不必通用。</p>
+<p>除了通过初始提示引入创建工具的能力外，我们还在每一步之后显式要求智能体反思既往轨迹，以判断是否应当创建工具。做法是在每条环境反馈之后追加一条简单的反思消息。实验中我们发现，这一反思过程对于提醒智能体设计对该特定议题有用且具体的工具是必要的。</p>
+<p>需要指出，LIVE-SWE-AGENT 对常规智能体框架所做的修改极为简单（初始提示与反思消息见附录 D）。LIVE-SWE-AGENT 不改动智能体循环、不施加特定工作流、也不要求任何代价高昂的离线训练。焦点在于允许并扩展智能体在运行时创建自有自定义工具的能力，以提升性能并减少人工造工具的工作量。这使 LIVE-SWE-AGENT 极为通用，可适用于广泛的任务、LLM 与智能体脚手架。此外我们还注意到：软件智能体本质上也是软件。因此，它们可以由软件智能体（即其自身）即时修改与更新，与任何其他软件仓库并无不同。在 LIVE-SWE-AGENT 中，我们利用这一洞见，通过让智能体按当前问题创建自有自定义工具来实现即时自改进。下面更详细地描述智能体所创建的自定义工具。</p>
+<p class="meta-line">2.2 自定义工具合成</p>
+<p>在 LIVE-SWE-AGENT 中，我们将自定义工具定义为可在环境中执行的脚本。这使智能体既能轻松创建工具（通过创建脚本文件），也能使用已创建工具（带参数运行该脚本）。我们认为这是一种通用且直观的接口，适合广泛任务。</p>
+<p>示例：编辑工具。图 3a 展示智能体创建的一个自定义工具。这是一个编辑工具，允许智能体通过替换、插入或删除代码来编辑文件。可以看到，它包含必要的工具逻辑以及关于如何使用该工具的清晰说明。相比可能以大量参数与标志淹没智能体的 bash 命令，智能体自己创建的工具目的直接、易于使用。此外，该例中编辑工具还提供相关反馈消息，例如指示替换编辑是否成功。这类反馈对告知智能体下一步动作可能至关重要。另一方面，像 sed 这样的 bash 编辑命令并不指示编辑结果：若待替换字符串并不存在，替换操作不会产生警告，却仍返回成功码。因此，智能体可能被误导，以为编辑成功，而文件实际上并未改动。</p>
+<p>LIVE-SWE-AGENT 也鼓励智能体创建能提升工作流效率的工具。例如，求解议题的常见一步是定位相关代码片段以理解根因。此时，一个可在特定目录内搜索代码并显示周围上下文的自定义搜索工具会很有用。尽管可以用不同 bash 命令的组合达到与自定义搜索工具相同的结果</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把循环和两条机制写死，是全文最该精读的方法页。自定义工具就是环境里能跑的脚本：创建等于写文件，使用等于带参数执行。改动极小，不换主循环、不加规定工作流、不做离线训练，只改初始提示，并在每步反馈后多问一句要不要造工具。编辑工具的例子说明自造比替换命令好：后者失败仍返回成功，智能体会被骗以为改过了。类比：给学徒一本空白手册，每修一次就让他写下自己的专用口诀，而不是塞一本百科全书。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>(e.g., grep, find, cat), the agent often needs to take multiple steps to perform the actual search, leading to increased context length and time required to solve an issue. By creating custom tools that can handle complex and multi-step tasks, LIVE-SWE-AGENT can improve both the effectiveness and efficiency of agents. &quot;&quot;&quot; code omitted &quot;&quot;&quot; def edit_file(filename, operations): &quot;&quot;&quot; Edit a file with specified operations. Operations format: - replace:&lt;line_range::&lt;old_text::&lt;new_text&gt; - insert:&lt;line_num::&lt;text&gt; - delete:&lt;line_num&gt; &quot;&quot;&quot; &quot;&quot;&quot; code omitted &quot;&quot;&quot; if cmd -= &#x27;replace&#x27;: if old_text in lines: lines = lines.replace(old_text, new_text) else: print(f&quot;Warning: &#x27;{old_text}&#x27; not found in {line_range}&quot;) &quot;&quot;&quot; code omitted &quot;&quot;&quot; print(f&quot;Successfully edited {filename}&quot;) if -_name-_ -= &quot;-_main-_&quot;: &quot;&quot;&quot; code omitted &quot;&quot;&quot; Terminal -- /tmp/edit_tool.py (a) Edit tool &quot;&quot;&quot; code omitted &quot;&quot;&quot; def analyze_marc_file(filepath): &quot;&quot;&quot;Analyze a MARC file and show language-related fields.&quot;&quot;&quot; from openlibrary.catalog.marc import MarcBinary &quot;&quot;&quot; code omitted &quot;&quot;&quot; if filepath.endswith(&#x27;.xml&#x27;): root = etree.fromstring(data) rec = MarcXml(root) else: rec = MarcBinary(data)</p>
+<p>&quot;&quot;&quot; code omitted &quot;&quot;&quot; edition = read_edition(rec) print(&quot;Edition data extracted:&quot;) print(f&quot; Languages: {edition.get(&#x27;languages&#x27;, &#x27;NOT FOUND&#x27;)}&quot;) print(f&quot; Title: {edition.get(&#x27;title&#x27;, &#x27;NOT FOUND&#x27;)[:50]}--.&quot;) &quot;&quot;&quot; code omitted &quot;&quot;&quot; if -_name-_ -= &quot;-_main-_&quot;: &quot;&quot;&quot; code omitted &quot;&quot;&quot; Terminal -- /tmp/marc_analyzer.py (b) MARC file analyzer tool Figure 3: Example custom tools Example issue-specific tool. In addition to general tools, another benefit of LIVE-SWE-AGENT is its ability to create issue-specific tools. Figure 3b shows an example of a custom tool that is specifically tailored to a particular issue. In this example, the tool analyzes MARC files, a file format for publication or text records, and prints them in a human-readable format. The agent can create this tool and use it to display the content of relevant MARC files (including binary files) that serve as test cases, helping it better understand the issue and evaluate potential patches. Such functionality cannot be achieved easily using simple bash commands or even general-purpose tools. By enabling the agents to create arbitrary custom tools on the fly, LIVESWE-AGENT can generate specialized tools for individual problems, allowing it to solve issues more effectively. A fair question to ask is why not generate these tools directly in the beginning? The reason is that tool creation, similar to manual problem solving, is also an iterative process. We need to understand the problem at hand and during the solving process identify the issues in order to come up with helpful tools in different scenarios. For example, in the MARC file example, it is not immediately obvious that we need to create a custom tool specifically to analyze MARC files. By creating all the tools in the beginning and applying this fixed set of tools during the entire process, we will lose the opportunity to design custom tools that are helpful in unique situations. Additionally, having access to all possible tools are not necessarily better as they can overwhelm and mislead the agent. Furthermore, the agent may often iterate on or modify the tools it has created which requires runtime modification abilities not available under a fixed tool setup. LIVE-SWE-AGENT provides the ability for agents to automatically synthesize customs tools on the fly without any additional overhead from heavy scaffold modifications or costly offline training updates. Experimental Setup Implementation. While LIVE-SWE-AGENT is general across different software agent scaffolds, we implement LIVE-SWE-AGENT on top of the popular mini-SWE-agent [42] framework. As such, we retain the hyperparameters used in mini-SWE-agent by default (i.e., maximum step limit of 250 and maximum cost of $3 per issue). We choose mini-SWE-agent to build on since it is not only simplistic (with ∼100 lines of code and only accessing bash commands) but also widely used. Unless otherwise stated, we use Claude 4.5 Sonnet (claude-sonnet-4-5-20250929) [6] in our experiments and sample one patch per issue. Datasets. We evaluate LIVE-SWE-AGENT on the popular SWE-bench Verified benchmark [26] containing 500 software development problems where the goal is to successfully modify the repository given a problem description. SWE-bench Verified is validated by human developers to ensure each problem description has sufficient amount of information to solve the issue. Additionally, we also evaluate on the recent SWE-Bench Pro [4] benchmark, containing 731 publicly available problems, aimed to capture realistic, complex, and enterprise-level problems. Compared with SWEbench Verified, SWE-Bench Pro contains more difficult problems across multiple repositories and programming languages.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（例如 grep、find、cat），智能体往往需要多步才能完成实际搜索，导致上下文变长、求解议题耗时增加。通过创建能处理复杂、多步任务的自定义工具，LIVE-SWE-AGENT 可以同时提升智能体的有效性与效率。</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>def edit_file(filename, operations):</p>
+<p>&#x27;&#x27;&#x27;</p>
+<p>按指定操作编辑文件。</p>
+<p>操作格式：</p>
+<ul>
+<li>replace:&lt;line_range::&lt;old_text::&lt;new_text&gt;</li>
+<li>insert:&lt;line_num::&lt;text&gt;</li>
+<li>delete:&lt;line_num&gt;</li>
+</ul>
+<p>&#x27;&#x27;&#x27;</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>if cmd == &#x27;replace&#x27;:</p>
+<p>if old_text in lines:</p>
+<p>lines = lines.replace(old_text, new_text)</p>
+<p>else:</p>
+<p>print(f&quot;Warning: &#x27;{old_text}&#x27; not found in {line_range}&quot;)</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>print(f&quot;Successfully edited {filename}&quot;)</p>
+<p>if __name__ == &quot;__main__&quot;:</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>终端 -- /tmp/edit_tool.py</p>
+<p>(a) 编辑工具</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>def analyze_marc_file(filepath):</p>
+<p>&#x27;&#x27;&#x27;分析 MARC 文件并显示与语言相关的字段。&#x27;&#x27;&#x27;</p>
+<p>from openlibrary.catalog.marc import MarcBinary</p>
+<p>if filepath.endswith(&#x27;.xml&#x27;):</p>
+<p>root = etree.fromstring(data)</p>
+<p>rec = MarcXml(root)</p>
+<p>else:</p>
+<p>rec = MarcBinary(data)</p>
+<p>edition = read_edition(rec)</p>
+<p>print(&quot;Edition data extracted:&quot;)</p>
+<p>print(f&quot; Languages: {edition.get(&#x27;languages&#x27;, &#x27;NOT FOUND&#x27;)}&quot;)</p>
+<p>print(f&quot; Title: {edition.get(&#x27;title&#x27;, &#x27;NOT FOUND&#x27;)[:50]}--.&quot;)</p>
+<p>if __name__ == &quot;__main__&quot;:</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>终端 -- /tmp/marc_analyzer.py</p>
+<p>(b) MARC 文件分析器工具</p>
+<p>图 3：自定义工具示例</p>
+<p>示例：议题专用工具。除通用工具外，LIVE-SWE-AGENT 的另一好处是能够创建议题专用工具。图 3b 展示一个专门针对特定议题定制的自定义工具。该例中，工具分析 MARC 文件（一种出版物或文本记录的文件格式），并以人类可读格式打印。智能体可创建并使用该工具，展示作为测试用例的相关 MARC 文件内容（包括二进制文件），从而更好地理解议题并评估潜在补丁。这类功能难以用简单 bash 命令乃至通用工具轻易实现。通过允许智能体即时创建任意自定义工具，LIVE-SWE-AGENT 能为个别问题生成特化工具，从而更有效地求解议题。</p>
+<p>一个公允的问题是：为何不在一开始就生成这些工具？原因在于，工具创建与人工解题一样，也是迭代过程。我们需要理解当前问题，并在求解过程中识别症结，才能在不同情景下想出有帮助的工具。例如，在 MARC 文件例子中，一开始并不显然需要专门做一个分析 MARC 文件的自定义工具。若一开始就创建全部工具并在全过程套用这套固定工具，就会失去在独特情境下设计有用定制工具的机会。此外，拥有一切可能的工具未必更好，因为它们可能淹没并误导智能体。再者，智能体常常会迭代或修改已创建的工具，这需要固定工具设定下所不具备的运行时修改能力。LIVE-SWE-AGENT 使智能体能够自动即时合成自定义工具，而无需沉重的脚手架改造或代价高昂的离线训练更新所带来的额外开销。</p>
+<p>实验设置</p>
+<p class="lead"><strong>实现。</strong>尽管 LIVE-SWE-AGENT 可通用于不同软件智能体脚手架，我们在流行的 mini-SWE-agent [42] 框架之上实现 LIVE-SWE-AGENT。因此，我们默认沿用 mini-SWE-agent 的超参数（即每议题最大步数 250、最大费用 3 美元）。选择在 mini-SWE-agent 上构建，是因为它不仅简朴（约 100 行代码，且只访问 bash 命令），而且被广泛使用。除非另有说明，实验使用 Claude 4.5 Sonnet（claude-sonnet-4-5-20250929）[6]，每个议题采样一个补丁。</p>
+<p class="lead"><strong>数据集。</strong>我们在流行的 SWE-bench Verified 基准 [26] 上评估 LIVE-SWE-AGENT，该基准包含 500 个软件开发问题，目标是根据问题描述成功修改仓库。SWE-bench Verified 经人类开发者验证，以确保每个问题描述含有足够信息来求解议题。此外，我们也在近期的 SWE-Bench Pro [4] 基准上评估，该基准包含 731 个公开问题，旨在刻画现实、复杂、企业级问题。相较 SWE-bench Verified，SWE-Bench Pro 包含跨多个仓库与编程语言的更难问题。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页补两个工具例子，并回答为何不能开场一次造齐。多步查找命令可以收成一个搜索工具，省上下文也省时间；某个问题还会现场写出书目记录分析器，通用命令行做不到。工具创建像解题一样要边做边想：事先备齐全部工具会淹没模型，也无法在运行中改已经造好的脚本。实验叠在约一百行、只会命令行的最小框架上，测五百道已验证题和七百多道更难的企业级题。类比：你不会出发前把所有可能用到的扳手都焊在腰上，那样只会绊倒自己。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Table 1: Result on SWE-bench Verified Tool LLM % Resolved Avg. $ Cost GPT-5-Mini 59.8% $0.04 GPT-5 65.0% $0.28 Claude 4.5 Sonnet 70.6% $0.56 mini-SWE-agent [42] Gemini 3 Pro 74.2% $0.46 GPT-5-Mini 63.0% $0.05 GPT-5 68.4% $0.27 Claude 4.5 Sonnet 75.4% $0.68 LIVE-SWE-AGENT Gemini 3 Pro 77.4% $0.48 Table 2: Result on SWE-bench Verified-60 Tool LLM % Resolved Offline cost (hours) Offline selfimproving agents SICA [30] GPT-5-Mini 50.0% infinite loop DGM [45] GPT-5-Mini 53.3% 1231 HGM [33] GPT-5-Mini 56.7% LIVE-SWE-AGENT GPT-5-Mini 65.0% Baselines. We compare LIVE-SWE-AGENT against representative state-of-the-art agentic approaches. For SWE-bench Verified, we compare against mini-SWE-agent as it is one of the most widely-used open-source agentic solutions on SWE-bench tasks with top leaderboard performance. Additionally, it is also a straightforward comparison as we directly build on top of the mini-SWE-agent framework. Furthermore, we compare with prior self-evolving agents: Self-Improving Coding Agent (SICA) [30], Darwin-Gödel Machine (DGM) [45], and Huxley-Gödel Machine (HGM) [33] on a subset of SWEbench Verified problems. This subset of 60 SWE-bench Verified problems has been used by prior work [33] to specifically evaluate all three self-improving agent baselines. For SWE-Bench Pro, we compare against SWE-agent [42] which is the top-performing approach on the SWE-Bench Pro leaderboard. For each baseline, we directly reuse their experimental results and report their performance, cost, as well as the backend LLM used whenever possible. Evaluation 4.1 Main Results SWE-bench Verified. Table 1 shows the results of LIVE-SWE-AGENT and prior agent approaches on SWE-bench Verified. We first observe that compared with mini-SWE-agent, across four different LLM backends, LIVE-SWE-AGENT consistently achieves a higher resolve rate. This demonstrates the improvement in performance enabled by allowing agents to create and use their own custom tools on the fly. Furthermore, LIVE-SWE-AGENT is able to achieve this with only a minimal increase in cost compared with the base mini-SWE-agent. In certain cases (e.g., in GPT-5), we even observed slight cost savings where the agent can improve the solving efficiency by replacing complex, multi-turn commands with customs tools that achieve the same functionality. We also demonstrate the comparison between LIVE-SWE-AGENT and the best-performing agentic tools, including both state-of-the-art open-source solutions and proprietary commercial scaffolds, on SWE-bench Verified (Figure 1). We only report single-attempt results in Figure 1 without any test-time scaling to ensure a fair comparison. We observe that LIVE-SWE-AGENT using Gemini 3 Pro achieves a solve rate of 77.4% without test-time scaling, outperforming all existing agents on the SWE-bench Verified leaderboard1 including state-of-the-art commercial solutions at the time of writing. 1https://www.swebench.com</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 1：SWE-bench Verified 上的结果</p>
+<p>工具</p>
+<p>LLM</p>
+<p>解决率</p>
+<p>平均费用（$）</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">59.8%</p>
+<p>$0.04</p>
+<p>GPT-5</p>
+<p class="meta-line">65.0%</p>
+<p>$0.28</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">70.6%</p>
+<p>$0.56</p>
+<p>mini-SWE-agent [42]</p>
+<p>Gemini 3 Pro</p>
+<p class="meta-line">74.2%</p>
+<p>$0.46</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">63.0%</p>
+<p>$0.05</p>
+<p>GPT-5</p>
+<p class="meta-line">68.4%</p>
+<p>$0.27</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">75.4%</p>
+<p>$0.68</p>
+<p>LIVE-SWE-AGENT</p>
+<p>Gemini 3 Pro</p>
+<p class="meta-line">77.4%</p>
+<p>$0.48</p>
+<p>表 2：SWE-bench Verified-60 上的结果</p>
+<p>工具</p>
+<p>LLM</p>
+<p>解决率</p>
+<p>离线成本（小时）</p>
+<p>离线自改进智能体</p>
+<p>SICA [30]</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">50.0%</p>
+<p>无限循环</p>
+<p>DGM [45]</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">53.3%</p>
+<p class="meta-line">1231</p>
+<p>HGM [33]</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">56.7%</p>
+<p>LIVE-SWE-AGENT</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">65.0%</p>
+<p class="lead"><strong>基线。</strong>我们将 LIVE-SWE-AGENT 与有代表性的最先进智能体方法比较。对 SWE-bench Verified，我们与 mini-SWE-agent 比较，因为它是 SWE-bench 任务上使用最广、排行榜表现靠前的开源智能体方案之一。此外这也是直接比较，因为我们直接构建于 mini-SWE-agent 框架之上。我们还在 SWE-bench Verified 问题的一个子集上，与先前的自演化智能体比较：Self-Improving Coding Agent（SICA）[30]、Darwin-Gödel Machine（DGM）[45] 以及 Huxley-Gödel Machine（HGM）[33]。该 60 题子集已被先前工作 [33] 专门用于评估全部三种自改进智能体基线。对 SWE-Bench Pro，我们与 SWE-agent [42] 比较，它是 SWE-Bench Pro 排行榜上表现最好的方法。对每个基线，我们直接复用其实验结果，并在可能时报告其性能、成本以及所用后端 LLM。</p>
+<p>评估</p>
+<p class="meta-line">4.1 主要结果</p>
+<p>SWE-bench Verified。表 1 给出 LIVE-SWE-AGENT 与先前智能体方法在 SWE-bench Verified 上的结果。我们首先观察到，相较 mini-SWE-agent，在四种不同 LLM 后端上，LIVE-SWE-AGENT 均持续取得更高解决率。这表明：允许智能体即时创建并使用自有自定义工具，能够带来性能提升。此外，LIVE-SWE-AGENT 相对基础 mini-SWE-agent 仅带来极小的费用增加。在某些情形（例如 GPT-5），我们甚至观察到轻微费用节省：智能体用实现相同功能的自定义工具替换复杂、多轮命令，从而提升求解效率。</p>
+<p>我们还展示了 LIVE-SWE-AGENT 与表现最佳的智能体工具（包括最先进开源方案与专有商业脚手架）在 SWE-bench Verified 上的比较（图 1）。图 1 仅报告单次尝试结果，不含任何测试时扩展，以确保公平比较。我们观察到，使用 Gemini 3 Pro 的 LIVE-SWE-AGENT 在无测试时扩展下达到 77.4% 解决率，优于 SWE-bench Verified 排行榜1 上包括写作时最先进商业方案在内的所有现有智能体。</p>
+<p class="meta-line">1https://www.swebench.com</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是主表、基线选法和已验证基准的主结果。同一模型上，当场造工具的解决率都高于只会命令行的底座，成本几乎不涨，有时还更省。在六十题子集上，它达到百分之六十五，三个离线自演化对手大约百分之五十到五十七，而后三者还要成百上千小时离线训练。基线选同底座方案、离线自演化三家，以及专业基准上的手工智能体。类比：别人先花一学期改装车间再上场，它是上场后按工件现做夹具，圈速还更好。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Table 3: Result on SWE-Bench Pro Tool LLM % Resolved Avg. $ Cost SWE-agent [42] Claude 4.5 Sonnet 43.6% - LIVE-SWE-AGENT Claude 4.5 Sonnet 45.8% $0.73 Furthermore, we perform a detailed comparison with three prior self-evolving agents on a subset of 60 SWE-bench Verified problems chosen by prior evaluation [33]. Table 2 shows the resolve rate and the offline cost for SICA, DGM, HGM, and LIVE-SWE-AGENT on the subset of problems. We observe that LIVE-SWE-AGENT achieves the best performance, improving the resolve rate by 8.3 percentage points compared to previous best approach. We also see that previous self-evolving agents all require a heavy amount of offline training to evolve the base agent, costing more than 500 hours. Furthermore, prior self-evolving techniques produce a static agent used for all problems. On the other hand, LIVE-SWE-AGENT creates customs tools for each individual task, allowing it to adapt on the fly based on the problem and specific LLM used. Unlike the costly offline updates required by prior self-evolving agents, LIVE-SWE-AGENT instead adopts an online evolving approach to prompt the agent to generate custom tools on the fly to improve performance with minimal overhead. SWE-Bench Pro. We also evaluate LIVE-SWE-AGENT on the public set of SWE-Bench Pro, containing 731 problems across 11 repositories and four programming languages (Python, Go, TypeScript, and JavaScript). Table 3 shows the performance of LIVE-SWE-AGENT compared to the state-of-the-art baseline of SWE-agent on SWE-Bench Pro [4]. Different from mini-SWE-agent, which only has access to basic bash commands, SWE-agent provides handcrafted file viewing and editing tools and is the best performing approach on the SWE-Bench Pro. We choose Claude 4.5 Sonnet for SWE-agent because it ranks at the top of SWE-Bench Pro leaderboard2, as such, we also use it as the base LLM for LIVE-SWE-AGENT to enable a fair comparison. We observe that LIVE-SWE-AGENT is able to achieve better performance compared with SWE-agent, a specially designed agent implemented with close to 7,000 lines of code. We also compare with all other top-performing agents and LLMs in Figure 1 and observe that LIVE-SWE-AGENT is able to achieve the new state-of-the-art performance of 45.8% resolve rate on SWE-Bench Pro. This further demonstrates the superiority of the live scaffold design of LIVE-SWE-AGENT compared to existing agents that interact with a fixed set of manually-crafted tools. 4.2 Tools Analysis edit view search others (a) Tools in SWE-bench Verified quotebrowser openlibrary ansible (b) Tools in SWE-Bench Pro python javascript go typescript (c) Tools in SWE-Bench Pro Figure 4: 2 dimensional t-SNE visualization of tools generated by Claude 4.5 Sonnet on SWE-bench Verified and SWE-Bench Pro. We label and display the embedding based on tool type (Figure 4a), repository name (Figure 4b), and programming language used in the repository (Figure 4c). Note that for Figure 4b, we only label three repositories in the legend due to space considerations. The three repositories were chosen as they have representative distinct clusters. Categories and variations of custom tools. We examine the custom tools created by LIVE-SWEAGENT. Figure 4 shows the embedding visualizations using t-SNE [17] of the tools created by LIVE-SWE-AGENT. We compute the embedding for each tool based on the tool body (i.e., the 2https://scale.com/leaderboard/swe_bench_pro_public</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 3：SWE-Bench Pro 上的结果</p>
+<p>工具</p>
+<p>LLM</p>
+<p>解决率</p>
+<p>平均费用（$）</p>
+<p>SWE-agent [42]</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">43.6%</p>
+<p>-</p>
+<p>LIVE-SWE-AGENT</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">45.8%</p>
+<p>$0.73</p>
+<p>此外，我们在先前评估 [33] 选定的 60 道 SWE-bench Verified 问题子集上，与三种先前自演化智能体做了细致比较。表 2 给出 SICA、DGM、HGM 与 LIVE-SWE-AGENT 在该子集上的解决率及离线成本。我们观察到 LIVE-SWE-AGENT 取得最佳性能，相对此前最佳方法将解决率提高 8.3 个百分点。我们也看到，先前自演化智能体都需要大量离线训练来演化基础智能体，耗时超过 500 小时。并且，先前自演化技术产出一个用于全部问题的静态智能体。相反，LIVE-SWE-AGENT 为每个任务创建自定义工具，使其能按问题与所用特定 LLM 即时适应。不同于先前自演化智能体所需的昂贵离线更新，LIVE-SWE-AGENT 采用在线演化：提示智能体即时生成自定义工具以提升性能，开销极小。</p>
+<p>SWE-Bench Pro。我们也在 SWE-Bench Pro 的公开集上评估 LIVE-SWE-AGENT，该集包含跨 11 个仓库、四种编程语言（Python、Go、TypeScript 与 JavaScript）的 731 个问题。表 3 给出 LIVE-SWE-AGENT 相对 SWE-Bench Pro [4] 上最先进基线 SWE-agent 的表现。与只访问基本 bash 命令的 mini-SWE-agent 不同，SWE-agent 提供手工打造的文件查看与编辑工具，并且是 SWE-Bench Pro 上表现最好的方法。我们为 SWE-agent 选择 Claude 4.5 Sonnet，因为它在 SWE-Bench Pro 排行榜2 上排名第一；因此我们也将其作为 LIVE-SWE-AGENT 的基础 LLM，以便公平比较。我们观察到，LIVE-SWE-AGENT 能取得优于 SWE-agent 的性能——而后者是一个接近 7,000 行代码的专门设计智能体。我们还在图 1 中与所有其他顶尖智能体和 LLM 比较，观察到 LIVE-SWE-AGENT 在 SWE-Bench Pro 上取得 45.8% 解决率的新最先进性能。这进一步表明，LIVE-SWE-AGENT 的在线脚手架设计优于与固定手工工具集交互的现有智能体。</p>
+<p class="meta-line">4.2 工具分析</p>
+<p>edit</p>
+<p>view</p>
+<p>search</p>
+<p>others</p>
+<p>(a) SWE-bench Verified 中的工具</p>
+<p>quotebrowser</p>
+<p>openlibrary</p>
+<p>ansible</p>
+<p>(b) SWE-Bench Pro 中的工具</p>
+<p>python</p>
+<p>javascript</p>
+<p>go</p>
+<p>typescript</p>
+<p>(c) SWE-Bench Pro 中的工具</p>
+<p>图 4：Claude 4.5 Sonnet 在 SWE-bench Verified 与 SWE-Bench Pro 上所生成工具的二维 t-SNE 可视化。我们按工具类型（图 4a）、仓库名（图 4b）以及仓库所用编程语言（图 4c）标注并展示嵌入。注意：图 4b 因篇幅仅在图例中标注三个仓库；所选三者具有代表性的分明簇。</p>
+<p>自定义工具的类别与变异。我们考察 LIVE-SWE-AGENT 创建的自定义工具。图 4 用 t-SNE [17] 展示 LIVE-SWE-AGENT 所创建工具的嵌入可视化。我们基于工具体（即工具脚本的内容）为每个工具计算嵌入，</p>
+<p class="meta-line">2https://scale.com/leaderboard/swe_bench_pro_public</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把专业基准成绩和离线对手说完，并开始看造了哪些工具。专业基准上百分之四十五点八超过近七千行的手工智能体。离线方法要训五百小时以上，还交出一个对所有题相同的静态智能体；这里每道题按问题和模型当场适配，几乎没有额外开销。散点图显示既有编辑、查看、搜索的公共簇，也有按仓库或语言分开的特化簇。类比：同一把刀切所有菜不如按这道菜现磨一把刀，而且磨刀不必先办一所专门刀厂。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>content of the tool script) using a text embedding model (OpenAI text-embedding-3-small). To start off, we look at the types of tools created by LIVE-SWE-AGENT by categorizing them into common tool functionalities (e.g., edit, view, search, etc). We perform this categorization by using simple string matching based on the script filename of the tool. Figure 4a shows the visualization of the tools generated for SWE-bench Verified. We see that while there are definitely distinct clusters of common tools like edit, view, and search, there are still variations among them. For example, the edit tool cluster (highlighted in blue circles) is not a tightly concentrated dot, but instead is spreadout, showing that LIVE-SWE-AGENT can generate different editing tools depending on the problem. Furthermore, LIVE-SWE-AGENT also allows the agent to generate additional tools (the others category highlighted in red triangles). These are the more unique issue-specific tools such as a script that applies a very detailed patch to multiple files or a diff checking tool that shows the difference between two files. We also apply similar analysis to all studied datasets in Appendix B. In addition to the types of tools created, we also examine how the tools created can change across different repositories and languages. Figure 4b shows the visualization of the tools created in SWEBench Pro categorized based on repositories. In SWE-Bench Pro, there are 11 different repositories, and not surprisingly, there are common tools created across different repositories (i.e., the overlapping clusters in the figure). On the other hand, there are also specific tools for certain repositories, for example we see a distinct cluster (highlighted in orange diamonds) for openlibrary, a codebase for cataloging literature. Since openlibrary deals with lots of raw data of a specialized format, the custom tools generated by LIVE-SWE-AGENT are specifically tailored for that. We also observe similar results when we break down the tools based on programming language of the repositories in Figure 4c. Different problems, environments, and languages may require completely different specialized tools, highlighting again how using the same set of tools for all problems is suboptimal. &quot;&quot;&quot; code omitted &quot;&quot;&quot; def search_code(pattern, dirs, f_pattern=&#x27;*.py&#x27;, context=2): # Skip hidden directories and common non-source directories dirs[:] = [d for d in dirs if not d.startswith(&#x27;.&#x27;) and d not in [&#x27;-_pycache-_&#x27;, &#x27;node_modules&#x27;]] &quot;&quot;&quot; code omitted &quot;&quot;&quot; for filename in files: if re.search(pattern, line, re.IGNORECASE): &quot;&quot;&quot; code omitted &quot;&quot;&quot; if -_name-_ -= &quot;-_main-_&quot;: print(&quot;Usage: search_code.py &lt;pattern&gt; [directory] [file_pattern] [context]&quot;) matches = search_code(pattern, dir, f_pattern, context) &quot;&quot;&quot; code omitted &quot;&quot;&quot; for ctx_line in match[&#x27;context_before&#x27;]: print(f&quot; {ctx_line.rstrip()}&quot;) print(f&quot;--&gt; {match[&#x27;line&#x27;]}&quot;) for ctx_line in match[&#x27;context_after&#x27;]: print(f&quot; {ctx_line.rstrip()}&quot;) &quot;&quot;&quot; code omitted &quot;&quot;&quot; if len(matches) &gt; 20: print(f&quot;\n--. and {len(matches) - 20} more matches&quot;) Terminal -- /tmp/search_tool.py $ grep -RIn --include=&#x27;*.py&#x27; --exclude-dir=&#x27;.*&#x27;\ --exclude-dir=&#x27;\_\_pycache\_\_&#x27; \ --exclude-dir=&#x27;node\_modules&#x27; \ -C2 `code&#x27; src/ | head -n 20 Equivalent bash command to perform similar search (a) Search tool &quot;&quot;&quot; code omitted &quot;&quot;&quot; def find_struct_definition(content, struct_name): &quot;&quot;&quot;Find and return struct definition with line numbers.&quot;&quot;&quot;</p>
+<p>for i, line in enumerate(lines): if re.search(rf&#x27;type\s+{struct_name}\s+struct\s*{{&#x27;, line): &quot;&quot;&quot; code omitted &quot;&quot;&quot; def find_function_definition(content, func_name): &quot;&quot;&quot;Find and return function definition with line numbers.&quot;&quot;&quot; def find_all_references(content, identifier): &quot;&quot;&quot;Find all references to an identifier.&quot;&quot;&quot; def find_all_imports(content, identifier): &quot;&quot;&quot;Find all imports in file.&quot;&quot;&quot; def main(): print(&quot;Usage: go_analyzer.py &lt;command&gt; &lt;file&gt; [args--.]&quot;) &quot;&quot;&quot; code omitted &quot;&quot;&quot; Terminal -- /tmp/go_analyzer.py (b) Go file analyzer tool Figure 5: Example custom tools Effective and interesting custom tools. We now take a closer look at a few exemplary effective and interesting tools created by LIVE-SWE-AGENT. Figure 5a shows a custom search tool created by LIVE-SWE-AGENT. This example might appear simple and straightforward at first glance. However, it implements several important features: (1) supports focused searching within directories and pattern-based matching, (2) ignores irrelevant folders (__pycache__ and node_modules) and hidden folders (.git) during search, (3) displays relevant code context before and after the found code, and (4) limits results to top 20 matches to reduce context size. By baking in the exclusion of irrelevant folders in the search tool, agents do not have to add these folders as a separate flag during the searching process. Showing the relevant surrounding context is also helpful since oftentimes we want to find out how the code snippet of interest is being used. Furthermore, only showing the first 20 matches can be critically important to not drastically inflate the context window, allowing the agent to easily refine their search to limit results. An example bash command to emulate the functionality of the custom tool is shown at the top of Figure 5a. We can see the high degree of complexity in terms of options, arguments, and flags used in this long command. On the other hand, we can simply call &quot;python search_code.py ‘code’ src/&quot; to perform the search via the custom tool. By only using basic bash commands, the agent will have to chain together multiple commands using complex flags with potential to incur errors (e.g., older grep versions do not support features like –exclude-dir) or substantial slowdowns. In fact, in our experimental results, we found that without access to custom tools, the agent may often take multiple steps to accomplish a basic task such as searching for relevant code. This issue is further amplified when steps like search may need to be done multiple times</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>使用文本嵌入模型（OpenAI text-embedding-3-small），基于工具体（即工具脚本内容）为每个工具计算嵌入。首先，我们按常见工具功能（例如 edit、view、search 等）对 LIVE-SWE-AGENT 创建的工具分类。分类通过基于工具脚本文件名的简单字符串匹配完成。图 4a 展示为 SWE-bench Verified 生成的工具可视化。可以看到，尽管 edit、view、search 等常见工具确有分明的簇，它们内部仍有变异。例如，编辑工具簇（蓝色圆圈高亮）并非紧密的一点，而是铺开的，表明 LIVE-SWE-AGENT 能按问题生成不同的编辑工具。此外，LIVE-SWE-AGENT 也允许智能体生成额外工具（红色三角高亮的 others 类别）。这些是更为独特的议题专用工具，例如对多个文件施加非常细致补丁的脚本，或显示两文件差异的 diff 检查工具。我们对全部研究数据集做了类似分析，见附录 B。</p>
+<p>除所创建工具的类型外，我们还考察工具如何随不同仓库与语言而变化。图 4b 按仓库展示 SWE-Bench Pro 中所创建工具的可视化。SWE-Bench Pro 有 11 个不同仓库；并不令人意外，不同仓库之间存在共通工具（即图中重叠的簇）。另一方面，某些仓库也有专用工具，例如我们看到 openlibrary（一个文献编目代码库）有一个分明的簇（橙色菱形高亮）。由于 openlibrary 处理大量特定格式的原始数据，LIVE-SWE-AGENT 生成的自定义工具专门为此定制。当按仓库编程语言分解工具时（图 4c），我们也观察到类似结果。不同问题、环境与语言可能需要完全不同的特化工具，再次凸显：对所有问题使用同一套工具是次优的。</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>def search_code(pattern, dirs, f_pattern=&#x27;*.py&#x27;, context=2):</p>
+<p># 跳过隐藏目录与常见非源码目录</p>
+<p>dirs[:] = [d for d in dirs if not d.startswith(&#x27;.&#x27;)</p>
+<p>and d not in [&#x27;__pycache__&#x27;, &#x27;node_modules&#x27;]]</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>for filename in files:</p>
+<p>if re.search(pattern, line, re.IGNORECASE):</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>if __name__ == &quot;__main__&quot;:</p>
+<p>print(&quot;Usage: search_code.py &lt;pattern&gt; [directory] [file_pattern] [context]&quot;)</p>
+<p>matches = search_code(pattern, dir, f_pattern, context)</p>
+<p>for ctx_line in match[&#x27;context_before&#x27;]:</p>
+<p>print(f&quot; {ctx_line.rstrip()}&quot;)</p>
+<p>print(f&quot;--&gt; {match[&#x27;line&#x27;]}&quot;)</p>
+<p>for ctx_line in match[&#x27;context_after&#x27;]:</p>
+<p>print(f&quot; {ctx_line.rstrip()}&quot;)</p>
+<p>if len(matches) &gt; 20:</p>
+<p>print(f&quot;\n--. and {len(matches) - 20} more matches&quot;)</p>
+<p>终端 -- /tmp/search_tool.py</p>
+<p>$ grep -RIn --include=&#x27;*.py&#x27; --exclude-dir=&#x27;.*&#x27; \</p>
+<p>--exclude-dir=&#x27;__pycache__&#x27; \</p>
+<p>--exclude-dir=&#x27;node_modules&#x27; \</p>
+<p>-C2 `code&#x27; src/ | head -n 20</p>
+<p>完成类似搜索的等价 bash 命令</p>
+<p>(a) 搜索工具</p>
+<p>&#x27;&#x27;&#x27; 代码省略 &#x27;&#x27;&#x27;</p>
+<p>def find_struct_definition(content, struct_name):</p>
+<p>&#x27;&#x27;&#x27;查找并返回带行号的结构体定义。&#x27;&#x27;&#x27;</p>
+<p>for i, line in enumerate(lines):</p>
+<p>if re.search(rf&#x27;type\s+{struct_name}\s+struct\s*{{&#x27;, line):</p>
+<p>def find_function_definition(content, func_name):</p>
+<p>&#x27;&#x27;&#x27;查找并返回带行号的函数定义。&#x27;&#x27;&#x27;</p>
+<p>def find_all_references(content, identifier):</p>
+<p>&#x27;&#x27;&#x27;查找对某标识符的全部引用。&#x27;&#x27;&#x27;</p>
+<p>def find_all_imports(content, identifier):</p>
+<p>&#x27;&#x27;&#x27;查找文件中的全部导入。&#x27;&#x27;&#x27;</p>
+<p>def main():</p>
+<p>print(&quot;Usage: go_analyzer.py &lt;command&gt; &lt;file&gt; [args--.]&quot;)</p>
+<p>终端 -- /tmp/go_analyzer.py</p>
+<p>(b) Go 文件分析器工具</p>
+<p>图 5：自定义工具示例</p>
+<p>有效且有趣的自定义工具。我们更仔细地看几个 LIVE-SWE-AGENT 创建的有效且有趣的工具。图 5a 展示 LIVE-SWE-AGENT 创建的一个自定义搜索工具。该例乍看可能简单直接。然而它实现了若干重要特性：（1）支持在目录内聚焦搜索与基于模式的匹配；（2）搜索时忽略无关文件夹（__pycache__ 与 node_modules）以及隐藏文件夹（.git）；（3）显示所找到代码前后的相关上下文；（4）将结果限制为前 20 条匹配以减小上下文规模。通过把排除无关文件夹烘焙进搜索工具，智能体不必在搜索过程中再单独加这些文件夹作为标志。显示周围相关上下文也很有帮助，因为我们常常想知道感兴趣的代码片段如何被使用。此外，只显示前 20 条匹配对避免急剧膨胀上下文窗口至关重要，使智能体容易 refinement 搜索以限制结果。图 5a 顶部给出模拟该自定义工具功能的示例 bash 命令。可以看到，这条长命令在选项、参数与标志上复杂度很高。另一方面，我们只需调用 &quot;python search_code.py &#x27;code&#x27; src/&quot; 即可通过自定义工具完成搜索。若只使用基本 bash 命令，智能体必须用复杂标志把多条命令串起来，并可能引入错误（例如较旧的 grep 版本不支持 --exclude-dir 一类特性）或显著变慢。事实上，实验中我们发现：没有自定义工具时，智能体往往需要多步才能完成搜索相关代码这类基本任务。当搜索一类步骤在同一任务中需要多次执行时，该问题进一步放大，</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页细看工具长什么样，以及为何自造搜索比很长的命令行更稳。编辑工具因题而异，不是同一个点；其余类别里还有打补丁、比对差异这类议题专用脚本。文献编目仓库因特殊数据格式单独成簇，说明同一套工具对所有仓库并不最优。搜索工具内置忽略缓存目录、带上下文、只显示前二十条，等价命令又长又脆，旧版查找甚至没有排除目录的旗标。类比：把一条要记二十个旗标的咒语，收成调用自定义脚本的一声招呼。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Table 4: Ablation result across LIVE-SWE-AGENT setups on subset of SWE-bench Verified problems Approach % Resolved # of tools created LIVE-SWE-AGENT w/o tool creation 62.0% 0.00 LIVE-SWE-AGENT w/o reflection 64.0% 2.92 LIVE-SWE-AGENT 76.0% 3.28 Table 5: Ablation result across different LLM backends on subset of SWE-bench Verified problems LLM mini-SWE-agent LIVE-SWE-AGENT GPT-5-Nano 44.0% 14.0% (↓-68.2%) GPT-5-Mini 60.0% 58.0% (↓-3.3%) GPT-5 60.0% 68.0% (↑13.3%) Claude 3.7 Sonnet 46.0% 50.0% (↑8.7%) Claude 4 Sonnet 58.0% 64.0% (↑10.3%) Claude 4.5 Sonnet 62.0% 76.0% (↑22.6%) for one task thus drastically limiting the problem solving efficiency and effectiveness. By creating and introducing efficient and easy to use custom tools designed by agents themselves, LIVE-SWE-AGENT can improve agent performance on complex software engineering tasks. Figure 5b shows another custom tool go_analyzer.py created by LIVE-SWE-AGENT. The tool can be used to analyze a Go file to find any struct and function definition, identifier references, and to obtain the imports used in the file. This example showcases the powerful generative capability of agents where the custom tool can be used as a simple static analyzer for the Go programming language to search and provide key information about a file. Different from the previous search tool example where one can technically mimic the behavior using bash commmands, abeit using very complex chain commands, the tool logic here is even more complex. The custom tool performs strategic pattern matching based on Go grammar and provides an interface to support multiple different usages. Furthermore, by saving this custom tool in an executable script, the agent can reuse the functionality multiple times. By creating and using this custom tool to better understand file structure and content, LIVE-SWE-AGENT is able to solve this issue3 that prior best performing baseline could not. 4.3 Ablation To evaluate the effect of different setups of LIVE-SWE-AGENT, we use a random subset of 50 problems in SWE-bench Verified (see Appendix C.1 for the detailed list of problems). Unless otherwise stated, we use Claude 4.5 Sonnet in our ablation experiments. Effectiveness of tool creation steps. Table 4 shows the impact of different components of LIVESWE-AGENT have on performance. We see that by removing the on-the-fly tool creation ability of LIVE-SWE-AGENT (i.e., using the base mini-SWE-agent), we achieve the lowest solve rate. The performance is improved when we indicate to the agent to create custom tools in the initial prompt (row LIVE-SWE-AGENT w/o reflection). However, the highest resolve rate is achieved once we explicitly ask the agent to reflect on the past trajectories to determine if they should create any tools after each step. In our experiments, we found that this reflection process provides a good reminder for the agent to create tools that are specifically designed for the particular issue. Furthermore, while the number of tools do not necessary correlate with solving performance, we also see that this reflection process creates more tools on average compared to only indicating the tool creation in the initial prompt. LIVE-SWE-AGENT is able to improve performance by reflecting on both the current problem and past trajectories to create custom tools on the fly. Different LLM backends. We now examine the effect of using different LLM backends for LIVESWE-AGENT. Table 5 compares the performance of the base mini-SWE-agent and LIVE-SWEAGENT as we vary the LLM used on the same 50 problems used in the previous ablation experiment. We first observe that there are weaker LLMs for which using LIVE-SWE-AGENT to create custom 3navidrome__navidrome-10108c63c9b5bdf2966ffb3239bbfd89683e37b7, SWE-Bench Pro</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 4：LIVE-SWE-AGENT 不同设置在 SWE-bench Verified 问题子集上的消融结果</p>
+<p>方法</p>
+<p>解决率</p>
+<p>创建工具数</p>
+<p>LIVE-SWE-AGENT 无工具创建</p>
+<p class="meta-line">62.0%</p>
+<p class="meta-line">0.00</p>
+<p>LIVE-SWE-AGENT 无反思</p>
+<p class="meta-line">64.0%</p>
+<p class="meta-line">2.92</p>
+<p>LIVE-SWE-AGENT</p>
+<p class="meta-line">76.0%</p>
+<p class="meta-line">3.28</p>
+<p>表 5：不同 LLM 后端在 SWE-bench Verified 问题子集上的消融结果</p>
+<p>LLM</p>
+<p>mini-SWE-agent</p>
+<p>LIVE-SWE-AGENT</p>
+<p>GPT-5-Nano</p>
+<p class="meta-line">44.0%</p>
+<p class="meta-line">14.0%（↓-68.2%）</p>
+<p>GPT-5-Mini</p>
+<p class="meta-line">60.0%</p>
+<p class="meta-line">58.0%（↓-3.3%）</p>
+<p>GPT-5</p>
+<p class="meta-line">60.0%</p>
+<p class="meta-line">68.0%（↑13.3%）</p>
+<p>Claude 3.7 Sonnet</p>
+<p class="meta-line">46.0%</p>
+<p class="meta-line">50.0%（↑8.7%）</p>
+<p>Claude 4 Sonnet</p>
+<p class="meta-line">58.0%</p>
+<p class="meta-line">64.0%（↑10.3%）</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">62.0%</p>
+<p class="meta-line">76.0%（↑22.6%）</p>
+<p>从而急剧限制问题求解的效率与有效性。通过创建并引入由智能体自身设计的、高效且易用的自定义工具，LIVE-SWE-AGENT 可以提升智能体在复杂软件工程任务上的表现。</p>
+<p>图 5b 展示 LIVE-SWE-AGENT 创建的另一个自定义工具 go_analyzer.py。该工具可用于分析 Go 文件，查找任意 struct 与函数定义、标识符引用，并获取文件中使用的导入。该例展示了智能体强大的生成能力：自定义工具可用作面向 Go 语言的简易静态分析器，以搜索并提供关于文件的关键信息。与上一搜索工具例子不同——那里理论上仍可用 bash 命令（尽管是非常复杂的命令链）模仿其行为——这里的工具逻辑更加复杂。该自定义工具基于 Go 语法做策略性模式匹配，并提供支持多种不同用法的接口。此外，把该自定义工具保存为可执行脚本后，智能体可以多次复用该功能。通过创建并使用该自定义工具以更好地理解文件结构与内容，LIVE-SWE-AGENT 得以解决先前最佳基线未能解决的这一议题3。</p>
+<p class="meta-line">4.3 消融</p>
+<p>为评估 LIVE-SWE-AGENT 不同设置的效果，我们使用 SWE-bench Verified 中随机抽取的 50 个问题（详细问题列表见附录 C.1）。除非另有说明，消融实验使用 Claude 4.5 Sonnet。</p>
+<p>工具创建步骤的有效性。表 4 展示 LIVE-SWE-AGENT 不同组件对性能的影响。可以看到，去掉 LIVE-SWE-AGENT 的即时工具创建能力（即使用基础 mini-SWE-agent）时，解决率最低。当仅在初始提示中指示智能体创建自定义工具时（行 LIVE-SWE-AGENT w/o reflection），性能有所提升。然而，一旦我们在每一步之后显式要求智能体反思既往轨迹以决定是否应创建工具，解决率达到最高。实验中我们发现，这一反思过程能很好地提醒智能体创建专门针对该特定议题的工具。此外，尽管工具数量并不必然与求解性能相关，我们也看到：相较仅在初始提示中指示工具创建，该反思过程平均会创建更多工具。LIVE-SWE-AGENT 通过反思当前问题与既往轨迹来即时创建自定义工具，从而提升性能。</p>
+<p>不同 LLM 后端。我们接着考察为 LIVE-SWE-AGENT 使用不同 LLM 后端的效果。表 5 在与上一消融实验相同的 50 个问题上，比较基础 mini-SWE-agent 与 LIVE-SWE-AGENT 随所用 LLM 变化的性能。我们首先观察到：对某些较弱的 LLM，使用 LIVE-SWE-AGENT 即时创建自定义工具甚至会降低性能。尤其是 GPT-5-Nano，使用 LIVE-SWE-AGENT 的结果显著差于基础 mini-SWE-agent。在检查轨迹后我们发现，GPT-5-Nano 未能理解创建自定义工具的目标，并常常陷入循环，从而导致性能下降。这表明较弱 LLM 可能缺乏即时合成有用工具所需的高层推理能力。然而，我们看到，随着使用更强大的模型，LIVE-SWE-AGENT 相对基础 mini-SWE-agent 的提升更大。具体而言，Claude 4 Sonnet 与 GPT-5 等最先进 LLM 在使用 LIVE-SWE-AGENT 相对 mini-SWE-agent 时取得最高的相对解决率提升。这展示了 LIVE-SWE-AGENT 在高性能 LLM 上的可推广性，以及随着我们持续构建更强大 LLM、LIVE-SWE-AGENT 进一步提升性能的潜力。</p>
+<p class="meta-line">3navidrome__navidrome-10108c63c9b5bdf2966ffb3239bbfd89683e37b7，SWE-Bench Pro</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用例子和消融证明自造工具不是装饰。没有工具时，搜索这类基本动作常要多步，还可能在同一题里反复做。语言分析器按语法找结构体和函数，先前最佳基线解不出那道题。消融很清楚：去掉造工具百分之六十二；只在开场提一句百分之六十四；每步反思百分之七十六。更弱的小模型当场造工具反而会崩，说明这套机制有能力门槛。类比：给学徒许可自制工具，师傅每步问一句要不要做夹具，比只在进门时嘱咐一次管用得多。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Table 6: Result on a subset of SWE-bench Multilingual problems Tool LLM % Resolved Avg. $ Cost mini-SWE-agent [42] Claude 4.5 Sonnet 40.0% $0.59 LIVE-SWE-AGENT Claude 4.5 Sonnet 46.0% $0.66 tools on the fly even decreases performance. In particular, we see that for GPT-5-Nano, the results are significantly worse when using LIVE-SWE-AGENT compared to base mini-SWE-agent. After examining the trajectories, we found that GPT-5-Nano fails to understand the goal of creating custom tools and is often stuck in a loop thus leading to reduction in performance. This indicates that weaker LLMs may lack the high-level reasoning capabilities to synthesize useful tools on the fly. However, we see that LIVE-SWE-AGENT is able to improve more over the base mini-SWE-agent as we start to use more powerful models. Specifically, state-of-the-art LLMs such as Claude 4 Sonnet and GPT-5 achieves the highest relative resolve rate improvement when using LIVE-SWE-AGENT compared with mini-SWE-agent. This demonstrates the generalizability of LIVE-SWE-AGENT across highperforming LLMs and the potential for LIVE-SWE-AGENT to further improve performance especially as we continue to build more and more powerful LLMs. SWE-bench Multilingual. In addition to evaluating on SWE-bench Verified and SWE-Bench Pro, we also test the generalizability of LIVE-SWE-AGENT on other benchmarks. We conducted an initial experiment on a subset of 50 problems (see Appendix C.2 for the detailed list of problems) in SWE-bench Multilingual [19], a benchmark of software engineering tasks across 9 programming languages (JavaScript, TypeScript, Rust, Ruby, Go, C/C++, PHP, and Java). Table 6 shows the performance of LIVE-SWE-AGENT compared to mini-SWE-agent on SWE-bench Multilingual. We observed that LIVE-SWE-AGENT achieves a better performance by obtaining a resolve rate of 46.0%, while mini-SWE-agent only has a resolve rate of 40.0%. This demonstrates the generalizability of LIVE-SWE-AGENT on additional challenging problems. 4.4 Discussion and Future Work Towards general, on the fly self-evolution. In this work, LIVE-SWE-AGENT primarily focuses on enabling agents to self-evolve through custom tool creation and usage. As discussed previously, the key idea of LIVE-SWE-AGENT, to improve and modify the agent itself on the fly, extends beyond creating new tools to also modifying the entire agent implementation. This includes the overall system prompt of the agent, how the agent interacts with the environment, and even the concrete workflow of the agent when it attempts to solve the issue. We believe that the entire agentic loop, much like any other software, can be modified and improved especially on the fly based on feedback and insights gained from solving a problem. Furthermore, we hope to extend the self-evolution loop across different tasks as well. Instead of discarding each evolved agent after a task is completed, we can save and serialize the useful tools and insights (via concepts like Skills [5]) for future tasks. The agent can then load these useful tools and insights obtained while solving previous tasks on the fly to further improve performance and support continuous self-evolution across tasks. Impact on LLM evaluation. Our experimental results on multiple benchmarks using multiple LLMs demonstrate that LIVE-SWE-AGENT can achieve state-of-the-art performance. This shows that LIVE-SWE-AGENT can provide an effective scaffold for unified evaluation of LLM performance on solving software development issues. Instead of using complex or proprietary agent scaffolds, LIVE-SWE-AGENT provides a simplistic and lightweight approach that can be easily added on top of any agent design to evaluate LLMs. Moreover, LIVE-SWE-AGENT not only evaluates the issue solving ability, but it can also test the tool-creation capability of LLMs and agents. Tools are one of the most important aspect of an agent and directly impacts the issue solving performance. The ability for LLMs to create custom tools, especially for solving complex software development issues, have not been extensively evaluated. To this end, we have already seen some interesting results in our evaluation where weaker LLMs lack high-level reasoning to create useful tools on the fly (see Section 4.3). LIVE-SWE-AGENT provides a unique framework to jointly evaluate both the tool creation and issue resolution ability of LLMs.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 6：SWE-bench Multilingual 问题子集上的结果</p>
+<p>工具</p>
+<p>LLM</p>
+<p>解决率</p>
+<p>平均费用（$）</p>
+<p>mini-SWE-agent [42]</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">40.0%</p>
+<p>$0.59</p>
+<p>LIVE-SWE-AGENT</p>
+<p>Claude 4.5 Sonnet</p>
+<p class="meta-line">46.0%</p>
+<p>$0.66</p>
+<p>从而即时创建自定义工具甚至会降低性能。尤其是 GPT-5-Nano，使用 LIVE-SWE-AGENT 的结果显著差于基础 mini-SWE-agent。在检查轨迹后我们发现，GPT-5-Nano 未能理解创建自定义工具的目标，并常常陷入循环，从而导致性能下降。这表明较弱 LLM 可能缺乏即时合成有用工具所需的高层推理能力。然而，我们看到，随着使用更强大的模型，LIVE-SWE-AGENT 相对基础 mini-SWE-agent 的提升更大。具体而言，Claude 4 Sonnet 与 GPT-5 等最先进 LLM 在使用 LIVE-SWE-AGENT 相对 mini-SWE-agent 时取得最高的相对解决率提升。这展示了 LIVE-SWE-AGENT 在高性能 LLM 上的可推广性，以及随着我们持续构建更强大 LLM、LIVE-SWE-AGENT 进一步提升性能的潜力。</p>
+<p>SWE-bench Multilingual。除在 SWE-bench Verified 与 SWE-Bench Pro 上评估外，我们也在其他基准上测试 LIVE-SWE-AGENT 的可推广性。我们在 SWE-bench Multilingual [19] 的 50 个问题子集（详细问题列表见附录 C.2）上做了初步实验；该基准覆盖 9 种编程语言的软件工程任务（JavaScript、TypeScript、Rust、Ruby、Go、C/C++、PHP 与 Java）。表 6 给出 LIVE-SWE-AGENT 相对 mini-SWE-agent 在 SWE-bench Multilingual 上的表现。我们观察到 LIVE-SWE-AGENT 取得更好性能，解决率为 46.0%，而 mini-SWE-agent 仅为 40.0%。这展示了 LIVE-SWE-AGENT 在额外挑战性问题上的可推广性。</p>
+<p class="meta-line">4.4 讨论与未来工作</p>
+<p>迈向通用的即时自演化。本文中，LIVE-SWE-AGENT 主要聚焦于通过自定义工具的创建与使用使智能体自演化。如前所述，LIVE-SWE-AGENT 的关键想法——即时改进并修改智能体自身——不仅限于创建新工具，也包括修改整个智能体实现。这包括智能体的总体系统提示、智能体与环境交互的方式，乃至智能体尝试求解议题时的具体工作流。我们相信，整个智能体循环就像任何其他软件一样，尤其可以基于求解问题所获得的反馈与洞见而被即时修改与改进。此外，我们希望把自演化循环扩展到不同任务之间。与其在任务完成后丢弃每个已演化的智能体，我们可以保存并序列化有用的工具与洞见（通过 Skills [5] 一类概念）供未来任务使用。智能体随后可以即时加载这些在求解先前任务时获得的有用工具与洞见，以进一步提升性能并支持跨任务的持续自演化。</p>
+<p>对 LLM 评测的影响。我们在多个基准、多种 LLM 上的实验结果表明，LIVE-SWE-AGENT 可以达到最先进性能。这说明 LIVE-SWE-AGENT 可以为统一评测 LLM 在求解软件开发议题上的表现提供有效脚手架。与其使用复杂或专有的智能体脚手架，LIVE-SWE-AGENT 提供一种简朴、轻量的方法，可轻易叠加在任何智能体设计之上以评测 LLM。而且，LIVE-SWE-AGENT 不仅评测议题求解能力，也可以测试 LLM 与智能体的工具创建能力。工具是智能体最重要的方面之一，并直接影响议题求解性能。LLM 创建自定义工具的能力——尤其是为求解复杂软件开发议题——尚未被广泛评测。就此而言，我们已在评估中看到一些有趣结果：较弱 LLM 缺乏即时创建有用工具的高层推理（见第 4.3 节）。LIVE-SWE-AGENT 提供了一个独特框架，用以联合评测 LLM 的工具创建与议题解决能力。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是能力门槛、多语言结果和作者自己写下的下一步。更弱的小模型不懂为何造工具，常死循环，解决率从百分之四十四掉到百分之十四；越强的模型相对涨得越多。多语言五十题从百分之四十升到百分之四十六，说明不只会刷一种语言。作者说下一步不该只造工具，还应改系统提示、交互方式甚至工作流，并把有用工具存到下一题，从而让自演化跨任务持续。类比：学徒会做扳手之后，还该被允许改自己的操作手册，并且把好扳手留到下一台机器。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Applications beyond software issue resolution tasks. In addition to software issue resolution tasks, LIVE-SWE-AGENT can be easily applied to other challenging software engineering tasks like generating tests [16], detecting and patching vulnerabilities [21], and synthesizing production-ready software from scratch [48]. Compared with issue resolution tasks, other software problem domains will require even more task-specific and diverse tools and agent scaffolds. For example, to detect malicious vulnerabilities in commercial off-the-shelf binaries, we need binary analysis tools and decompilers. To optimize a large complex system, we need to apply profilers and tracing tools. Instead of using a fixed agent scaffold with basic tools that cannot adopt to different problem domains or painstakingly designing specialized agents for each individual task, LIVE-SWE-AGENT can easily generalize to solving tasks in different domains by automatically modifying itself on the fly based on the task at hand. Self-evolution during LLM training. In this work, LIVE-SWE-AGENT is implemented as a lightweight modification to an existing agent, requiring no offline training or updates. However, the idea of on-the-fly self-evolution can also be easily extended to LLM training, where instead of learning from a fixed workflow and a static set of tools, the LLM learns to also create new tools and modify the scaffold itself during training. In this approach, the resulting LLM will have improved reasoning capabilities as the self-evolving training approach provides additional learning signals, allowing the LLM to solve more complex tasks. Through self-evolving training, LLMs can learn to better create useful, task-specific tools and modify advanced scaffolds dynamically based on the problem at hand. Moreover, the final trained LLM will be compatible with more runtime agent frameworks since it is able to learn from its own created tools and modified scaffolds rather than relying on predefined scaffolds. This adaptability allows it to be more robust and generalize effectively to new scaffold setups and even different tasks. Related Work 5.1 Software Engineering Agents Inspired by the human debugging process, where developers interact with the environmental feedback (like test failures) and learn from their earlier attempts, ChatRepair [39, 40] proposed the first interactive bug-fixing solution based on LLMs. Since ChatRepair, a large body of research work on bug fixing and general coding tasks aims to automatically provide LLMs more context information through multi-turn conversations [13, 20, 43]. More recently, foundation LLMs have seen substantial advances in their tool use and reasoning capabilities, and it becomes very natural to further equip feedback-driven solutions with such emergent LLM capabilities. In March 2024, Devin AI released the first AI software engineer, which can fully autonomously complete end-to-end software tasks, such as GitHub issue resolution [15]. The initial Devin release showed an impressive resolve rate of 13.86% on SWE-bench [18], a dataset with thousands of real-world GitHub issues. Since then, a large number of dedicated software agent scaffolds have been proposed, including SWE-agent [41], OpenHands [34], AutoCodeRover [47], and Trae Agent [24]. Such software agents typically equip the LLMs with a suite of coding tools and encourage the LLMs to autonomously decide the next actions for completing real-world software tasks. Different from the mainstream software agents, researchers have also proposed various AI software engineer solutions based on pre-defined workflows to challenge the necessity of complicated agent design, such as Agentless [37] and Moatless [49]. Moreover, recent LLMs have increasingly been post-trained on massive real-world software data to better solve software engineering issues, including SWE-RL [36], DeepSWE [25], DeepSeek V3.1 [3], MiniMax M1/M2 [11], Kimi K2 [31], SWE-1.5 [14], and Code World Model (CWM) [10]. Due to the huge design space for software agents, it can be extremely challenging and costly to build an optimal agent scaffold. As a result, a number of self-improving software agents have been proposed very recently, including the Self-Improving Coding Agent (SICA) [30], Darwin-Gödel Machine (DGM) [45], and Huxley-Gödel Machine (HGM) [33]. However, such self-improving agents require costly offline training on known benchmarks, and may not be generalize well across different LLMs, benchmarks, and issue types. Beyond the software engineering domain, prior work [9, 32, 28, 27, 35] explored using LLMs to create tools for general reasoning or embodied tasks, but they do not target real-world software engineering problems. In contrast, in this paper, we propose LIVE-SWE-AGENT, the first live software agent capable of performing practical self-evolution on-the-fly during runtime when solving real-world issues. In this way, LIVE-SWE-AGENT requires no offline training at all</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>超越软件议题求解任务的应用。除软件议题求解任务外，LIVE-SWE-AGENT 也可轻易应用于其他具有挑战性的软件工程任务，例如生成测试 [16]、检测并修补漏洞 [21]，以及从零合成可投产软件 [48]。相较议题求解任务，其他软件问题域将需要更加任务特定、更加多样的工具与智能体脚手架。例如，要在商业现成二进制中检测恶意漏洞，我们需要二进制分析工具与反编译器。要优化大型复杂系统，我们需要应用分析器与追踪工具。与其使用无法适应不同问题域的固定智能体脚手架加基本工具，或为每个任务辛苦设计专门智能体，LIVE-SWE-AGENT 可以通过按手头任务即时自动修改自身，轻易推广到不同领域的任务求解。</p>
+<p>LLM 训练期间的自演化。本文中，LIVE-SWE-AGENT 实现为对现有智能体的轻量修改，无需离线训练或更新。然而，即时自演化的想法也可以轻易扩展到 LLM 训练：与其从固定工作流和静态工具集中学习，LLM 在训练期间也学习创建新工具并修改脚手架本身。在这种方法下，所得 LLM 将具有更强的推理能力，因为自演化训练方法提供额外学习信号，使 LLM 能够求解更复杂的任务。通过自演化训练，LLM 可以学会更好地创建有用的、任务特定的工具，并按手头问题动态修改高级脚手架。而且，最终训练出的 LLM 将与更多运行时智能体框架兼容，因为它从自己创建的工具与修改过的脚手架中学习，而非依赖预定义脚手架。这种适应性使其更稳健，并能有效推广到新的脚手架设定乃至不同任务。</p>
+<p>相关工作</p>
+<p class="meta-line">5.1 软件工程智能体</p>
+<p>受人类调试过程启发——开发者与环境反馈（如测试失败）交互并向更早尝试学习——ChatRepair [39, 40] 提出了首个基于 LLM 的交互式缺陷修复方案。自 ChatRepair 以来，大量关于缺陷修复与一般编码任务的研究工作旨在通过多轮对话自动为 LLM 提供更多上下文信息 [13, 20, 43]。最近，基础 LLM 在工具使用与推理能力上取得实质进展，将反馈驱动方案进一步配备这些涌现的 LLM 能力变得十分自然。2024 年 3 月，Devin AI 发布了首个 AI 软件工程师，能够完全自主完成端到端软件任务，例如 GitHub 议题求解 [15]。Devin 的首次发布在 SWE-bench [18]（含数千真实世界 GitHub 议题的数据集）上展示了 13.86% 的可观解决率。此后，大量专门的软件智能体脚手架被提出，包括 SWE-agent [41]、OpenHands [34]、AutoCodeRover [47] 与 Trae Agent [24]。这类软件智能体通常为 LLM 配备一套编码工具，并鼓励 LLM 自主决定完成真实软件任务的下一步动作。与主流软件智能体不同，研究者也提出了基于预定义工作流的多种 AI 软件工程师方案，以挑战复杂智能体设计的必要性，例如 Agentless [37] 与 Moatless [49]。此外，近期 LLM 越来越多地在海量真实世界软件数据上做后训练，以更好求解软件工程议题，包括 SWE-RL [36]、DeepSWE [25]、DeepSeek V3.1 [3]、MiniMax M1/M2 [11]、Kimi K2 [31]、SWE-1.5 [14] 以及 Code World Model（CWM）[10]。</p>
+<p>由于软件智能体的设计空间巨大，构建最优智能体脚手架极为困难且代价高昂。因此，最近提出了若干自改进软件智能体，包括 Self-Improving Coding Agent（SICA）[30]、Darwin-Gödel Machine（DGM）[45] 以及 Huxley-Gödel Machine（HGM）[33]。然而，这类自改进智能体需要在已知基准上做代价高昂的离线训练，且在不同 LLM、基准与议题类型之间未必能很好泛化。在软件工程领域之外，先前工作 [9, 32, 28, 27, 35] 探索了用 LLM 为一般推理或具身任务创建工具，但它们不以真实世界软件工程问题为目标。与之相对，本文提出 LIVE-SWE-AGENT，首个能够在求解真实世界议题的运行过程中进行实用即时自演化的在线软件智能体。由此，LIVE-SWE-AGENT 完全不需要离线训练，</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把故事拉出修问题，并开始对相关工作定位。测漏洞、写测试、从零写库，都需要完全不同的工具，固定脚手架装不下；训练期也可以学自己造工具、改脚手架，让模型不绑死某套运行框架。相关工作从对话式修复、首个人工智能软件工程师，讲到手工脚手架与少智能体工作流，再讲离线自改进又贵又难泛化；一般推理里的造工具工作也不针对真实软件工程。类比：同一套瑞士军刀既不能拆二进制也不能做性能剖析，该让它按任务自己长出新刀片。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>and can be easily generalized to different LLMs and issue domains. Moreover, it also demonstrated superior performance compared to all existing self-improving software agents. 5.2 Benchmarks for Software Engineering Agents To evaluate and demonstrate the performance of software engineering agents, a large number of datasets have been proposed. SWE-bench [18] is one of the earliest and most widely used benchmark datasets for software agents. Besides the initial SWE-bench dataset, which includes thousands of realworld GitHub issues, researchers have also built curated subsets with high-quality and representative issues to support faster and more reliable evaluation, including SWE-bench Lite [18] and SWE-bench Verified [26]. Since SWE-bench mostly focused on Python projects, researchers have proposed a number of SWE-bench-style benchmarks for projects in multiple languages for more comprehensive agent evaluation, including SWE-PolyBench [29], SWE-bench Multilingual [19], and Multi-SWEbench [44]. Also, SWE-bench relies heavily on manual effort for collecting benchmark instances and setting up executable environments, and is hardly scalable; as a result, researchers have also leveraged software agents to streamline issue collection and environment setup to build live and scalable benchmarks, including SWE-bench-Live [46] and SWE-rebench [8]. More recently, Scale AI has also constructed SWE-Bench Pro [4], which aims to capture more realistic, complex, enterprise-level issues than SWE-bench. For rigorous evaluation of LIVE-SWE-AGENT, our study involved multiple widely used benchmarks, including SWE-bench Verified, SWE-bench Multilingual, SWE-bench Pro. Conclusion In this paper, we have proposed LIVE-SWE-AGENT, the first live software agent that can autonomously and continuously evolve itself on-the-fly during runtime when solving real-world software problems. More specifically, LIVE-SWE-AGENT starts with the most basic agent scaffold with only access to bash tools, and autonomously evolves its own scaffold implementation while solving real-world software problems. Our evaluation on the widely studied benchmarks (such as SWE-bench Verified and SWE-bench Pro) demonstrated that LIVE-SWE-AGENT outperforms state-of-the-art manually design software agents, demonstrating a promising future for live and self-evolving software agents.</p>
+<h1>References</h1>
+<p>[1] GPT-5.1. https://openai.com/index/gpt-5-1-for-developers/. [2] kimi-k2-thinking. https://moonshotai.github.io/Kimi-K2/thinking.html. [3] DeepSeek AI. DeepSeek V3.1. https://api-docs.deepseek.com/news/news250821. [4] Scale AI. Swe-bench pro: Can ai agents solve long-horizon software engineering tasks? arXiv preprint arXiv:2509.16941, 2025. [5] Anthropic. Introducing Agent Skills. https://www.claude.com/blog/skills. [6] Anthropic. Claude Sonnet 4.5, 2025. https://www.anthropic.com/news/ claude-sonnet-4-5. [7] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models. arXiv preprint arXiv:2108.07732, 2021. [8] Ibragim Badertdinov, Alexander Golubev, Maksim Nekrashevich, Anton Shevtsov, Simon Karasik, Andrei Andriushchenko, Maria Trofimova, Daria Litvintseva, and Boris Yangel. Swerebench: An automated pipeline for task collection and decontaminated evaluation of software engineering agents. arXiv preprint arXiv:2505.20411, 2025. [9] Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. Large language models as tool makers. In B. Kim, Y. Yue, S. Chaudhuri, K. Fragkiadaki, M. Khan, and Y. Sun, editors, International Conference on Representation Learning, volume 2024, pages 54067–54089, 2024.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>并且可以轻易推广到不同 LLM 与议题领域。此外，它也展示出优于所有现有自改进软件智能体的性能。</p>
+<p>5.2 软件工程智能体基准 为评估并展示软件工程智能体的性能，已提出大量数据集。SWE-bench [18] 是最早、使用最广的软件智能体基准数据集之一。除包含数千真实世界 GitHub 议题的初始 SWE-bench 数据集外，研究者也构建了高质量、有代表性议题的精选集，以支持更快、更可靠的评估，包括 SWE-bench Lite [18] 与 SWE-bench Verified [26]。由于 SWE-bench 主要聚焦 Python 项目，研究者提出了若干面向多语言项目的 SWE-bench 风格基准，以进行更全面的智能体评估，包括 SWE-PolyBench [29]、SWE-bench Multilingual [19] 以及 Multi-SWE-bench [44]。此外，SWE-bench 在收集基准实例与搭建可执行环境上严重依赖人工，难以扩展；因此，研究者也利用软件智能体来简化议题收集与环境搭建，以构建在线、可扩展的基准，包括 SWE-bench-Live [46] 与 SWE-rebench [8]。最近，Scale AI 还构建了 SWE-Bench Pro [4]，旨在刻画比 SWE-bench 更现实、更复杂、企业级的议题。为对 LIVE-SWE-AGENT 做严谨评估，我们的研究使用了多个广泛使用的基准，包括 SWE-bench Verified、SWE-bench Multilingual、SWE-bench Pro。</p>
+<p>结论 本文提出了 LIVE-SWE-AGENT，首个能够在解决真实世界软件问题的运行过程中自主、持续地即时自演化的在线软件智能体。具体而言，LIVE-SWE-AGENT 从仅能访问 bash 工具的最基本智能体脚手架出发，并在解决真实世界软件问题的同时自主演化其自身的脚手架实现。我们在广泛研究的基准（如 SWE-bench Verified 与 SWE-bench Pro）上的评估表明，LIVE-SWE-AGENT 优于最先进的人工设计软件智能体，展示了在线、自演化软件智能体的可观前景。</p>
+<h1>参考文献</h1>
+<p>[1] GPT-5.1. https://openai.com/index/gpt-5-1-for-developers/. [2] kimi-k2-thinking. https://moonshotai.github.io/Kimi-K2/thinking.html. [3] DeepSeek AI. DeepSeek V3.1. https://api-docs.deepseek.com/news/news250821. [4] Scale AI. Swe-bench pro: Can ai agents solve long-horizon software engineering tasks? arXiv preprint arXiv:2509.16941, 2025. [5] Anthropic. Introducing Agent Skills. https://www.claude.com/blog/skills. [6] Anthropic. Claude Sonnet 4.5, 2025. https://www.anthropic.com/news/claude-sonnet-4-5. [7] Jacob Austin, Augustus Odena, Maxwell Nye, Maarten Bosma, Henryk Michalewski, David Dohan, Ellen Jiang, Carrie Cai, Michael Terry, Quoc Le, and Charles Sutton. Program synthesis with large language models. arXiv preprint arXiv:2108.07732, 2021. [8] Ibragim Badertdinov, Alexander Golubev, Maksim Nekrashevich, Anton Shevtsov, Simon Karasik, Andrei Andriushchenko, Maria Trofimova, Daria Litvintseva, and Boris Yangel. Swe-rebench: An automated pipeline for task collection and decontaminated evaluation of software engineering agents. arXiv preprint arXiv:2505.20411, 2025. [9] Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. Large language models as tool makers. In B. Kim, Y. Yue, S. Chaudhuri, K. Fragkiadaki, M. Khan, and Y. Sun, editors, International Conference on Representation Learning, volume 2024, pages 54067–54089, 2024.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束相关工作并下结论，文献从这里起头。作者说该智能体完全不需要离线训练，能泛化到不同模型和议题域，且优于现有自改进软件智能体。基准谱系从精选子集、已验证集讲到多语言、实时收集和企业级题。结论重复主张：从只会命令行的最小脚手架起步，修真实问题的同时演化自身实现。书目条目保持英文，标题作参考文献。类比：比赛规则本身也在变，作者不仅交了一辆车，还想交一条可以公平试新车的赛道。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>[10] Quentin Carbonneaux, Gal Cohen, Jonas Gehring, Jacob Kahn, Jannik Kossen, Felix Kreuk, Emily McMilin, Michel Meyer, Yuxiang Wei, David Zhang, et al. Cwm: An open-weights llm for research on code generation with world models. arXiv preprint arXiv:2510.02387, 2025. [11] Aili Chen, Aonian Li, Bangwei Gong, Binyang Jiang, Bo Fei, Bo Yang, Boji Shan, Changqing Yu, Chao Wang, Cheng Zhu, et al. Minimax-m1: Scaling test-time compute efficiently with lightning attention. arXiv preprint arXiv:2506.13585, 2025. [12] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374, 2021. [13] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. arXiv preprint arXiv:2304.05128, 2023. [14] Cognition. SWE-1.5. https://cognition.ai/blog/swe-1-5. [15] Cognition. Devin AI, 2024. https://cognition.ai/blog/introducing-devin. [16] Yinlin Deng, Chunqiu Steven Xia, Haoran Peng, Chenyuan Yang, and Lingming Zhang. Large language models are zero-shot fuzzers: Fuzzing deep-learning libraries via large language models. In Proceedings of the 32nd ACM SIGSOFT international symposium on software testing and analysis, pages 423–435, 2023. [17] Geoffrey E Hinton and Sam Roweis. Stochastic neighbor embedding. Advances in neural information processing systems, 15, 2002. [18] Carlos E Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. Swe-bench: Can language models resolve real-world github issues? arXiv preprint arXiv:2310.06770, 2023. [19] Kabir Khandpur, Kilian Lieret, Carlos E. Jimenez, Ofir Press, and John Yang. Swe-bench multilingual, 2025. https://www.swebench.com/multilingual.html. [20] Jiaolong Kong, Xiaofei Xie, Mingfei Cheng, Shangqing Liu, Xiaoning Du, and Qi Guo. Contrastrepair: Enhancing conversation-based automated program repair via contrastive test case pairs. ACM Transactions on Software Engineering and Methodology, 34(8):1–31, 2025. [21] Hwiwon Lee, Ziqi Zhang, Hanxiao Lu, and Lingming Zhang. SEC-bench: Automated Benchmarking of LLM Agents on Real-World Software Security Tasks. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. [22] Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, Thomas Hubert, Peter Choy, Cyprien de Masson d’Autume, Igor Babuschkin, Xinyun Chen, Po-Sen Huang, Johannes Welbl, Sven Gowal, Alexey Cherepanov, James Molloy, Daniel J. Mankowitz, Esme Sutherland Robson, Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. Competition-level code generation with alphacode. arXiv preprint arXiv:2203.07814, 2022. [23] Junwei Liu, Kaixin Wang, Yixuan Chen, Xin Peng, Zhenpeng Chen, Lingming Zhang, and Yiling Lou. Large language model-based agents for software engineering: A survey. arXiv preprint arXiv:2409.02977, 2024. [24] Yizhou Liu, Pengfei Gao, Xinchen Wang, Jie Liu, Yexuan Shi, Zhao Zhang, and Chao Peng. Marscode agent: Ai-native automated bug fixing. arXiv preprint arXiv:2409.00899, 2024.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>[10] Quentin Carbonneaux, Gal Cohen, Jonas Gehring, Jacob Kahn, Jannik Kossen, Felix Kreuk, Emily McMilin, Michel Meyer, Yuxiang Wei, David Zhang, et al. Cwm: An open-weights llm for research on code generation with world models. arXiv preprint arXiv:2510.02387, 2025. [11] Aili Chen, Aonian Li, Bangwei Gong, Binyang Jiang, Bo Fei, Bo Yang, Boji Shan, Changqing Yu, Chao Wang, Cheng Zhu, et al. Minimax-m1: Scaling test-time compute efficiently with lightning attention. arXiv preprint arXiv:2506.13585, 2025. [12] Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harri Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Josh Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. Evaluating large language models trained on code. arXiv preprint arXiv:2107.03374, 2021. [13] Xinyun Chen, Maxwell Lin, Nathanael Schärli, and Denny Zhou. Teaching large language models to self-debug. arXiv preprint arXiv:2304.05128, 2023. [14] Cognition. SWE-1.5. https://cognition.ai/blog/swe-1-5. [15] Cognition. Devin AI, 2024. https://cognition.ai/blog/introducing-devin. [16] Yinlin Deng, Chunqiu Steven Xia, Haoran Peng, Chenyuan Yang, and Lingming Zhang. Large language models are zero-shot fuzzers: Fuzzing deep-learning libraries via large language models. In Proceedings of the 32nd ACM SIGSOFT international symposium on software testing and analysis, pages 423–435, 2023. [17] Geoffrey E Hinton and Sam Roweis. Stochastic neighbor embedding. Advances in neural information processing systems, 15, 2002. [18] Carlos E Jimenez, John Yang, Alexander Wettig, Shunyu Yao, Kexin Pei, Ofir Press, and Karthik Narasimhan. Swe-bench: Can language models resolve real-world github issues? arXiv preprint arXiv:2310.06770, 2023. [19] Kabir Khandpur, Kilian Lieret, Carlos E. Jimenez, Ofir Press, and John Yang. Swe-bench multilingual, 2025. https://www.swebench.com/multilingual.html. [20] Jiaolong Kong, Xiaofei Xie, Mingfei Cheng, Shangqing Liu, Xiaoning Du, and Qi Guo. Contrastrepair: Enhancing conversation-based automated program repair via contrastive test case pairs. ACM Transactions on Software Engineering and Methodology, 34(8):1–31, 2025. [21] Hwiwon Lee, Ziqi Zhang, Hanxiao Lu, and Lingming Zhang. SEC-bench: Automated Benchmarking of LLM Agents on Real-World Software Security Tasks. In The Thirty-ninth Annual Conference on Neural Information Processing Systems, 2025. [22] Yujia Li, David Choi, Junyoung Chung, Nate Kushman, Julian Schrittwieser, Rémi Leblond, Tom Eccles, James Keeling, Felix Gimeno, Agustin Dal Lago, Thomas Hubert, Peter Choy, Cyprien de Masson d’Autume, Igor Babuschkin, Xinyun Chen, Po-Sen Huang, Johannes Welbl, Sven Gowal, Alexey Cherepanov, James Molloy, Daniel J. Mankowitz, Esme Sutherland Robson, Pushmeet Kohli, Nando de Freitas, Koray Kavukcuoglu, and Oriol Vinyals. Competition-level code generation with alphacode. arXiv preprint arXiv:2203.07814, 2022. [23] Junwei Liu, Kaixin Wang, Yixuan Chen, Xin Peng, Zhenpeng Chen, Lingming Zhang, and Yiling Lou. Large language model-based agents for software engineering: A survey. arXiv preprint arXiv:2409.02977, 2024. [24] Yizhou Liu, Pengfei Gao, Xinchen Wang, Jie Liu, Yexuan Shi, Zhao Zhang, and Chao Peng. Marscode agent: Ai-native automated bug fixing. arXiv preprint arXiv:2409.00899, 2024.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是参考文献续页，条目保持英文。从世界模型代码生成、高效注意力、代码评测，到对话式调试、安全基准和多语言软件问题集等。需要核对某条引用时按编号回正文即可。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>[25] Michael Luo, Naman Jain, Jaskirat Singh, Sijun Tan, Ameen Patel, Qingyang Wu, Alpay Ariyak, Colin Cai, Shang Zhu Tarun Venkat, Ben Athiwaratkun, et al. Deepswe: Training a fully open-sourced, state-of-the-art coding agent by scaling rl. [26] OpenAI. SWE-bench Verified, 2025. https://openai.com/index/ introducing-swe-bench-verified/. [27] Cheng Qian, Chi Han, Yi R. Fung, Yujia Qin, Zhiyuan Liu, and Heng Ji. Creator: Tool creation for disentangling abstract and concrete reasoning of large language models, 2024. [28] Jiahao Qiu, Xuan Qi, Tongcheng Zhang, Xinzhe Juan, Jiacheng Guo, Yifu Lu, Yimin Wang, Zixin Yao, Qihan Ren, Xun Jiang, Xing Zhou, Dongrui Liu, Ling Yang, Yue Wu, Kaixuan Huang, Shilong Liu, Hongru Wang, and Mengdi Wang. Alita: Generalist agent enabling scalable agentic reasoning with minimal predefinition and maximal self-evolution, 2025. [29] Muhammad Shihab Rashid, Christian Bock, Yuan Zhuang, Alexander Buchholz, Tim Esler, Simon Valentin, Luca Franceschi, Martin Wistuba, Prabhu Teja Sivaprasad, Woo Jung Kim, Anoop Deoras, Giovanni Zappella, and Laurent Callot. Swe-polybench: A multi-language benchmark for repository level evaluation of coding agents. arXiv preprint arXiv:2504.08703, 2025. [30] Maxime Robeyns, Martin Szummer, and Laurence Aitchison. SICA a self-improving coding agent. In ICLR 2025 Workshop on Scaling Self-Improving Foundation Models, 2025. [31] Kimi Team. Kimi k1.5: Scaling reinforcement learning with llms. arXiv preprint arXiv:2501.12599, 2025. [32] Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models. Transactions on Machine Learning Research, 2024. [33] Wenyi Wang, Piotr Pi˛ekos, Li Nanbo, Firas Laakom, Yimeng Chen, Mateusz Ostaszewski, Mingchen Zhuge, and Jürgen Schmidhuber. Huxley-gödel machine: Human-level coding agent development by an approximation of the optimal self-improving machine, 2025. [34] Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li, Jaskirat Singh, Hoang H. Tran, Fuqiang Li, Ren Ma, Mingzhang Zheng, Bill Qian, Yanjun Shao, Niklas Muennighoff, Yizhe Zhang, Binyuan Hui, Junyang Lin, Robert Brennan, Hao Peng, Heng Ji, and Graham Neubig. Openhands: An open platform for ai software developers as generalist agents. arXiv preprint arXiv:2407.16741, 2024. [35] Zhiruo Wang, Daniel Fried, and Graham Neubig. Trove: Inducing verifiable and efficient toolboxes for solving programmatic tasks, 2024. [36] Yuxiang Wei, Olivier Duchenne, Jade Copet, Quentin Carbonneaux, Lingming Zhang, Daniel Fried, Gabriel Synnaeve, Rishabh Singh, and Sida I. Wang. Swe-rl: Advancing llm reasoning via reinforcement learning on open software evolution. arXiv preprint arXiv:2502.18449, 2025. [37] Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, and Lingming Zhang. Agentless: Demystifying llm-based software engineering agents. arXiv preprint arXiv:2407.01489, 2024. [38] Chunqiu Steven Xia and Lingming Zhang. Less training, more repairing please: revisiting automated program repair via zero-shot learning. In Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering, pages 959–971, 2022. [39] Chunqiu Steven Xia and Lingming Zhang. Conversational automated program repair. arXiv preprint arXiv:2301.13246, 2023. [40] Chunqiu Steven Xia and Lingming Zhang. Automated program repair via conversation: Fixing 162 out of 337 bugs for $0.42 each using chatgpt. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis, pages 819–831, 2024.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>[25] Michael Luo, Naman Jain, Jaskirat Singh, Sijun Tan, Ameen Patel, Qingyang Wu, Alpay Ariyak, Colin Cai, Shang Zhu Tarun Venkat, Ben Athiwaratkun, et al. Deepswe: Training a fully open-sourced, state-of-the-art coding agent by scaling rl. [26] OpenAI. SWE-bench Verified, 2025. https://openai.com/index/introducing-swe-bench-verified/. [27] Cheng Qian, Chi Han, Yi R. Fung, Yujia Qin, Zhiyuan Liu, and Heng Ji. Creator: Tool creation for disentangling abstract and concrete reasoning of large language models, 2024. [28] Jiahao Qiu, Xuan Qi, Tongcheng Zhang, Xinzhe Juan, Jiacheng Guo, Yifu Lu, Yimin Wang, Zixin Yao, Qihan Ren, Xun Jiang, Xing Zhou, Dongrui Liu, Ling Yang, Yue Wu, Kaixuan Huang, Shilong Liu, Hongru Wang, and Mengdi Wang. Alita: Generalist agent enabling scalable agentic reasoning with minimal predefinition and maximal self-evolution, 2025. [29] Muhammad Shihab Rashid, Christian Bock, Yuan Zhuang, Alexander Buchholz, Tim Esler, Simon Valentin, Luca Franceschi, Martin Wistuba, Prabhu Teja Sivaprasad, Woo Jung Kim, Anoop Deoras, Giovanni Zappella, and Laurent Callot. Swe-polybench: A multi-language benchmark for repository level evaluation of coding agents. arXiv preprint arXiv:2504.08703, 2025. [30] Maxime Robeyns, Martin Szummer, and Laurence Aitchison. SICA a self-improving coding agent. In ICLR 2025 Workshop on Scaling Self-Improving Foundation Models, 2025. [31] Kimi Team. Kimi k1.5: Scaling reinforcement learning with llms. arXiv preprint arXiv:2501.12599, 2025. [32] Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. Voyager: An open-ended embodied agent with large language models. Transactions on Machine Learning Research, 2024. [33] Wenyi Wang, Piotr Piękos, Li Nanbo, Firas Laakom, Yimeng Chen, Mateusz Ostaszewski, Mingchen Zhuge, and Jürgen Schmidhuber. Huxley-gödel machine: Human-level coding agent development by an approximation of the optimal self-improving machine, 2025. [34] Xingyao Wang, Boxuan Li, Yufan Song, Frank F. Xu, Xiangru Tang, Mingchen Zhuge, Jiayi Pan, Yueqi Song, Bowen Li, Jaskirat Singh, Hoang H. Tran, Fuqiang Li, Ren Ma, Mingzhang Zheng, Bill Qian, Yanjun Shao, Niklas Muennighoff, Yizhe Zhang, Binyuan Hui, Junyang Lin, Robert Brennan, Hao Peng, Heng Ji, and Graham Neubig. Openhands: An open platform for ai software developers as generalist agents. arXiv preprint arXiv:2407.16741, 2024. [35] Zhiruo Wang, Daniel Fried, and Graham Neubig. Trove: Inducing verifiable and efficient toolboxes for solving programmatic tasks, 2024. [36] Yuxiang Wei, Olivier Duchenne, Jade Copet, Quentin Carbonneaux, Lingming Zhang, Daniel Fried, Gabriel Synnaeve, Rishabh Singh, and Sida I. Wang. Swe-rl: Advancing llm reasoning via reinforcement learning on open software evolution. arXiv preprint arXiv:2502.18449, 2025. [37] Chunqiu Steven Xia, Yinlin Deng, Soren Dunn, and Lingming Zhang. Agentless: Demystifying llm-based software engineering agents. arXiv preprint arXiv:2407.01489, 2024. [38] Chunqiu Steven Xia and Lingming Zhang. Less training, more repairing please: revisiting automated program repair via zero-shot learning. In Proceedings of the 30th ACM Joint European Software Engineering Conference and Symposium on the Foundations of Software Engineering, pages 959–971, 2022. [39] Chunqiu Steven Xia and Lingming Zhang. Conversational automated program repair. arXiv preprint arXiv:2301.13246, 2023. [40] Chunqiu Steven Xia and Lingming Zhang. Automated program repair via conversation: Fixing 162 out of 337 bugs for $0.42 each using chatgpt. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis, pages 819–831, 2024.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续文献：开源强化学习编码智能体、工具创建与自演化、具身智能体、开放软件开发平台、以及对话式自动程序修复等。条目保持英文，按号回查即可。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>[41] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. Swe-agent: Agent-computer interfaces enable automated software engineering. Advances in Neural Information Processing Systems, 37:50528–50652, 2024. [42] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik R Narasimhan, and Ofir Press. SWE-agent: Agent-computer interfaces enable automated software engineering. In The Thirty-eighth Annual Conference on Neural Information Processing Systems, 2024. [43] Zhiqiang Yuan, Mingwei Liu, Shiji Ding, Kaixin Wang, Yixuan Chen, Xin Peng, and Yiling Lou. Evaluating and improving chatgpt for unit test generation. Proceedings of the ACM on Software Engineering, 1(FSE):1703–1726, 2024. [44] Daoguang Zan, Zhirong Huang, Wei Liu, Hanwu Chen, Linhao Zhang, Shulin Xin, Lu Chen, Qi Liu, Xiaojian Zhong, Aoyan Li, Siyao Liu, Yongsheng Xiao, Liangqiang Chen, Yuyu Zhang, Jing Su, Tianyu Liu, Rui Long, Kai Shen, and Liang Xiang. Multi-swe-bench: A multilingual benchmark for issue resolving. arXiv preprint arXiv:2504.02605, 2025. [45] Jenny Zhang, Shengran Hu, Cong Lu, Robert Lange, and Jeff Clune. Darwin godel machine: Open-ended evolution of self-improving agents. arXiv preprint arXiv:2505.22954, 2025. [46] Linghao Zhang, Shilin He, Chaoyun Zhang, Yu Kang, Bowen Li, Chengxing Xie, Junhao Wang, Maoquan Wang, Yufan Huang, Shengyu Fu, Elsie Nallipogu, Qingwei Lin, Yingnong Dang, Saravan Rajmohan, and Dongmei Zhang. Swe-bench goes live! arXiv preprint arXiv:2505.23419, 2025. [47] Yuntong Zhang, Haifeng Ruan, Zhiyu Fan, and Abhik Roychoudhury. Autocoderover: Autonomous program improvement. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis, pages 1592–1604, 2024. [48] Wenting Zhao, Nan Jiang, Celine Lee, Justin T Chiu, Claire Cardie, Matthias Gallé, and Alexander M Rush. Commit0: Library generation from scratch. arXiv preprint arXiv:2412.01769, 2024. [49] Albert Örwall. Moatless, 2024. https://github.com/aorwall/moatless-tools.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>[41] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik Narasimhan, and Ofir Press. Swe-agent: Agent-computer interfaces enable automated software engineering. Advances in Neural Information Processing Systems, 37:50528–50652, 2024. [42] John Yang, Carlos E Jimenez, Alexander Wettig, Kilian Lieret, Shunyu Yao, Karthik R Narasimhan, and Ofir Press. SWE-agent: Agent-computer interfaces enable automated software engineering. In The Thirty-eighth Annual Conference on Neural Information Processing Systems, 2024. [43] Zhiqiang Yuan, Mingwei Liu, Shiji Ding, Kaixin Wang, Yixuan Chen, Xin Peng, and Yiling Lou. Evaluating and improving chatgpt for unit test generation. Proceedings of the ACM on Software Engineering, 1(FSE):1703–1726, 2024. [44] Daoguang Zan, Zhirong Huang, Wei Liu, Hanwu Chen, Linhao Zhang, Shulin Xin, Lu Chen, Qi Liu, Xiaojian Zhong, Aoyan Li, Siyao Liu, Yongsheng Xiao, Liangqiang Chen, Yuyu Zhang, Jing Su, Tianyu Liu, Rui Long, Kai Shen, and Liang Xiang. Multi-swe-bench: A multilingual benchmark for issue resolving. arXiv preprint arXiv:2504.02605, 2025. [45] Jenny Zhang, Shengran Hu, Cong Lu, Robert Lange, and Jeff Clune. Darwin godel machine: Open-ended evolution of self-improving agents. arXiv preprint arXiv:2505.22954, 2025. [46] Linghao Zhang, Shilin He, Chaoyun Zhang, Yu Kang, Bowen Li, Chengxing Xie, Junhao Wang, Maoquan Wang, Yufan Huang, Shengyu Fu, Elsie Nallipogu, Qingwei Lin, Yingnong Dang, Saravan Rajmohan, and Dongmei Zhang. Swe-bench goes live! arXiv preprint arXiv:2505.23419, 2025. [47] Yuntong Zhang, Haifeng Ruan, Zhiyu Fan, and Abhik Roychoudhury. Autocoderover: Autonomous program improvement. In Proceedings of the 33rd ACM SIGSOFT International Symposium on Software Testing and Analysis, pages 1592–1604, 2024. [48] Wenting Zhao, Nan Jiang, Celine Lee, Justin T Chiu, Claire Cardie, Matthias Gallé, and Alexander M Rush. Commit0: Library generation from scratch. arXiv preprint arXiv:2412.01769, 2024. [49] Albert Örwall. Moatless, 2024. https://github.com/aorwall/moatless-tools.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页文献收到智能体计算机接口、多语言问题求解基准、开放式自改进、实时基准、自主程序改进、从零生成程序库等。全文正式文献到此结束。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>A Additional experimental settings We now describe additional experimental settings used by LIVE-SWE-AGENT for evaluation. As discussed in Section 3, we implement LIVE-SWE-AGENT on top of the mini-SWE-agent framework. We use the same default hyperparameter of mini-SWE-agent at the time of writing (maximum step limit of 250 and maximum cost of $3 per issue). For Gemini 3 Pro, we use temperature of 1 since it is recommended by the developers4. For any Anthropic models in our experiments, we follow mini-SWE-agent and use a temperature of 0.0. For any OpenAI models in our experiments (e.g., GPT-5, GPT-5-Mini, GPT-5-Nano), since temperature 0.0 sampling is not supported, we use temperature of 1. To the best of our knowledge, this is also the case used in mini-SWE-agent when they use OpenAI models. B Additional tool analysis django sympy (a) Tools in SWE-bench Verified edit view search others (b) Tools in SWE-Bench Pro Figure 6: Additional 2 dimensional t-SNE visualization of tools generated by Claude 4.5 Sonnet on SWE-bench Verified and SWE-Bench Pro. We label and display the embedding based on the repository name (Figure 6a) and tool name (Figure 6b). Note that for Figure 6a, we only label two repositories in the legend due to space considerations. The two repositories were chosen as they have representative distinct clusters. We perform additional tool analysis similar to the ones done in Section 4.2. We added the missing results including the visualization based on repository used for SWE-bench Verified and tool name for SWE-Bench Pro. Note that we did not include any results based on programming language for SWE-bench Verified since they are all repositories in Python. We observe similar patterns to the main evaluation. To perform this analysis, we use sklearn implementation of PCA with n_components of 50. We then use the t-SNE implementation from sklearn with max_iter of 1000. C Ablation problems C.1 SWE-bench Verified ablation subset Here we include the 50 randomly selected problems in SWE-bench Verified used in our ablation evaluations.</p>
+<ul>
+<li>sympy__sympy-12489</li>
+<li>django__django-16502</li>
+<li>scikit-learn__scikit-learn-11310</li>
+<li>django__django-13590</li>
+<li>scikit-learn__scikit-learn-11578</li>
+<li>matplotlib__matplotlib-21568</li>
+<li>django__django-11276</li>
+<li>django__django-11119</li>
+<li>sympy__sympy-13031</li>
+<li>sphinx-doc__sphinx-8459</li>
+<li>django__django-14170</li>
+<li>django__django-11066</li>
+<li>sphinx-doc__sphinx-9658</li>
+<li>django__django-14631 4https://ai.google.dev/gemini-api/docs/gemini-3</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>A 补充实验设置</p>
+<p>下面说明 LIVE-SWE-AGENT 评估所用的补充实验设置。如第 3 节所述，我们在 mini-SWE-agent 框架之上实现 LIVE-SWE-AGENT。我们使用写作时 mini-SWE-agent 的相同默认超参数（每议题最大步数 250、最大费用 3 美元）。</p>
+<p>对 Gemini 3 Pro，我们使用温度 1，因为这是开发者所推荐的4。对我们实验中的任何 Anthropic 模型，我们遵循 mini-SWE-agent，使用温度 0.0。对我们实验中的任何 OpenAI 模型（例如 GPT-5、GPT-5-Mini、GPT-5-Nano），由于不支持温度 0.0 采样，我们使用温度 1。据我们所知，这也是 mini-SWE-agent 在使用 OpenAI 模型时的做法。</p>
+<p>B 补充工具分析</p>
+<p>django</p>
+<p>sympy</p>
+<p>(a) SWE-bench Verified 中的工具</p>
+<p>edit</p>
+<p>view</p>
+<p>search</p>
+<p>others</p>
+<p>(b) SWE-Bench Pro 中的工具</p>
+<p>图 6：Claude 4.5 Sonnet 在 SWE-bench Verified 与 SWE-Bench Pro 上所生成工具的补充二维 t-SNE 可视化。我们按仓库名（图 6a）与工具名（图 6b）标注并展示嵌入。注意：图 6a 因篇幅仅在图例中标注两个仓库；所选二者具有代表性的分明簇。</p>
+<p>我们做了与第 4.2 节类似的补充工具分析。我们补上了缺失结果，包括 SWE-bench Verified 按仓库的可视化，以及 SWE-Bench Pro 按工具名的可视化。注意：我们未包含 SWE-bench Verified 按编程语言的结果，因为它们全部是 Python 仓库。我们观察到与主评估相似的模式。</p>
+<p>为进行该分析，我们使用 sklearn 的 PCA 实现，n_components 为 50。随后使用 sklearn 的 t-SNE 实现，max_iter 为 1000。</p>
+<p>C 消融问题</p>
+<p>C.1 SWE-bench Verified 消融子集</p>
+<p>此处列出我们消融评估中随机选取的 50 个 SWE-bench Verified 问题。</p>
+<ul>
+<li>sympy__sympy-12489</li>
+<li>django__django-16502</li>
+<li>scikit-learn__scikit-learn-11310</li>
+<li>django__django-13590</li>
+<li>scikit-learn__scikit-learn-11578</li>
+<li>matplotlib__matplotlib-21568</li>
+<li>django__django-11276</li>
+<li>django__django-11119</li>
+<li>sympy__sympy-13031</li>
+<li>sphinx-doc__sphinx-8459</li>
+<li>django__django-14170</li>
+<li>django__django-11066</li>
+<li>sphinx-doc__sphinx-9658</li>
+<li>django__django-14631</li>
+</ul>
+<p class="meta-line">4https://ai.google.dev/gemini-api/docs/gemini-3</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是附录设置和补充图。超参沿用最小底座：每题最多二百五十步、三美元。两家模型用温度一，另一家用零。补充散点图按仓库和工具名着色，模式和正文类似。消融用的五十道已验证题号从本页开始列出。类比：菜谱末页的火候表，复现实验时才需要逐条核对。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><ul>
+<li>django__django-11749</li>
+<li>scikit-learn__scikit-learn-13135</li>
+<li>astropy__astropy-14369</li>
+<li>matplotlib__matplotlib-24177</li>
+<li>django__django-15252</li>
+<li>pydata__xarray-7233</li>
+<li>django__django-11815</li>
+<li>sympy__sympy-18199</li>
+<li>django__django-15467</li>
+<li>psf__requests-5414</li>
+<li>django__django-17084</li>
+<li>scikit-learn__scikit-learn-15100</li>
+<li>django__django-13925</li>
+<li>django__django-11163</li>
+<li>django__django-16595</li>
+<li>django__django-16938</li>
+<li>sympy__sympy-13877</li>
+<li>django__django-16612</li>
+<li>django__django-15629</li>
+<li>pydata__xarray-3677</li>
+<li>django__django-15503</li>
+<li>psf__requests-1142</li>
+<li>mwaskom__seaborn-3069</li>
+<li>django__django-15127</li>
+<li>astropy__astropy-13033</li>
+<li>django__django-16429</li>
+<li>django__django-16256</li>
+<li>django__django-11133</li>
+<li>django__django-13741</li>
+<li>matplotlib__matplotlib-23476</li>
+<li>scikit-learn__scikit-learn-12973</li>
+<li>scikit-learn__scikit-learn-13779</li>
+<li>sympy__sympy-23413</li>
+<li>pytest-dev__pytest-7521</li>
+<li>sympy__sympy-22456</li>
+<li>django__django-16082 C.2 SWE-bench Multilingual ablation subset We further evaluate on 50 randomly selected subset of problems in SWE-bench Multilingual. Below is the list of instance_ids of the problems in our subset.</li>
+<li>apache__druid-13704</li>
+<li>apache__druid-14136</li>
+<li>apache__druid-15402</li>
+<li>apache__lucene-13494</li>
+<li>astral-sh__ruff-15543</li>
+<li>axios__axios-6539</li>
+<li>babel__babel-15445</li>
+<li>burntsushi__ripgrep-2576</li>
+<li>caddyserver__caddy-5404</li>
+<li>caddyserver__caddy-5995</li>
+<li>caddyserver__caddy-6051</li>
+<li>facebook__docusaurus-9183</li>
+<li>faker-ruby__faker-2970</li>
+<li>fastlane__fastlane-20642</li>
+<li>fluent__fluentd-3640</li>
+<li>fmtlib__fmt-3750</li>
+<li>javaparser__javaparser-4538</li>
+<li>javaparser__javaparser-4561</li>
+<li>jqlang__jq-2919</li>
+<li>laravel__framework-48636</li>
+<li>laravel__framework-52451</li>
+<li>mrdoob__three.js-27395</li>
+<li>nushell__nushell-12901</li>
+<li>phpoffice__phpspreadsheet-3659</li>
+<li>preactjs__preact-2757</li>
+<li>preactjs__preact-2927</li>
+<li>preactjs__preact-3562</li>
+<li>preactjs__preact-3739</li>
+<li>projectlombok__lombok-3326</li>
+<li>reactivex__rxjava-7597</li>
+<li>redis__redis-10068</li>
+<li>redis__redis-10095</li>
+<li>rubocop__rubocop-13503</li>
+<li>rubocop__rubocop-13560</li>
+<li>rubocop__rubocop-13627</li>
+<li>rubocop__rubocop-13680</li>
+<li>rubocop__rubocop-13705</li>
+<li>sharkdp__bat-2650</li>
+<li>sharkdp__bat-562</li>
+<li>tokio-rs__axum-1730</li>
+<li>tokio-rs__axum-2096</li>
+<li>tokio-rs__axum-682</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><ul>
+<li>django__django-11749</li>
+<li>scikit-learn__scikit-learn-13135</li>
+<li>astropy__astropy-14369</li>
+<li>matplotlib__matplotlib-24177</li>
+<li>django__django-15252</li>
+<li>pydata__xarray-7233</li>
+<li>django__django-11815</li>
+<li>sympy__sympy-18199</li>
+<li>django__django-15467</li>
+<li>psf__requests-5414</li>
+<li>django__django-17084</li>
+<li>scikit-learn__scikit-learn-15100</li>
+<li>django__django-13925</li>
+<li>django__django-11163</li>
+<li>django__django-16595</li>
+<li>django__django-16938</li>
+<li>sympy__sympy-13877</li>
+<li>django__django-16612</li>
+<li>django__django-15629</li>
+<li>pydata__xarray-3677</li>
+<li>django__django-15503</li>
+<li>psf__requests-1142</li>
+<li>mwaskom__seaborn-3069</li>
+<li>django__django-15127</li>
+<li>astropy__astropy-13033</li>
+<li>django__django-16429</li>
+<li>django__django-16256</li>
+<li>django__django-11133</li>
+<li>django__django-13741</li>
+<li>matplotlib__matplotlib-23476</li>
+<li>scikit-learn__scikit-learn-12973</li>
+<li>scikit-learn__scikit-learn-13779</li>
+<li>sympy__sympy-23413</li>
+<li>pytest-dev__pytest-7521</li>
+<li>sympy__sympy-22456</li>
+<li>django__django-16082</li>
+</ul>
+<p>C.2 SWE-bench Multilingual 消融子集 我们进一步在 SWE-bench Multilingual 中随机选取的 50 个问题子集上评估。以下是该子集中问题的 instance_id 列表。</p>
+<ul>
+<li>apache__druid-13704</li>
+<li>apache__druid-14136</li>
+<li>apache__druid-15402</li>
+<li>apache__lucene-13494</li>
+<li>astral-sh__ruff-15543</li>
+<li>axios__axios-6539</li>
+<li>babel__babel-15445</li>
+<li>burntsushi__ripgrep-2576</li>
+<li>caddyserver__caddy-5404</li>
+<li>caddyserver__caddy-5995</li>
+<li>caddyserver__caddy-6051</li>
+<li>facebook__docusaurus-9183</li>
+<li>faker-ruby__faker-2970</li>
+<li>fastlane__fastlane-20642</li>
+<li>fluent__fluentd-3640</li>
+<li>fmtlib__fmt-3750</li>
+<li>javaparser__javaparser-4538</li>
+<li>javaparser__javaparser-4561</li>
+<li>jqlang__jq-2919</li>
+<li>laravel__framework-48636</li>
+<li>laravel__framework-52451</li>
+<li>mrdoob__three.js-27395</li>
+<li>nushell__nushell-12901</li>
+<li>phpoffice__phpspreadsheet-3659</li>
+<li>preactjs__preact-2757</li>
+<li>preactjs__preact-2927</li>
+<li>preactjs__preact-3562</li>
+<li>preactjs__preact-3739</li>
+<li>projectlombok__lombok-3326</li>
+<li>reactivex__rxjava-7597</li>
+<li>redis__redis-10068</li>
+<li>redis__redis-10095</li>
+<li>rubocop__rubocop-13503</li>
+<li>rubocop__rubocop-13560</li>
+<li>rubocop__rubocop-13627</li>
+<li>rubocop__rubocop-13680</li>
+<li>rubocop__rubocop-13705</li>
+<li>sharkdp__bat-2650</li>
+<li>sharkdp__bat-562</li>
+<li>tokio-rs__axum-1730</li>
+<li>tokio-rs__axum-2096</li>
+<li>tokio-rs__axum-682</li>
+</ul></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页几乎全是实例编号：已验证消融五十题的后半，以及多语言五十题的前半。正文不解释这些题，只保证别人能复现同一子集。类比：附录里的零件编号清单，对上号就能找到同一箱螺丝。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-18" data-page="18">
+  <div class="page-label">第 18 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-018.jpg" alt="PDF page 18" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><ul>
+<li>tokio-rs__tokio-6603</li>
+<li>tokio-rs__tokio-6752</li>
+<li>tokio-rs__tokio-6838</li>
+<li>uutils__coreutils-6731</li>
+<li>valkey-io__valkey-1842</li>
+<li>valkey-io__valkey-790</li>
+<li>vuejs__core-11739</li>
+<li>vuejs__core-11870 D Prompts Used Here we provide the detailed prompts used by LIVE-SWE-AGENT. Note that the majority of the prompt is constructed by mini-SWE-agent and we only make minimal changes to enable on-the-fly tool creation. Furthermore, we perform a slight modification: change the home directory indication of testbed to app in the initial prompt for all SWE-Bench Pro evaluations. This is done since the SWE-Bench Pro docker environments use app as the main source directory containing the repository code, different from SWE-bench environments. Apart from that, we use the same prompt for all our evaluations. D.1 Initial prompt Initial prompt for LIVE-SWE-AGENT &lt;pr_description&gt; Consider the following PR description: {{task}} &lt;/pr_description&gt; &lt;instructions&gt; # Task Instructions ## Overview You&#x27;re a software engineer interacting continuously with a computer by submitting commands. You&#x27;ll be helping implement necessary changes to meet requirements in the PR description. Your task is specifically to make changes to non-test files in the current directory in order to fix the issue described in the PR description in a way that is general and consistent with the codebase. ,→ IMPORTANT: This is an interactive process where you will think and issue ONE command, see its result, then think and issue your next command. ,→ For each response:</li>
+</ul>
+<h1>1. Include a THOUGHT section explaining your reasoning and what you&#x27;re trying to accomplish</h1>
+<h1>2. Provide exactly ONE bash command to execute</h1>
+<p>## Important Boundaries - MODIFY: Regular source code files in /testbed (this is the working directory for all your subsequent commands) - DO NOT MODIFY: Tests, configuration files (pyproject.toml, setup.cfg, etc.) ## Recommended Workflow</p>
+<h1>1. Analyze the codebase by finding and reading relevant files</h1>
+<h1>2. Create a script to reproduce the issue</h1>
+<h1>3. Edit the source code to resolve the issue</h1>
+<h1>4. Verify your fix works by running your script again</h1>
+<h1>5. Test edge cases to ensure your fix is robust</h1>
+<p>## Command Execution Rules You are operating in an environment where</p>
+<h1>1. You write a single command</h1>
+<h1>2. The system executes that command in a subshell</h1>
+<h1>3. You see the result</h1>
+<h1>4. You write your next command</h1>
+<p>Each response should include:</p>
+<h1>1. A **THOUGHT** section where you explain your reasoning and plan</h1>
+<h1>2. A single bash code block with your command</h1>
+<p>Format your responses like this: &lt;format_example&gt; THOUGHT: Here I explain my reasoning process, analysis of the current situation, and what I&#x27;m trying to accomplish with the command below. ```bash your_command_here ``` &lt;/format_example&gt; Commands must be specified in a single bash code block: ```bash your_command_here ```</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><ul>
+<li>tokio-rs__tokio-6603</li>
+<li>tokio-rs__tokio-6752</li>
+<li>tokio-rs__tokio-6838</li>
+<li>uutils__coreutils-6731</li>
+<li>valkey-io__valkey-1842</li>
+<li>valkey-io__valkey-790</li>
+<li>vuejs__core-11739</li>
+<li>vuejs__core-11870</li>
+</ul>
+<p>D 所用提示 此处给出 LIVE-SWE-AGENT 所用的详细提示。注意：提示的大部分由 mini-SWE-agent 构建，我们仅做最小改动以启用即时工具创建。此外，我们做了一处轻微修改：在全部 SWE-Bench Pro 评估的初始提示中，把测试床主目录指示从 testbed 改为 app。这是因为 SWE-Bench Pro 的 docker 环境使用 app 作为包含仓库代码的主源目录，与 SWE-bench 环境不同。除此之外，我们全部评估使用相同提示。</p>
+<p>D.1 初始提示 LIVE-SWE-AGENT 的初始提示 &lt;pr_description&gt; Consider the following PR description: {{task}} &lt;/pr_description&gt; &lt;instructions&gt; # Task Instructions ## Overview You&#x27;re a software engineer interacting continuously with a computer by submitting commands. You&#x27;ll be helping implement necessary changes to meet requirements in the PR description. Your task is specifically to make changes to non-test files in the current directory in order to fix the issue described in the PR description in a way that is general and consistent with the codebase. IMPORTANT: This is an interactive process where you will think and issue ONE command, see its result, then think and issue your next command. For each response:</p>
+<h1>1. Include a THOUGHT section explaining your reasoning and what you&#x27;re trying to accomplish</h1>
+<h1>2. Provide exactly ONE bash command to execute</h1>
+<p>## Important Boundaries - MODIFY: Regular source code files in /testbed (this is the working directory for all your subsequent commands) - DO NOT MODIFY: Tests, configuration files (pyproject.toml, setup.cfg, etc.) ## Recommended Workflow</p>
+<h1>1. Analyze the codebase by finding and reading relevant files</h1>
+<h1>2. Create a script to reproduce the issue</h1>
+<h1>3. Edit the source code to resolve the issue</h1>
+<h1>4. Verify your fix works by running your script again</h1>
+<h1>5. Test edge cases to ensure your fix is robust</h1>
+<p>## Command Execution Rules You are operating in an environment where</p>
+<h1>1. You write a single command</h1>
+<h1>2. The system executes that command in a subshell</h1>
+<h1>3. You see the result</h1>
+<h1>4. You write your next command</h1>
+<p>Each response should include:</p>
+<h1>1. A **THOUGHT** section where you explain your reasoning and plan</h1>
+<h1>2. A single bash code block with your command</h1>
+<p>Format your responses like this: &lt;format_example&gt; THOUGHT: Here I explain my reasoning process, analysis of the current situation, and what I&#x27;m trying to accomplish with the command below. ```bash your_command_here ``` &lt;/format_example&gt; Commands must be specified in a single bash code block: ```bash your_command_here ```</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页续完多语言题号，并给出附录里的初始提示，英文原文保留。作者说改动极小：只在最小底座提示上加上可以自己造工具；专业基准评测把工作目录名改掉，因为容器布局不同。其余评估共用同一套提示。类比：说明书正文没变，只在封面多盖了一枚允许自制夹具的章。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-19" data-page="19">
+  <div class="page-label">第 19 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-019.jpg" alt="PDF page 19" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>**CRITICAL REQUIREMENTS:** - Your response SHOULD include a THOUGHT section explaining your reasoning - Your response MUST include EXACTLY ONE bash code block - This bash block MUST contain EXACTLY ONE command (or a set of commands connected with &amp;&amp; or ||) - If you include zero or multiple bash blocks, or no command at all, YOUR RESPONSE WILL FAIL - Do NOT try to run multiple independent commands in separate blocks in one response - Directory or environment variable changes are not persistent. Every action is executed in a new subshell.</p>
+<div class="toc-line">- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir &amp;&amp; ...` or write/load</div>
+<p>environment variables from files ,→ Example of a CORRECT response: &lt;example_response&gt; THOUGHT: I need to understand the structure of the repository first. Let me check what files are in the current directory to get a better understanding of the codebase. ,→ ```bash ls -la ``` &lt;/example_response&gt; Example of an INCORRECT response: &lt;example_response&gt; THOUGHT: I need to examine the codebase and then look at a specific file. I&#x27;ll run multiple commands to do this. ```bash ls -la ``` Now I&#x27;ll read the file: ```bash cat file.txt ``` &lt;/example_response&gt; If you need to run multiple commands, either:</p>
+<h1>1. Combine them in one block using &amp;&amp; or ||</h1>
+<p>```bash command1 &amp;&amp; command2 || echo &quot;Error occurred&quot; ```</p>
+<p>2. Wait for the first command to complete, see its output, then issue the next command in your following response. ## Environment Details - You have a full Linux shell environment - Always use non-interactive flags (-y, -f) for commands - Avoid interactive tools like vi, nano, or any that require user input - If a command isn&#x27;t available, you can install it ## Useful Command Examples ### Create a new file: ```bash cat &lt;&lt;&#x27;EOF&#x27; &gt; newfile.py import numpy as np hello = &quot;world&quot; print(hello) EOF ``` ### View file content: ```bash # View specific lines with numbers nl -ba filename.py | sed -n &#x27;10,20p&#x27; ``` **IMPORTANT TOOL CREATION INSTRUCTIONS** ## Creating your own tools - You can also create your own tools in Python to help with your workflow - Compared to basic bash commands, the tools you create should be able to better aid your workflow in solving the task ,→ - Ensure each tool you create is in Python, contains informative outputs or error messages, and can be ran from the command line ,→ - You should at least create a simple edit tool that can help you effectively edit arbitrary files instead of using bash commands ,→ - The tools you create can be for any purpose, it does not need to be general, instead think about how it can help you specifically with the current task at hand ,→ ### Example of creating a custom tool: &lt;example_response&gt;</p>
+<div class="toc-line">THOUGHT: I noticed that in order to solve the issue I need to ... therefore I should create a custom tool to help me</div>
+<div class="toc-line">...</div>
+<pre class="math">,→ ```bash cat &lt;&lt;&#x27;EOF&#x27; &gt; /path/to/tool_name.py #!/usr/bin/env python3 import sys # Import other packages if needed def main(): # Your tool logic here</pre>
+<div class="toc-line">...</div></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（续）附录 D.1 初始提示的中段，原文为给模型看的英文操作说明，故保留不译。要点：每次只许一条 bash；环境不持久；以及全文真正新增的「工具创建须知」——用 Python 写可命令行调用的脚本，至少做个编辑器，工具不必通用、要对准当前任务。</p>
+<p>**CRITICAL REQUIREMENTS:** - Your response SHOULD include a THOUGHT section explaining your reasoning - Your response MUST include EXACTLY ONE bash code block - This bash block MUST contain EXACTLY ONE command (or a set of commands connected with &amp;&amp; or ||) - If you include zero or multiple bash blocks, or no command at all, YOUR RESPONSE WILL FAIL - Do NOT try to run multiple independent commands in separate blocks in one response - Directory or environment variable changes are not persistent. Every action is executed in a new subshell.</p>
+<div class="toc-line">- However, you can prefix any action with `MY_ENV_VAR=MY_VALUE cd /path/to/working/dir &amp;&amp; ...` or write/load environment variables from files</div>
+<p>Example of a CORRECT response: &lt;example_response&gt; THOUGHT: I need to understand the structure of the repository first. Let me check what files are in the current directory to get a better understanding of the codebase. ```bash ls -la ``` &lt;/example_response&gt; Example of an INCORRECT response: &lt;example_response&gt; THOUGHT: I need to examine the codebase and then look at a specific file. I&#x27;ll run multiple commands to do this. ```bash ls -la ``` Now I&#x27;ll read the file: ```bash cat file.txt ``` &lt;/example_response&gt; If you need to run multiple commands, either:</p>
+<h1>1. Combine them in one block using &amp;&amp; or ||</h1>
+<p>```bash command1 &amp;&amp; command2 || echo &quot;Error occurred&quot; ```</p>
+<p>2. Wait for the first command to complete, see its output, then issue the next command in your following response. ## Environment Details - You have a full Linux shell environment - Always use non-interactive flags (-y, -f) for commands - Avoid interactive tools like vi, nano, or any that require user input - If a command isn&#x27;t available, you can install it ## Useful Command Examples ### Create a new file: ```bash cat &lt;&lt;&#x27;EOF&#x27; &gt; newfile.py import numpy as np hello = &quot;world&quot; print(hello) EOF ``` ### View file content: ```bash # View specific lines with numbers nl -ba filename.py | sed -n &#x27;10,20p&#x27; ``` **IMPORTANT TOOL CREATION INSTRUCTIONS** ## Creating your own tools - You can also create your own tools in Python to help with your workflow - Compared to basic bash commands, the tools you create should be able to better aid your workflow in solving the task - Ensure each tool you create is in Python, contains informative outputs or error messages, and can be ran from the command line - You should at least create a simple edit tool that can help you effectively edit arbitrary files instead of using bash commands - The tools you create can be for any purpose, it does not need to be general, instead think about how it can help you specifically with the current task at hand ### Example of creating a custom tool: &lt;example_response&gt;</p>
+<div class="toc-line">THOUGHT: I noticed that in order to solve the issue I need to ... therefore I should create a custom tool to help me ...</div>
+<p>```bash cat &lt;&lt;&#x27;EOF&#x27; &gt; /path/to/tool_name.py #!/usr/bin/env python3 import sys # Import other packages if needed def main(): # Your tool logic here</p>
+<div class="toc-line">...</div></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是初始提示后半和造工具示例，代码与提示保持英文。硬性规定每次只许一个命令块，目录和环境变量在新子壳里不持久。更关键的是造工具说明：必须能从命令行跑、输出要有信息，并且至少做一个编辑工具；工具不必通用，只要对当前任务有用。类比：教练手册里多了一节你可以现场做工具，其余比赛规则照旧。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-20" data-page="20">
+  <div class="page-label">第 20 / 20 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-020.jpg" alt="PDF page 20" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>if __name__ == &quot;__main__&quot;: main() EOF ``` &lt;/example_response&gt; ### Example of using the tool you created: &lt;example_response&gt;</p>
+<div class="toc-line">THOUGHT: Let me use the custom tool I created to help me with ...</div>
+<p>```bash python /path/to/tool_name.py &lt;&lt;EOF your_input_here EOF ``` &lt;/example_response&gt; ## Submission When you&#x27;ve completed your work (reading, editing, testing), and cannot make further progress issue exactly the following command: ```bash echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT &amp;&amp; git add -A &amp;&amp; git diff --cached ``` This command will submit your work. You cannot continue working (reading, editing, testing) in any way on this task after submitting. &lt;/instructions&gt; Figure 7: The initial prompt for LIVE-SWE-AGENT, modified from the base mini-SWE-agent prompt. D.2 Feedback message Feedback message used by LIVE-SWE-AGENT &lt;returncode&gt;{{output.returncode}}&lt;/returncode&gt; {% if output.output | length &lt; 10000 -%} &lt;output&gt; {{ output.output -}} &lt;/output&gt; Reflect on the previous trajectories and decide if there are any tools you can create to help you with the current task. ,→ Note that just because you can use basic bash commands doesn&#x27;t mean you should not create any tools that can still be helpful. ,→ {%- else -%} &lt;warning&gt; The output of your last command was too long. Please try a different command that produces less output. If you&#x27;re looking at a file you can try use head, tail, sed or create a tool to view a smaller number of lines selectively. ,→ If you&#x27;re using grep or find and it produced too much output, you can use a more selective search pattern. &lt;/warning&gt; {%- set elided_chars = output.output | length - 10000 -%} &lt;output_head&gt; {{ output.output[:5000] }} &lt;/output_head&gt; &lt;elided_chars&gt; {{ elided_chars }} characters elided &lt;/elided_chars&gt; &lt;output_tail&gt; {{ output.output[-5000:] }} &lt;/output_tail&gt; {%- endif -%} Figure 8: The feedback message used by LIVE-SWE-AGENT after each agent step.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>if __name__ == &quot;__main__&quot;: main() EOF ``` &lt;/example_response&gt; ### Example of using the tool you created: &lt;example_response&gt;</p>
+<div class="toc-line">THOUGHT: Let me use the custom tool I created to help me with ...</div>
+<p>```bash python /path/to/tool_name.py &lt;&lt;EOF your_input_here EOF ``` &lt;/example_response&gt; ## Submission When you&#x27;ve completed your work (reading, editing, testing), and cannot make further progress issue exactly the following command: ```bash echo COMPLETE_TASK_AND_SUBMIT_FINAL_OUTPUT &amp;&amp; git add -A &amp;&amp; git diff --cached ``` This command will submit your work. You cannot continue working (reading, editing, testing) in any way on this task after submitting. &lt;/instructions&gt; 图 7：LIVE-SWE-AGENT 的初始提示，由基础 mini-SWE-agent 提示修改而来。</p>
+<p>D.2 反馈消息 LIVE-SWE-AGENT 使用的反馈消息 &lt;returncode&gt;{{output.returncode}}&lt;/returncode&gt; {% if output.output | length &lt; 10000 -%} &lt;output&gt; {{ output.output -}} &lt;/output&gt; Reflect on the previous trajectories and decide if there are any tools you can create to help you with the current task. Note that just because you can use basic bash commands doesn&#x27;t mean you should not create any tools that can still be helpful. {%- else -%} &lt;warning&gt; The output of your last command was too long. Please try a different command that produces less output. If you&#x27;re looking at a file you can try use head, tail, sed or create a tool to view a smaller number of lines selectively. If you&#x27;re using grep or find and it produced too much output, you can use a more selective search pattern. &lt;/warning&gt; {%- set elided_chars = output.output | length - 10000 -%} &lt;output_head&gt; {{ output.output[:5000] }} &lt;/output_head&gt; &lt;elided_chars&gt; {{ elided_chars }} characters elided &lt;/elided_chars&gt; &lt;output_tail&gt; {{ output.output[-5000:] }} &lt;/output_tail&gt; {%- endif -%} 图 8：LIVE-SWE-AGENT 在每一步智能体步骤之后使用的反馈消息。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束提示：如何调用刚造的工具、如何提交补丁，以及每步之后贴上的反馈模板。先回传输出，再强制反思要不要造工具；输出太长则截头去尾，并建议自己写查看工具。这就是消融里那句值钱的提醒，没有它解决率上不去。类比：每次试车结束，技师必须在记录单上回答要不要现做一把新扳手，不能只看仪表就开走。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+    <p class="eyebrow">读后评论 · 非论文原文</p>
+    <h1>当场造工具是动态组合，但还没有卸得干净</h1>
+    <p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完 §2、§4.3–4.4 之后展开。</p>
+
+    <h2>它解决的是「焊死的工具箱」，不是「可组合的运行时」</h2>
+    <p>LIVE-SWE-AGENT 的现场很清楚：从只会 bash 的 mini-SWE-agent 起步，修 issue 时把自定义工具写成可执行脚本，再在每步反馈后反思要不要造或改。这是<strong>运行中的动态组合</strong>——行动空间跟着当前仓库长，而不是开跑前焊死。</p>
+    <p>Cordiverse 要的却是另一层保证：卸掉时把副作用干净收回（时间可组合性），以及依赖能声明、能发现、能随变化自动协调（空间可组合性）。这篇论文没有这两刀。脚本写进环境、被调用、被改写；任务结束可以扔掉，但没有卸载语义、没有依赖规约、也没有「一次坏的自修改如何隔离爆炸半径」。live tool creation 因此是动态组合的<strong>半截</strong>：组合发生了，回收与协调还没有。</p>
+
+    <h2>弱模型过不了「合成工具」这道门</h2>
+    <p>表 5 是全文最不该被成绩图盖住的结果。GPT-5-Nano 从 mini-SWE-agent 的 44.0% 掉到 14.0%：轨迹里它不懂「为何造工具」，常死循环。GPT-5-Mini 也略降。涨点从 GPT-5、Claude 4 才开始，Claude 4.5 Sonnet 相对提升最大（62% → 76%）。</p>
+    <p>含义比「强模型更好用」更尖锐：当场自演化把<strong>工具合成</strong>变成一等能力，弱模型过不了这道门时，开放脚手架会放大失败，而不是放大收益。作者把它写成评测红利——LIVE-SWE-AGENT 同时测 issue 解决率和造工具能力——但对 harness 工程，这是能力门槛，不是可忽略的消融脚注。</p>
+
+    <h2>作者自己点名、但仍开放的</h2>
+    <ul>
+      <li><strong>整脚手架 / 提示 / 工作流</strong>：§4.4 说当场自演化本应覆盖系统提示、环境交互、具体工作流，本文只先做了造工具。演化范围仍窄。</li>
+      <li><strong>跨任务持久化</strong>：现在每道题现场造、题后可丢。作者提到用 Skills 把有用工具和洞见序列化到下一题；这还是展望，不是实验。</li>
+      <li><strong>训练期自演化</strong>：运行时提示很瘦，但「让模型在训练里学会造工具、改脚手架」没有做。和 DGM 的离线搜脚手架不是同一条路，却同样未闭合。</li>
+    </ul>
+
+    <h2>一句话判断</h2>
+    <div class="claim">
+      <p><strong>价值</strong>在于证明：不必花 2.2 万美元离线演化脚手架，bash-only 加上「造工具 + 每步反思」就能在 Verified / Pro 上压过当时手工与专有 harness。<strong>缺口</strong>是：这是没有卸载保证、没有依赖语义的动态组合；弱模型过不了工具合成；整脚手架与跨任务 Skills 仍开放。Cordiverse 要补的，正是这篇还没承诺的那半截。</p>
+    </div>
+    <p>若只带着一个问题回正文：盯 <a href="#page-4">§2.1</a>（反思加在哪）和 <a href="#page-9">表 5</a>（谁根本造不了工具）。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'live-swe-agent-paper-cols-v1';
+const total = 20;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

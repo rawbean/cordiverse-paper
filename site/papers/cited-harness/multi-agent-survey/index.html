@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>基于大语言模型的多智能体：进展与挑战综述 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="基于大语言模型的多智能体：进展与挑战综述">基于大语言模型的多智能体：进展与挑战综述</p>
+      <p class="paper-authors" title="T. Guo et al.">T. Guo et al.</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">馆藏条目写的是「多智能体综述」，但这份 <code>page_texts.json</code> 抽到的正文是 <strong>LMTuner</strong>：一篇把大模型微调收成对话式训练系统的框架文。下面按<strong>实际抽出的英文页</strong>给主张、机制与路径，避免按错标题读。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 用交互 / 训练 / 推理三模块，再加一行 <code>Let_Tune()</code> 和 GPT-4 对话配参，把从 3 亿到 1300 亿参数的微调，从「拼一堆互不兼容的工具包」收成可开源复用的训练系统。</p>
+</div>
+
+<h2>和 AI 工程、智能体 / Cordiverse 的关系</h2>
+<p>LMTuner 首先是<strong>训练侧 harness</strong>：不改智能体循环，改的是「人怎么把底座模型训起来」。对 AI 工程的用处可以收成一句：把显存、LoRA、数据集和 DeepSpeed 命令，交给一个会问问题的配置助手。</p>
+<p>它和多智能体编排（AutoGen、MetaGPT）不是同一层。交互模块把 GPT-4 当配置智能体，但训练一旦启动，就是常规 DeepSpeed 作业。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：模块可钩子替换，不等于运行时卸得干净、依赖跟得上。此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>领域增量训练需求上涨，但 Megatron、bitsandbytes、OpenDelta 等单点工具要人自己串。h2oGPT / Lamini 只整合子集。作者认为缺的是<strong>模块化且能对话配参</strong>的一体系统，好让新手五分钟开训。</p>
+
+<h2>机制</h2>
+<ul>
+  <li><strong>交互模块</strong>（<a href="#page-3">第 3–4 页</a>）：GPT-4 System Message + Function；pynvml 读 GPU；产出 <code>ARGS.json</code>，必要时写换机器的 <code>Readme.md</code>。</li>
+  <li><strong>训练模块</strong>（<a href="#page-5">第 5–6 页</a>）：自带中英 / 医疗 / 法律 QA，可喂本地 JSONL；ZeRO + LoRA / QLoRA / LOMO；RoPE 插值；默认 Lion + wandb。</li>
+  <li><strong>推理模块</strong>：训完加载权重，可选 INT8 / INT4。</li>
+</ul>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>开源系统</strong>：Apache 2.0，一行启动，技术拼盘写入同一框架。</li>
+  <li><strong>表 1 对照</strong>：相对 Megatron / HuggingFace / h2oGPT 等，声称覆盖并行、量化、PEFT、位置插值与对话助手。</li>
+  <li><strong>表 2</strong>：MedDialog 上微调 10 epoch 的 BLEU 等超过 GPT-3 / GLM 零样本——设定不对齐，只能当「灶能出菜」的证据。</li>
+  <li><strong>附录</strong>：支持模型、数据集、显存表；无 GPT-4 地区可用预置问卷。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>摘要与引言</td>
+      <td><a href="#page-1">1</a></td>
+      <td>为何现有工具包难拼；三模块与参数范围。</td>
+      <td>必读。先建立主张。</td>
+    </tr>
+    <tr>
+      <td>表 1 · 贡献 · 相关工作</td>
+      <td><a href="#page-2">2</a></td>
+      <td>和谁比、贡献三条、在训练工具谱系里站哪。</td>
+      <td>扫定位；核对比勾是否名实相符。</td>
+    </tr>
+    <tr>
+      <td>§3.1 交互</td>
+      <td><a href="#page-3">3</a>–<a href="#page-4">4</a></td>
+      <td>图 2–4：对话配参、<code>ARGS.json</code>、<code>Readme.md</code>。</td>
+      <td>关心机制必读。</td>
+    </tr>
+    <tr>
+      <td>§3.2–3.3 · 案例</td>
+      <td><a href="#page-5">5</a>–<a href="#page-6">6</a></td>
+      <td>数据 / 模型 / PEFT / 插值；表 2；结论。</td>
+      <td>对证据时精读表 2 的设定。</td>
+    </tr>
+    <tr>
+      <td>局限 · 参考文献</td>
+      <td><a href="#page-7">7</a>–<a href="#page-10">10</a></td>
+      <td>复杂需求仍可能改代码；书目（英文）。</td>
+      <td>文献可快翻。</td>
+    </tr>
+    <tr>
+      <td>附录 A–D</td>
+      <td><a href="#page-10">10</a>–<a href="#page-11">11</a></td>
+      <td>支持模型与数据；表 3 显存；安装与 OpenAI Key。</td>
+      <td>要复现再读；盯「对话配参依赖 GPT-4」。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → 图 1（<a href="#page-1">第 1 页</a>）→ 图 2（<a href="#page-3">第 3 页</a>）→ 结论（<a href="#page-6">第 6 页</a>）。</p>
+  </div>
+  <div class="card">
+    <h3>核对数字与硬件</h3>
+    <p>表 2（<a href="#page-6">第 6 页</a>）→ 表 3–4（<a href="#page-11">第 11 页</a>）。盯「微调 vs 零样本」和最低显存。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / harness</h3>
+    <p>§3.1 把 GPT-4 当配置智能体 → 附录 D 的 API Key → <a href="#commentary">读后评论</a>：配参助手不是运行时组合。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「ARGS.json 里到底有哪些键」「表 2 的对照是否公平」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>LMTuner: An user-friendly and highly-integrable Training Framework for fine-tuning Large Language Models Yixuan Weng 1, Zhiqi Wang1,2, Huanxuan Liao1,2, Shizhu He1,2, Shengping Liu3, Kang Liu1,2, Jun Zhao1,2 1 The Laboratory of Cognition and Decision Intelligence for Complex Systems, Institute of Automation, Chinese Academy of Sciences 2School of Artificial Intelligence, University of Chinese Academy of Sciences 3Unisound, Beijing, China wengsyx@gmail.com, {wangzhiqi2022, liaohuanxuan2023}@ia.ac.cn, liushengping@unisound.com, {shizhu.he, kliu, jzhao}@nlpr.ia.ac.cn</p>
+<h1>Abstract</h1>
+<p>With the burgeoning development in the realm of large language models (LLMs), the demand for efficient incremental training tailored to specific industries and domains continues to increase. Currently, the predominantly employed frameworks lack modular design, it often takes a lot of coding work to kickstart the training of LLM. To address this, we present &quot;LMTuner&quot;, a highly usable, integrable, and scalable system for training LLMs expeditiously and with minimal user-input. LMTuner comprises three main modules - the Interaction, Training, and Inference Modules. We advocate that LMTuner’s usability and integrality alleviate the complexities in training large language models. Remarkably, even a novice user could commence training large language models within five minutes. Furthermore, it integrates DeepSpeed frameworks and supports Efficient Fine-Tuning methodologies like Low Rank Adaptation (LoRA), Quantized LoRA (QLoRA), etc., enabling the training of language models scaling from 300M to a whopping 130B parameters using a single server. The LMTuner’s homepage1and screencast video 2are now publicly available. Introduction Large language models (LLMs) are demonstrating unprecedented performance in numerous natural language understanding and generation tasks (Wei et al., 2022b,a; Weng et al., 2023a) thanks to their capacity to learn from extensive text data with generative manner (Brown et al., 2020; Scao et al., 2022). This has led to a rising number of researchers and engineers embarking on the training of their own language models for specific industries and domains (Taori et al., 2023; Xu et al., 2023; Cui et al., 2023). However, training LLMs imposes high demands on engineering skills (Zhang et al., 2022), and the various techniques applicable 1https://wengsyx.github.io/LMTuner/ 2https://youtu.be/nsXmWOmN3rE Interaction Module Training Module Inference Module Man-Machine Interactive Environment Interaction Let_Tune() Dataset GPT-4 Model PEFT MEFT HyperParameters Medical Low Own Llama Llama2 ChatGLM GLM130B LoRA LOMO QLoRA Learning Rate Epochs Warmup Figure 1: The architecture of the LMTuner. LMTuner can be invoked through a single line of code . The overall process is top-down, sequentially going through the Interaction Module, Training Module, and Inference Module. to such training are mostly disparate (Dao et al., 2022; Xi et al., 2023; Luo et al., 2023). This not only increases the complexity of related projects but also adds to the learning cost required for training language models. With the progressive development of generative large language model technology, various techniques have emerged, incorporated into different toolkits (Zhao et al., 2023b). As shown in Table 1, when aiming for model parallelism, MegatronLM (Shoeybi et al., 2020) stands as a preferred choice, while bitsandbytes (Dettmers et al., 2022) serves the purpose of model quantization, and Opendelta (Hu et al., 2023) facilitates the implementation of Efficient Fine-Tuning technology. Nonetheless, the flexibility offered by these individual tools comes at the cost of developers spending significant time coordinating the usage of diverse tool modules, rendering direct application challenging. To address these challenges, several frameworks, such as h2oGPT (Candel et al., 2023) and Lamini (Diamos et al., 2023), have attempted to consolidate some of these functionalities. However, these frameworks typically integrate only a subset of the available techniques, often lacking comprehensive coverage of commonly used model technologies. Therefore, in this paper, we present LMTuner, a novel framework that significantly minimizes these arXiv:2308.10252v1 [cs.CL] 20 Aug 2023</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>LMTuner：一个用户友好且高度可集成的大语言模型微调训练框架</p>
+<p>Yixuan Weng 1, Zhiqi Wang1,2, Huanxuan Liao1,2, Shizhu He1,2, Shengping Liu3, Kang Liu1,2, Jun Zhao1,2</p>
+<p class="meta-line">1 复杂系统认知与决策智能实验室，中国科学院自动化研究所</p>
+<p class="meta-line">2 中国科学院大学人工智能学院</p>
+<p class="meta-line">3 云知声，北京，中国</p>
+<p>wengsyx@gmail.com, {wangzhiqi2022, liaohuanxuan2023}@ia.ac.cn,</p>
+<p>liushengping@unisound.com, {shizhu.he, kliu, jzhao}@nlpr.ia.ac.cn</p>
+<h1>摘要</h1>
+<p>随着大语言模型（LLM）领域的蓬勃发展，面向特定行业与领域的高效增量训练需求持续增长。当前主流框架缺乏模块化设计，启动 LLM 训练往往需要大量编码工作。为此，我们提出 LMTuner：一套高度可用、可集成、可扩展的系统，能以极少的用户输入迅速开展 LLM 训练。LMTuner 由三大模块构成——交互模块、训练模块与推理模块。我们主张，LMTuner 的可用性与整体性降低了训练大语言模型的复杂性。值得注意的是，即便新手用户也可在五分钟内开始训练大语言模型。此外，它集成 DeepSpeed 框架，并支持 Low Rank Adaptation（LoRA）、Quantized LoRA（QLoRA）等高效微调方法，使单台服务器即可训练从 3 亿到高达 1300 亿参数的语言模型。LMTuner 主页1与演示视频2现已公开。</p>
+<p>引言</p>
+<p>大语言模型（LLM）凭借以生成方式从海量文本中学习的能力，在众多自然语言理解与生成任务上展现出前所未有的性能（Wei et al., 2022b,a; Weng et al., 2023a; Brown et al., 2020; Scao et al., 2022）。这促使越来越多的研究者与工程师着手为自己的特定行业与领域训练语言模型（Taori et al., 2023; Xu et al., 2023; Cui et al., 2023）。然而，训练 LLM 对工程技能要求很高（Zhang et al., 2022），且可用于此类训练的各种技术大多彼此分立（Dao et al., 2022; Xi et al., 2023; Luo et al., 2023）。这不仅增加了相关项目的复杂度，也抬高了训练语言模型所需的学习成本。</p>
+<p>随着生成式大语言模型技术的逐步发展，各类技术不断涌现，并被纳入不同工具包（Zhao et al., 2023b）。如表 1 所示，若目标是模型并行，MegatronLM（Shoeybi et al., 2020）是优选；bitsandbytes（Dettmers et al., 2022）用于模型量化；Opendelta（Hu et al., 2023）则便于实现高效微调。然而，这些单点工具带来的灵活性，代价是开发者需花费大量时间协调多样工具模块，直接应用变得困难。为应对这些挑战，h2oGPT（Candel et al., 2023）与 Lamini（Diamos et al., 2023）等框架尝试整合部分功能。但这些框架通常只覆盖可用技术的一个子集，往往缺乏对常用模型技术的全面覆盖。</p>
+<p>因此，本文提出 LMTuner，一种显著降低上述障碍的</p>
+<p>图 1：LMTuner 的架构。LMTuner 可通过一行代码调用。整体流程自上而下，依次经过交互模块、训练模块与推理模块。</p>
+<p>arXiv:2308.10252v1 [cs.CL] 20 Aug 2023</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开场提出 LMTuner：用交互、训练、推理三个模块，把微调大模型收成「少写代码、五分钟能开训」的系统，并接上 DeepSpeed、LoRA、QLoRA，单机覆盖 3 亿到 1300 亿参数。
+这很重要，因为它针对的不是新算法，而是训练工程被拆成一堆互不兼容的工具包。
+类比：与其自己把烤箱、秤和菜谱拼成厨房，不如有人给你一套按按钮就能开火的一体灶。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Highly-integrable User-friendly Model Parallelism Quantization PEFT MEFT ZeRO Load Dataset Position Interpolation AI Assisstent Code Concise MegatronLM (Shoeybi et al., 2020) ✓ Huggingface (Wolf et al., 2020) ✓ ✓ ✓ ✓ ✓ bitsandbytes (Dettmers et al., 2022) ✓ OpenDelta (Hu et al., 2023) ✓ ✓ Lamini (Diamos et al., 2023) ✓ ✓ h2oGPT (Candel et al., 2023) ✓ ✓ ✓ ✓ LMTuner (Ours) ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ Table 1: Compared to other commonly used language model training systems, LMTuner system has highly integrable and user-friendly. obstacles by offering an easy-to-use, scalable, and integrative modular system. As depicted in Figure 1, LMTuner is comprised of three modules. 1) The Interaction Module enables user-friendly communication, automatically adjusting parameters based on user needs and context, ideal for non-technical users. 2) The Training Module autonomously processes training using these parameters, saving users the complexity of setup. 3) The Inference Module utilizes the trained models for various tasks upon training completion. With these modules, developers can effortlessly generate their desired models and automatically pass on the parameters to the next module for seamless training. This streamlines the entire process, allowing the system to be readily deployed and utilized upon completion of training. In summary, our proposed LMTuner system offers greater usability and flexibility, allowing users to swiftly configure parameters for training language models according to specific needs and effectively initiate the training. Our contributions are as follows:</p>
+<ul>
+<li>We have proposed LMTuner, which is the highly usable and integrated training system for LLMs. It is free to use and license-friendly (Apache 2.0). And we open source code at https://github.com/WENGSYX/LMTuner.</li>
+<li>LMTuner boasts high usability, only needing a single code ( ) to be launched. It facilitates quick start-up for large language model training by allowing users to interact using natural language with LMTuner.</li>
+<li>We have incorporated a wide range of techniques suited for training large language models, including models, domain QA datasets, Efficient Fine-Tuning methods, and specific hyperparameters. This integration fosters the research and development of large language models. Related Work The development of pre-training language models has brought about numerous language model tools and a flourishing NLP community, among which are “Transformers” (Wolf et al., 2020). It establishes a range of model classes and provides APIs for implementing easily extendable transformer models. Other tools closely associated with language model building include Fairseq (Ott et al., 2019), MegatronLM (Shoeybi et al., 2020), MedConQA (Xia et al., 2022a), OpenDelta (Hu et al., 2023) and h2oGPT (Candel et al., 2023). Differing from these, LMTuner is specifically designed for training auto-regressive LLMs. With its modular design, it allows for a free combination of different pre-training models, datasets, model frameworks, automatic length extrapolation settings, and PEFT methods within one framework. With the assistance of dialogue-type LLMs such as GPT-4 (OpenAI, 2023), users can accomplish the entire training process with just a single line of code. Recent researches have proposed many directions for training LLMs (Ignat et al., 2023), including high-quality data (Zhou et al., 2023; Gunasekar et al., 2023), efficient fine-tuning methods (Mangrulkar et al., 2022), model structures (Shazeer, 2019; Dao et al., 2022), and length extrapolation (Chi et al., 2023; Tworkowski et al., 2023; Su et al., 2022; Chen et al., 2023a). The LMTuner system integrates the most advanced techniques in these fields, allowing users to make choices according to their needs. LMTuner integrates these techniques into separate modules, facilitating user selection and usage (Wang et al., 2023a; Dao et al., 2022; Dettmers et al., 2023). LLMs undergoing instruction pre-training can align with human instructions (Ouyang et al., 2022b; Chung et al., 2022) and have been discovered to possess many capabilities not present in smaller language models (Zhao et al., 2023a), such as tool creation (Cai et al., 2023), environment</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>高度可集成</p>
+<p>用户友好</p>
+<p>模型并行</p>
+<p>量化</p>
+<p>PEFT</p>
+<p>MEFT</p>
+<p>ZeRO</p>
+<p>加载数据集</p>
+<p>位置插值</p>
+<p>AI 助手</p>
+<p>代码简洁</p>
+<p>MegatronLM（Shoeybi et al., 2020） ✓</p>
+<p>Huggingface（Wolf et al., 2020） ✓ ✓ ✓ ✓ ✓</p>
+<p>bitsandbytes（Dettmers et al., 2022） ✓</p>
+<p>OpenDelta（Hu et al., 2023） ✓ ✓</p>
+<p>Lamini（Diamos et al., 2023） ✓ ✓</p>
+<p>h2oGPT（Candel et al., 2023） ✓ ✓ ✓ ✓</p>
+<p>LMTuner（本文） ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓ ✓</p>
+<p>表 1：与其他常用语言模型训练系统相比，LMTuner 系统高度可集成且用户友好。</p>
+<p>新颖框架，通过易用、可扩展、可整合的模块化系统显著减少这些障碍。如图 1 所示，LMTuner 由三个模块组成。1）交互模块实现友好沟通，根据用户需求与上下文自动调整参数，适合非技术用户。2）训练模块依据这些参数自主完成训练，省去用户配置的复杂性。3）推理模块在训练完成后，将所得模型用于各类任务。借助这些模块，开发者可轻松生成所需模型，并自动把参数传给下一模块以无缝训练。这简化了全过程，使系统在训练完成后即可部署使用。</p>
+<p>综上，我们提出的 LMTuner 系统提供更高的可用性与灵活性，使用户能按具体需求迅速配置训练参数并有效启动训练。我们的贡献如下：</p>
+<ul>
+<li>我们提出 LMTuner，面向 LLM 的高度可用、高度集成的训练系统。免费使用，许可证友好（Apache 2.0）。开源代码见 https://github.com/WENGSYX/LMTuner。</li>
+<li>LMTuner 可用性高，仅需一行代码即可启动。用户可用自然语言与 LMTuner 交互，从而快速开始大语言模型训练。</li>
+<li>我们纳入了广泛适用于大语言模型训练的技术，包括模型、领域问答数据集、高效微调方法与特定超参数。这种整合推动大语言模型的研究与开发。</li>
+</ul>
+<p>相关工作</p>
+<p>预训练语言模型的发展带来了大量语言模型工具与繁荣的 NLP 社区，其中即有 “Transformers”（Wolf et al., 2020）。它建立了一系列模型类，并提供 API 以实现易于扩展的 transformer 模型。与语言模型构建密切相关的其他工具还包括 Fairseq（Ott et al., 2019）、MegatronLM（Shoeybi et al., 2020）、MedConQA（Xia et al., 2022a）、OpenDelta（Hu et al., 2023）与 h2oGPT（Candel et al., 2023）。与这些工作不同，LMTuner 专门面向自回归 LLM 的训练。凭借模块化设计，它允许在同一框架内自由组合不同的预训练模型、数据集、模型框架、自动长度外推设置与 PEFT 方法。在 GPT-4（OpenAI, 2023）等对话型 LLM 的辅助下，用户仅需一行代码即可完成整个训练过程。</p>
+<p>近期研究提出了训练 LLM 的诸多方向（Ignat et al., 2023），包括高质量数据（Zhou et al., 2023; Gunasekar et al., 2023）、高效微调方法（Mangrulkar et al., 2022）、模型结构（Shazeer, 2019; Dao et al., 2022）以及长度外推（Chi et al., 2023; Tworkowski et al., 2023; Su et al., 2022; Chen et al., 2023a）。LMTuner 系统整合了这些领域的先进技术，允许用户按需选择。LMTuner 将这些技术放入独立模块，便于用户选择与使用（Wang et al., 2023a; Dao et al., 2022; Dettmers et al., 2023）。</p>
+<p>经过指令预训练的 LLM 可以对齐人类指令（Ouyang et al., 2022b; Chung et al., 2022），并被发现具有许多较小语言模型所不具备的能力（Zhao et al., 2023a），例如工具创造（Cai et al., 2023）、环境</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用表 1 把 LMTuner 和其他训练系统并排：并行、量化、PEFT、ZeRO、数据集、位置插值、对话助手，作者声称覆盖更全；并列出三贡献：开源、一行启动、技术拼盘。
+这很重要，因为它把「我们好用」落成可对照的清单，而不是口号。
+类比：装修清单上别人只勾了水电，作者把家具、窗帘、智能门锁也勾上了——读的时候要核对这些勾是否名实相符。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>if ‘train this machine’ else STEP1: Interaction Module (System Message): You are an AI assistant capable of training large language models.</p>
+<div class="toc-line">Firstly, you need to ask the user questions in order ...</div>
+<p>ARGS[&#x27;model&#x27;]: Default: None; Here are some available models to</p>
+<div class="toc-line">choose from: GLM-130B, ChatGLM2-6B, llama-7b...</div>
+<p>ARGS[&#x27;learning rate&#x27;]: Default 1e-5; If using LoRA or QLoRA as the</p>
+<div class="toc-line">method, please set it to 1e-3...</div>
+<p>LMTuner (GPT-4) LMTuner Man-Machine Interactive Environment Interaction User: I want to train a medical model on this machine. Let_Tune() Python Env. True GPUs Number 2 GPUs Memory 48G ARGS.json Hello there! I&quot;m your AI assistant, and I&quot;m here to help you train your model. Before we get started, it&quot;s important to have a clear plan and goal in mind User I want to train a medical model on this machine. Perfect! We can definitely assist you with that. To start with, let&#x27;s choose the dataset for your model. Since you mentioned you&#x27;re interested in training a medical model, we can recommend the ‘LM-Medical-v1&#x27; dataset to you. Would that be OK? User ok Great! Your dataset has been set to &#x27;LM-Medical-v1&#x27;. Based on your GPU memory, we recommend training Llama2-7B or using LoRA to train Llama2-13B. User It&#x27;s okay to use Llama2-13B. I have set up Llama2-13B with LoRA for you. Based on your GPU memory, we recommend using a batch size of 8 and setting the max text length to 1024, does that work for you? In addition, you will need to set the number of training epochs and how often to save the weights, such as every N steps. The defaults are 10 and 1000, respectively. User Right. { &#x27;GPU Number&#x27;: None, &#x27;GPU Memory&#x27;: None, ‘48 GB’ &#x27;data&#x27;: None, ‘LM-Medical-v1’ &#x27;model&#x27;: None, ‘Llama2-13B’ &#x27;method&#x27;: None, ‘LoRA’ &#x27;learn rate&#x27;: None, 1e-04 &#x27;epoch&#x27;: 10, &#x27;lora rank&#x27;: 16, &#x27;batch size&#x27;: None, &#x27;max length&#x27;: None, 1024 &#x27;quantization&#x27;: 0, &#x27;train this machine&#x27;: None, True &#x27;save interval&#x27;: 1000, &#x27;save path&#x27;: &#x27;./checkpoints&#x27;, &#x27;gradient accumulation&#x27;: 1, ’rope scaling’: False, } STEP2: Training Module STEP3: Inference Module ARGS.json Readme.md deepspeed --include localhost:0,1 main.py --model Llama2-13B -- use_lora 1 --lora_rank 16 --fp16 --dataset LM-Medical-v1 --</p>
+<div class="toc-line">max_seq_length 1024 --deepspeed_config ./ds_config.json ...</div>
+<p>Dataset Model PEFT MEFT HyperParameters LM-Medical-v1 Llama2-13B LoRA fp16 Learn rate 1e-4 Max length 1024 ,,,,,, Q: What are the manifestations of lactose intolerance? What are the treatment methods? A: Lactose intolerance is a common digestive disorder where the body is unable to completely digest lactose, a sugar found in milk and dairy products. This condition results from a deficiency of the enzyme lactase, which is produced in the small intestine.\n\nSymptoms\nThe</p>
+<div class="toc-line">symptoms of lactose intolerance typically develop within a ...</div>
+<p>ds_config.json LMTuner LMTuner LMTuner Figure 2: Overview of the LMTuner system. When a user makes a request by , the LMTuner system automatically detects the GPUs available in the environment and engages in detailed discussions with the user to determine the configuration. The configuration is then automatically sent to the Training Module to initiate training. During the training process, wandb is enabled to save training logs. The final trained model is sent to the Inference Module for deployment. exploration (Wang et al., 2023b), self-verification (Weng et al., 2022), and complex reasoning (Weng et al., 2023b; Zhu et al., 2023). Leveraging these capabilities of LLMs, LMTuner’s Interaction Module can help users analyze their needs and recommend necessary settings through a nature-language-based interaction method. This practice of using LLMs as interactive agents (Wang et al., 2023c) have also been applied in interactive decision making (Yao et al., 2023) and functioning as research assistants (Ren et al., 2023). LMTuner LMTuner is an open-source system that offers a command-line interface (CLI) for training LLMs: 1 #Official Launch for LMTuner. 2 from LMTuner import Let_Tune 3 Let_Tune () 5 &gt;&gt;&gt; [AI] Greetings! I am your AI assistant. Present assist training your model. Necessary possess clear plan , goal first. 6 &gt;&gt;&gt; [ANSWER] : As shown in Figure 2, LMTuner allows for the development of LLMs training through simple conversations. This can improve engineering efficiency when training LLMs and reduce code burden. 3.1 Interaction Module The Interaction Module of LMTuner, utilizing GPT4’s (or ChatGPT) System Message and Function features, serves as an LLM training assistant. This module, during initialization, incorporates common training issues, parameter configurations, and selectable methods into System Messages, thereby streamlining the training process. The essential function of GPT-4 within this context is to ascertain the requisite training configurations. A function, Set_ARGS, is available to amend the parameters in the training configuration. To enable GPT-4 to evaluate various parameter settings, we utilize pynvml to monitor server GPUs, integrating this information within the System Message content. The Interaction Module helps prevent user configuration mistakes through its user-friendly interface and high adaptability. As shown in Figure 3, users can state their needs conversationally. LMTuner then analyzes their words and suggests appropriate training settings. This works because the System Message contains knowledge about LLM training, compensating for the common lack of</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>探索（Wang et al., 2023b）、自我验证（Weng et al., 2022）以及复杂推理（Weng et al., 2023b; Zhu et al., 2023）。借助 LLM 的这些能力，LMTuner 的交互模块可通过基于自然语言的交互，帮助用户分析需求并推荐必要设置。这种将 LLM 用作交互智能体的做法（Wang et al., 2023c）也已被用于交互式决策（Yao et al., 2023）以及充当研究助手（Ren et al., 2023）。</p>
+<p>LMTuner</p>
+<p>LMTuner 是一个开源系统，提供用于训练 LLM 的命令行接口（CLI）：</p>
+<p class="meta-line">1 #Official Launch for LMTuner.</p>
+<p class="meta-line">2 from LMTuner import Let_Tune</p>
+<p class="meta-line">3 Let_Tune ()</p>
+<p class="meta-line">5 &gt;&gt;&gt; [AI] Greetings! I am your AI</p>
+<p>assistant. Present assist training</p>
+<p>your model. Necessary possess clear</p>
+<p>plan , goal first.</p>
+<p class="meta-line">6 &gt;&gt;&gt; [ANSWER] :</p>
+<p>如图 2 所示，LMTuner 允许通过简单对话开展 LLM 训练开发。这可以提高训练 LLM 时的工程效率并减轻代码负担。</p>
+<p class="meta-line">3.1 交互模块</p>
+<p>LMTuner 的交互模块利用 GPT-4（或 ChatGPT）的 System Message 与 Function 特性，充当 LLM 训练助手。该模块在初始化时，将常见训练问题、参数配置与可选方法写入 System Messages，从而简化训练过程。GPT-4 在此情境中的核心职能是确定所需训练配置。函数 Set_ARGS 可用于修改训练配置中的参数。为使 GPT-4 能够评估不同参数设置，我们使用 pynvml 监测服务器 GPU，并将该信息纳入 System Message。</p>
+<p>交互模块以其友好界面与高适应性，帮助防止用户配置错误。如图 3 所示，用户可以对话方式陈述需求。LMTuner 随后分析其表述并建议适当的训练设置。之所以可行，是因为 System Message 包含关于 LLM 训练的知识，弥补了缺乏大语言模型训练背景的研究者与工程师的常见知识缺口。</p>
+<p>图 2：LMTuner 系统总览。当用户通过 Let_Tune() 提出请求时，系统自动检测环境中可用的 GPU，并与用户详细讨论以确定配置。配置随后被自动送入训练模块启动训练。训练过程中启用 wandb 保存日志。最终训练好的模型被送入推理模块部署。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页进入方法：一行 Let_Tune() 启动，交互模块用 GPT-4 的 System Message 和 Function，再靠 pynvml 看显存，跟用户用白话把 ARGS 聊出来。
+这很重要，因为它把「会配超参」外包给对话智能体，而不是再写一份配置手册。
+类比：去裁缝店不用报尺寸表，店员量一下、问你场合，再替你选布料和针脚。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Llama2 7B Llama 33B Llama2 70B GLM-130B</p>
+<div class="toc-line">......</div>
+<p>Models Chinese Common Law English Common PEFT and MEFT Datsets Hyper-Parameters Interaction Module Learning Reat=1e-5 Warmup=0.02 Batch Size=24 Seq Length=1024 I have collected one million legal texts and corresponding question-answer dialogues, and I would like to use them to train a Chinese language model. Since I have a large amount of data, I don&#x27;t need the model to be too large, and I hope to perform incremental training on all parameters in My 8 * A6000 server. I have a strong desire to train a massive model on my personal dataset, but unfortunately, I am limited to only eight 3090s. Could you lend me a hand? I would like to use Llama2-7B to train a medical dialogue chatbot, And I have two A100 GPUs. A B C Custom Medical ChatGLM2 6B Normal LoRA QLoRA</p>
+<div class="toc-line">......</div>
+<p>Learning Reat=1e-4 Warmup=0.02 Batch Size=6 Seq Length=1024 LOMO Learning Reat=1e-4 Warmup=0.02 Batch Size=32 Seq Length=2048 Figure 3: Depending on the requirements specified, LMTuner can automatically suggest different training plans. such expertise among researchers and engineers without backgrounds in large language model training. The Interaction Module, while offering immense flexibility and ease of use, prevents potential issues such as user configuration errors. As shown in Figure 3, users with different requirements only need to express their needs in natural language. The LMTuner system is capable of analyzing and recommending appropriate training parameters. If the user is not inclined to train the model on the current device, LMTuner will automatically generate a Readme.md file that includes environment configuration, model processing, and training code instructions like Figure 4, facilitating a swift setup for the user on a new device. Once all training parameters are finalized, LMTuner saves a copy of these in an ARGS.json file. If one wishes to initiate training quickly with the same parameters, they only need to pass the path name of ARGS.json to the function, thereby avoiding redundant repeated dialogues. 1 #Quickly Launch for LMTuner. 2 from LMTuner import Let_Tune 3 Let_Tune(ARGS=’./ARGS.config ’) 5 &gt;&gt;&gt; [LMTuner] We will train the model ~ Go! 6 &gt;&gt;&gt; [2023 -07 -19 05:18:34 ,778] [INFO] [runner.py:555: main] cmd = python -u -m deepspeed.launcher.launch -- world_info=xxxxx main.py --seed</p>
+<div class="toc-line">1234 ......</div>
+<p>Train the model on another server</p>
+<p>Welcome to LMTuner we can provide you with various training methods you want Installation</p>
+<p>For details, please refer to Github Guide Operation</p>
+<p>Login wandb</p>
+<p>Please run the following code in shell to login wandb Copy ds_config</p>
+<p>Please move the originally generated ds_config.json to the now training path. Training operation</p>
+<p>Please manually execute the following code on the server to start training: wandb login xxxxxxxxxxxxxxxxxx deepspeed --include localhost:0,1 main.py --seed 1234 --model ChatGLM2-6B -- use_lora 1 --lora_rank 16 --fp16 --dataset WENGSYX/Lingo-Medical-v1 --train-data WENGSYX/Lingo-Medical-v1 --valid-data WENGSYX/Lingo-Medical-v1 --max_seq_length 270 --epochs 10  --train-iters 0  --no-load-rng --warmup .02 --checkpointactivations --save-interval 1000 --save &quot;./checkpoints&quot; --split 1 --eval-interval 1000000 --eval-batch-size 2 --lr 2e-4 --num-workers 0 --log-interval 10 -- deepspeed_config ./ds_config.json Figure 4: An example of the Readme.md automatically generated by LMTuner. 3.2 Training Module The training module in LMTuner has highly integrated, easy to invoke, and extensible features. Currently, the mainstream LLMs are mostly similar in architecture, and the training process and loss calculation are generally consistent. Therefore, we construct the required techniques in a modularized manner at the code level according to different requirements. Meanwhile, such design also facilitates engineers with coding skills to directly replace the corresponding modules through hooks. In the rest of this section, we will introduce each technical module separately. Datasets. The availability of high-quality training data is crucial for developing capable LLMs. To</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>图 3：依据用户给出的需求，LMTuner 可自动建议不同的训练方案。</p>
+<p>交互模块在提供极大灵活性与易用性的同时，防止诸如用户配置错误等问题。如图 3 所示，需求不同的用户只需用自然语言表达其需要。LMTuner 系统能够分析并推荐适当的训练参数。若用户不打算在当前设备上训练模型，LMTuner 将自动生成一份 Readme.md，包含环境配置、模型处理与训练代码说明（如图 4），便于用户在新设备上迅速搭建。</p>
+<p>一旦所有训练参数敲定，LMTuner 会将这些参数保存到 ARGS.json。若希望用相同参数快速启动训练，只需把 ARGS.json 的路径名传给 Let_Tune 函数，从而避免重复对话。</p>
+<p class="meta-line">1 #Quickly Launch for LMTuner.</p>
+<p class="meta-line">2 from LMTuner import Let_Tune</p>
+<p class="meta-line">3 Let_Tune(ARGS=’./ARGS.config ’)</p>
+<p class="meta-line">5 &gt;&gt;&gt; [LMTuner] We will train the model</p>
+<p>~ Go!</p>
+<p class="meta-line">6 &gt;&gt;&gt; [2023 -07 -19 05:18:34 ,778] [INFO]</p>
+<p>[runner.py:555: main] cmd = python</p>
+<p>-u -m deepspeed.launcher.launch --</p>
+<p>world_info=xxxxx main.py --seed</p>
+<div class="toc-line">1234 ......</div>
+<p>图 4：LMTuner 自动生成的 Readme.md 示例。</p>
+<p class="meta-line">3.2 训练模块</p>
+<p>LMTuner 的训练模块具有高度集成、易于调用、可扩展的特点。当前主流 LLM 大多架构相近，训练过程与损失计算大体一致。因此，我们按不同需求在代码层面以模块化方式构建所需技术。同时，这一设计也便于具备编码能力的工程师通过钩子直接替换相应模块。本节其余部分将分别介绍各技术模块。</p>
+<p class="lead"><strong>数据集。</strong>高质量训练数据对发展有能力的 LLM 至关重要。为</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把交互收尾：聊完写出 ARGS.json 和换机器用的 Readme.md；然后进入训练模块，说主流 LLM 结构差不多，技术按模块挂、可用钩子替换。
+这很重要，因为它把「对话配参」变成可复现的文件，而不是一次性聊天记录。
+类比：第一次点菜有服务员帮忙，菜单会被存成小票；下次直接把小票递进去，厨房按同样配方做。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>facilitate affordable access to suitable datasets for question answering, we have curated and prepared a collection of QA datasets covering diverse domains, including English, Chinese, medical, and legal fields. Furthermore, to enable the development of models with customizable names and personas, the datasets have been augmented with synthetic question-answer pairs inquiring about the model’s identity (e.g. &quot;Hi I’m [MODEL NAME]&quot;). During training, the [MODEL NAME] tokens can be dynamically substituted with the preferred name for each model instance. 1 from LMTuner.dataset import LMTunerDataset 3 dataset = LMTunerDataset () 5 # Give your model a name 6 dataset.set_model_name(’LMTuner ’) 8 # Add QA dataset samples 9 dataset.add_sample ([’Who are you?’, &quot;I’m LMTuner , your personal sidekick!&quot;]) However, despite the richness of our curated datasets, they inherently possess certain limitations in coverage and diversity. To augment the builtin datasets and account for user-specific needs, our system also provides seamless support for customized training data. Users can simply provide the local path to their own JSONL-formatted question answering data files. This design choice provides greater flexibility to users, empowering them to tailor the training distribution to their unique application requirements. For instance, users can provide proprietary datasets containing sensitive or confidential information not suitable for public release. The ability to directly use local JSONL files avoids the need to port datasets to external platforms. 1 # Pretrained Custom-Dataset Format 2 { &quot;input&quot; : &quot;&quot; , &quot;output&quot; : &quot; With the burgeoning development in the realm of . . . &quot; , 5 } 7 # Instruct Custom-Dataset Format 8 { &quot;input&quot; : &quot;Human : Who are you ?&quot; , &quot;output&quot; : &quot; A s s i s t a n t : I ’m LMTuner , your p e r s o n a l s i d e k i c k ! &quot; , 11 } Models. Recent advancements in natural language processing have been enabled by the transformer architecture (Vaswani et al., 2017). The SwissArmyTransformer 3 framework facilitates efficient development of diverse transformer models by decoupling reusable core components from interchangeable model-specific modules. These lightweight modules attach to the shared backbone via hooks, enabling rapid iteration and customization. In contrast, Transformers (Wolf et al., 2020) provides optimized implementations of canonical architectures and pretrained models for production use. The LMTuner system combines these complementary strengths for flexible model development and deployment. It utilizes SwissArmyTransformer to construct tailored architectures and seamlessly integrates Transformers’ pretrained models. This synthesis of code modularization and extensive pretrained models promises to enhance productivity, accelerate innovation, and improve real-world language understanding. LMTuner promotes exploratory modeling by innovating new designs built on transformer infrastructure, while benefiting from cutting-edge advancements in language model pretraining. Selectively utilizing both libraries stands to meaningfully advance natural language processing systems through rapid prototyping of specialized models and accessible deployment of state-of-the-art capabilities. Efficient Fine-Tuning. LMTuner uses ZeRO technology of Deepspeed by default to unload parameters and improve training throughput. In addition, LMTuner provides parameters-efficient fine-tuning (PEFT) methods including LoRA (Hu et al., 2022) and QLoRA (Dettmers et al., 2023), and memoryefficient fine-tuning (MEFT) methods including LOMO (Lv et al., 2023) and Quantization(Gholami et al., 2021). They support training LLMs with low memory usage. These methods are implemented in a modularized manner at the code level of LMTuner, so they can be easily combined and used freely. Position Interpolation. To better support longcontext modeling, LMTuner has integrated some scaling of RoPE. We implemented Xpos (Sun et al., 2022) and some recent position interpolation methods like linear interpolation (Chen et al., 2023a), dynamic interpolation, NTK-Aware Scaled RoPE (NTKv1) and NTK-By-Parts (NTKv2). The dynamic methods choose the correct scale parameter based on sequence length, rather than having to settle for a fixed trade-off between maximum 3https://github.com/THUDM/SwissArmyTransformer</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>便于以可负担的方式获得合适的问答数据集，我们策划并准备了一组覆盖多样领域的 QA 数据集，包括英语、中文、医疗与法律。此外，为支持可定制名称与人设的模型开发，数据集已用询问模型身份的合成问答对增强（例如 “Hi I’m [MODEL NAME]”）。训练期间，[MODEL NAME] 标记可动态替换为每个模型实例的首选名称。</p>
+<p class="meta-line">1 from LMTuner.dataset import</p>
+<p>LMTunerDataset</p>
+<p class="meta-line">3 dataset = LMTunerDataset ()</p>
+<p class="meta-line">5 # Give your model a name</p>
+<p class="meta-line">6 dataset.set_model_name(’LMTuner ’)</p>
+<p class="meta-line">8 # Add QA dataset samples</p>
+<p class="meta-line">9 dataset.add_sample ([’Who are you?’,</p>
+<p>&quot;I’m LMTuner , your personal sidekick!&quot;])</p>
+<p>然而，尽管我们策划的数据集较为丰富，其覆盖与多样性仍固有局限。为增强内置数据集并照顾用户特定需求，系统也无缝支持定制训练数据。用户只需提供本地 JSONL 格式问答数据文件的路径。这一设计给予用户更大灵活性，使其能按独特应用需求裁剪训练分布。例如，用户可提供不宜公开的专有或机密数据集。直接使用本地 JSONL 文件，避免了把数据迁到外部平台。</p>
+<p class="meta-line">1 # Pretrained Custom-Dataset Format</p>
+<p class="meta-line">2 { &quot;input&quot; : &quot;&quot; , &quot;output&quot; : &quot; With the burgeoning development in the realm of . . . &quot; , }</p>
+<p class="meta-line">7 # Instruct Custom-Dataset Format</p>
+<p class="meta-line">8 { &quot;input&quot; : &quot;Human : Who are you ?&quot; , &quot;output&quot; : &quot; Assistant : I’m LMTuner , your personal sidekick ! &quot; , }</p>
+<p class="lead"><strong>模型。</strong>自然语言处理的近期进展由 transformer 架构（Vaswani et al., 2017）所推动。SwissArmyTransformer 框架通过把可复用核心组件与可互换的模型特定模块解耦，便于高效开发多样 transformer 模型。这些轻量模块经钩子挂到共享骨干上，实现快速迭代与定制。相比之下，Transformers（Wolf et al., 2020）为生产使用提供规范架构与预训练模型的优化实现。</p>
+<p>LMTuner 系统结合这两种互补优势，用于灵活的模型开发与部署。它用 SwissArmyTransformer 构建定制架构，并无缝集成 Transformers 的预训练模型。这种代码模块化与大量预训练模型的综合，有望提高生产力、加速创新，并改善现实世界的语言理解。LMTuner 通过在 transformer 基础设施上创新新设计来促进探索性建模，同时受益于语言模型预训练的前沿进展。有选择地使用这两个库，可通过快速原型化专用模型与便捷部署最先进能力，有意义地推进自然语言处理系统。</p>
+<p class="lead"><strong>高效微调。</strong>LMTuner 默认使用 DeepSpeed 的 ZeRO 技术卸载参数并提高训练吞吐。此外，LMTuner 提供参数高效微调（PEFT）方法，包括 LoRA（Hu et al., 2022）与 QLoRA（Dettmers et al., 2023），以及内存高效微调（MEFT）方法，包括 LOMO（Lv et al., 2023）与量化（Gholami et al., 2021）。它们支持以较低内存占用训练 LLM。这些方法在 LMTuner 代码层面以模块化实现，因此可以轻松组合、自由使用。</p>
+<p class="lead"><strong>位置插值。</strong>为更好支持长上下文建模，LMTuner 集成了若干 RoPE 缩放。我们实现了 Xpos（Sun et al., 2022）以及线性插值（Chen et al., 2023a）、动态插值、NTK-Aware Scaled RoPE（NTKv1）与 NTK-By-Parts（NTKv2）等近期位置插值方法。动态方法根据序列长度选择正确的缩放参数，而不必在最大</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是训练模块的零件柜：自带中英医疗法律 QA、可换模型名、可喂本地 JSONL；模型侧拼 SwissArmyTransformer 与 HuggingFace；默认 ZeRO，再加上 LoRA / QLoRA / LOMO 和 RoPE 插值。
+这很重要，因为它解释「一行启动」背后到底预装了哪些技术，而不是魔法。
+类比：一体灶里其实已经嵌好了蒸烤箱、燃气灶和定时器——你选模式，不必自己拧气管。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>sequence length and performance on shorter sequences, i.e., use the exact position values for the first 2048 contexts and then recalculate the position vectors for each new sequence length as the model generates the markers one by one. A certain degree of long-context modeling can be achieved by choosing different scaling methods. Other Details. We use the probability distribution over sequences of tokens as the optimization objective with cross-entropy loss (Radford et al., 2019) and use Lion optimizer (Chen et al., 2023b) by default to optimize LLMs, because it has been proven to be more memory-efficient than Adam (Kingma and Ba, 2017). During training, we record the loss, learning rate, and number of tokens respectively at each step using wandb4, and display them in the browser through line charts, which helps users observe the training status during training. 3.3 Inference Module LMTuner loads the final model weights after training and generates continuations conditioned on given contexts until reaching the maximum length. To speed up inference, LMTuner provides model quantization methods including INT8 and INT4 quantization (Zeng et al., 2022). By quantizing 16-bit floating-point weights into lower bitwidth integers such as 8-bit or 4-bit, the computation time and memory usage during inference can be reduced. LMTuner quantizes weights of selected layers in a trained model, while keeping activations in 16-bit floating-point format. After quantization, the inference latency on CPU and throughput on GPU can be improved significantly with little degradation in model quality (Liu et al., 2023). A Running Case The target audience of LMTuner is machine learning engineers and researchers across academia and industry. Novice users can leverage LMTuner’s guided interaction while experts retain full control over implementation details. It compares favorably to current systems by combining user-friendliness, scalability, and integrability within a unified interface. LMTuner is open-source under the Apache 2.0 license, allowing free use in commercial products. By open-sourcing LMTuner, we hope to catalyze progress in large language model training and lower the barriers to leveraging these transformative technologies. The availability of an easy-to4https://wandb.ai/ use, highly customizable system should benefit the broader community. Assuming we need to train a medical LLM that can assist in patient diagnosis, and we have two A6000 GPUs with 48GB VRAM each, as well as a medical QA dataset (MedDialog (Zeng et al., 2020)). Using LMTuner, we can automatically determine the training process, including the selection of the LLama-7B model and a set of corresponding hyperparameters5. while Table 2 showcases the performance of the MedDialog test set (without manual model selection). Instead, we chose the final model obtained after LMTuner training, which completed 10 epochs. We observed that the LMTuner-trained model surpasses existing models in metrics such as Bleu, Meteor, and NIST. This indicates that the trained model is ready for direct utilization. Method MedDialog BLEU-2 BLEU-4 Meteor Nist-2 Nist-4 GPT-3 (175B) + Direct 14.93 7.52 4.55 0.814 0.852 GPT-3 (175B) + CoT 9.18 4.61 3.54 0.546 0.569 Instruct-GPT (175B) + Direct 15.93 8.21 5.74 0.874 0.913 Instruct-GPT (175B) + CoT 16.49 7.80 4.94 1.020 1.059 GLM (130B) + Direct 12.16 6.02 5.31 0.577 0.601 GLM (130B) + CoT 30.02 15.61 8.73 1.909 2.017 Zeng et al. (2020) 31.67 16.88 9.57 1.981 2.076 LMTuner (Ours) 35.62 19.02 9.47 2.377 2.517 Table 2: We present the results of several language models on the MedDialog task, including the zeroshot (Direct) and CoT (Wei et al., 2022b, 2021) performance of some LLMs (GPT-3:code-davinci-001 (Chen et al., 2021); Instruct-GPT: code-davinci-002 (Ouyang et al., 2022a)), as well as the performance of previous Finetune state-of-the-art models. Conclusion LMTuner represents a pioneering effort to facilitate large language model training through enhanced usability and modularity. We believe LMTuner represents a significant step towards realizing the full potential of large language models. By continuing to integrate emerging techniques and community feedback, its capabilities will only grow over time. The availability of LMTuner as an open source project presents exciting opportunities for LLMs enhancement. We hope its emphasis on usability and extensibility will meaningfully accelerate future work in this paradigm-defining domain. 5We released the code at https://github.com/ WENGSYX/LMTuner/tree/main/Example/English_ Medical</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>序列长度与较短序列性能之间接受固定折中，即对前 2048 个上下文使用精确位置值，随后在模型逐标记生成时为每个新序列长度重新计算位置向量。通过选择不同缩放方法，可实现一定程度的长上下文建模。</p>
+<p class="lead"><strong>其他细节。</strong>我们以标记序列上的概率分布为优化目标，使用交叉熵损失（Radford et al., 2019），并默认使用 Lion 优化器（Chen et al., 2023b）优化 LLM，因为它已被证明比 Adam（Kingma and Ba, 2017）更节省内存。训练期间，我们用 wandb 分别记录每步的损失、学习率与标记数，并在浏览器中以折线图展示，帮助用户观察训练状态。</p>
+<p class="meta-line">3.3 推理模块</p>
+<p>LMTuner 在训练后加载最终模型权重，并在给定上下文上生成续写，直至达到最大长度。为加速推理，LMTuner 提供包括 INT8 与 INT4 量化（Zeng et al., 2022）在内的模型量化方法。通过将 16 位浮点权重量化为 8 位或 4 位等更低位宽整数，可减少推理时的计算时间与内存占用。LMTuner 对训练模型中选定层的权重量化，同时将激活保持为 16 位浮点。量化后，CPU 上的推理延迟与 GPU 上的吞吐可显著改善，而模型质量下降很小（Liu et al., 2023）。</p>
+<p>一个运行案例</p>
+<p>LMTuner 的目标用户是学术界与工业界的机器学习工程师与研究者。新手可借助 LMTuner 的引导式交互，专家则保留对实现细节的完全控制。它通过在统一接口中结合用户友好、可扩展与可集成，与当前系统相比具有优势。LMTuner 以 Apache 2.0 许可证开源，允许在商业产品中免费使用。通过开源 LMTuner，我们希望催化大语言模型训练的进展，并降低利用这些变革性技术的门槛。</p>
+<p>假设我们需要训练一个可协助患者诊断的医疗 LLM，并拥有两块各 48GB 显存的 A6000 GPU，以及一个医疗 QA 数据集（MedDialog（Zeng et al., 2020））。使用 LMTuner，我们可以自动确定训练过程，包括选择 LLama-7B 模型及一组相应超参数。</p>
+<p>而表 2 展示了 MedDialog 测试集上的性能（无人工模型选择）。相反，我们选择 LMTuner 训练完成后、完成 10 个 epoch 的最终模型。我们观察到，LMTuner 训练的模型在 Bleu、Meteor 与 NIST 等指标上超过现有模型。这表明训练好的模型已可直接使用。</p>
+<p>表 2：我们给出若干语言模型在 MedDialog 任务上的结果，包括部分 LLM 的零样本（Direct）与思维链（CoT）性能，以及此前微调最优模型的性能。</p>
+<p>方法 / MedDialog / BLEU-2 / BLEU-4 / Meteor / Nist-2 / Nist-4</p>
+<p>GPT-3 (175B) + Direct 14.93 7.52 4.55 0.814 0.852</p>
+<p>GPT-3 (175B) + CoT 9.18 4.61 3.54 0.546 0.569</p>
+<p>Instruct-GPT (175B) + Direct 15.93 8.21 5.74 0.874 0.913</p>
+<p>Instruct-GPT (175B) + CoT 16.49 7.80 4.94 1.020 1.059</p>
+<p>GLM (130B) + Direct 12.16 6.02 5.31 0.577 0.601</p>
+<p>GLM (130B) + CoT 30.02 15.61 8.73 1.909 2.017</p>
+<p class="lead"><strong>Zeng et al.</strong> (2020) 31.67 16.88 9.57 1.981 2.076</p>
+<p>LMTuner（本文） 35.62 19.02 9.47 2.377 2.517</p>
+<p>结论</p>
+<p>LMTuner 代表通过增强可用性与模块化来促进大语言模型训练的开创性努力。我们相信 LMTuner 是迈向充分实现大语言模型潜力的重要一步。通过持续整合新兴技术与社区反馈，其能力将随时间增长。将 LMTuner 作为开源项目提供，为大语言模型增强带来令人兴奋的机会。我们希望其对可用性与可扩展性的强调，将有意义地加速这一范式定义领域的未来工作。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束训练细节（Lion、wandb），介绍推理侧 INT8/INT4，再用 MedDialog 案例和表 2 说微调后的模型在 BLEU 等指标上超过 GPT-3 / GLM 的零样本。
+这很重要，因为它第一次拿出数字；但也要记住：这是微调过的专用模型对零样本大模型，不是同设定对打。
+类比：拿练过医考题的专科生，去比没看过题的通才——分数能说明「这套灶能出菜」，不能说明菜比米其林更好。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Limitations While LMTuner is designed to be user-friendly and intuitive, it may not capture all specific user requirements in its current version. The training process might need to be adjusted or additional techniques might need to be integrated to achieve optimal performance for certain specialized tasks. Some complex requirements could necessitate manual code modification, which might increase the learning curve for non-expert users. However, this limitation is also being actively addressed through continuous development and updates to the system to enhance its comprehension of user requirements. Acknowledgments This work was supported by the Strategic Priority Research Program of Chinese Academy of Sciences (No. XDA27020100) and the National Natural Science Foundation of China (No.U1936207, No.61976211). This work was supported by the Youth Innovation Promotion Association CAS and Yunnan Provincial Major Science and Technology Special Plan Projects (No.202202AD080004).</p>
+<h1>References</h1>
+<p>Sid Black, Gao Leo, Phil Wang, Connor Leahy, and Stella Biderman. 2021. GPT-Neo: Large Scale Autoregressive Language Modeling with MeshTensorflow. If you use this software, please cite it using these metadata. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901. Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. 2023. Large language models as tool makers. Arno Candel, Jon McKinney, Philipp Singer, Pascal Pfeiffer, Maximilian Jeblick, Prithvi Prabhu, Jeff Gambera, Mark Landry, Shivam Bansal, Ryan Chesler, Chun Ming Lee, Marcos V. Conde, Pasha Stetsenko, Olivier Grellier, and SriSatish Ambati.</p>
+<p>2023. h2ogpt: Democratizing large language models. Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harrison Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Joshua Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating large language models trained on code. CoRR, abs/2107.03374. Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. 2023a. Extending context window of large language models via positional interpolation. Xiangning Chen, Chen Liang, Da Huang, Esteban Real, Kaiyuan Wang, Yao Liu, Hieu Pham, Xuanyi Dong, Thang Luong, Cho-Jui Hsieh, Yifeng Lu, and Quoc V. Le. 2023b. Symbolic discovery of optimization algorithms. Ta-Chung Chi, Ting-Han Fan, Alexander I. Rudnicky, and Peter J. Ramadge. 2023. Dissecting transformer length extrapolation via the lens of receptive field analysis. Hyung Won Chung, Le Hou, Shayne Longpre, Barret Zoph, Yi Tay, William Fedus, Yunxuan Li, Xuezhi Wang, Mostafa Dehghani, Siddhartha Brahma, Albert Webson, Shixiang Shane Gu, Zhuyun Dai, Mirac Suzgun, Xinyun Chen, Aakanksha Chowdhery, Alex Castro-Ros, Marie Pellat, Kevin Robinson, Dasha Valter, Sharan Narang, Gaurav Mishra, Adams Yu, Vincent Zhao, Yanping Huang, Andrew Dai, Hongkun Yu, Slav Petrov, Ed H. Chi, Jeff Dean, Jacob Devlin, Adam Roberts, Denny Zhou, Quoc V. Le, and Jason Wei. 2022. Scaling instruction-finetuned language models. Jiaxi Cui, Zongjian Li, Yang Yan, Bohua Chen, and Li Yuan. 2023. Chatlaw: Open-source legal large language model with integrated external knowledge bases. Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. 2022. Flashattention: Fast and memory-efficient exact attention with io-awareness. Tim Dettmers, Mike Lewis, Younes Belkada, and Luke Zettlemoyer. 2022. Llm.int8(): 8-bit matrix multiplication for transformers at scale. Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. 2023. Qlora: Efficient finetuning of quantized llms. Greg Diamos, Sharon Zhou, Samee Ibraheem, Daniel, and Arman. 2023. Lamini: The llm engine for rapidly customizing models. https://github.com/ lamini-ai/lamini.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>局限 尽管 LMTuner 被设计为用户友好且直观，当前版本可能无法捕捉所有特定用户需求。对某些专门任务，训练过程可能需要调整，或需要整合额外技术以达到最优性能。一些复杂需求可能需要手动修改代码，这可能增加非专家用户的学习曲线。不过，这一局限也正通过持续开发与更新来积极应对，以增强系统对用户需求的理解。</p>
+<h1>致谢</h1>
+<p>本工作得到中国科学院战略性先导科技专项（No. XDA27020100）以及国家自然科学基金（No.U1936207、No.61976211）的支持。本工作得到中国科学院青年创新促进会以及云南省科技重大专项（No.202202AD080004）的支持。</p>
+<h1>参考文献</h1>
+<p>Sid Black, Gao Leo, Phil Wang, Connor Leahy, and Stella Biderman. 2021. GPT-Neo: Large Scale Autoregressive Language Modeling with MeshTensorflow. If you use this software, please cite it using these metadata. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. 2020. Language models are few-shot learners. Advances in neural information processing systems, 33:1877–1901. Tianle Cai, Xuezhi Wang, Tengyu Ma, Xinyun Chen, and Denny Zhou. 2023. Large language models as tool makers. Arno Candel, Jon McKinney, Philipp Singer, Pascal Pfeiffer, Maximilian Jeblick, Prithvi Prabhu, Jeff Gambera, Mark Landry, Shivam Bansal, Ryan Chesler, Chun Ming Lee, Marcos V. Conde, Pasha Stetsenko, Olivier Grellier, and SriSatish Ambati. 2023. h2ogpt: Democratizing large language models. Mark Chen, Jerry Tworek, Heewoo Jun, Qiming Yuan, Henrique Ponde de Oliveira Pinto, Jared Kaplan, Harrison Edwards, Yuri Burda, Nicholas Joseph, Greg Brockman, Alex Ray, Raul Puri, Gretchen Krueger, Michael Petrov, Heidy Khlaaf, Girish Sastry, Pamela Mishkin, Brooke Chan, Scott Gray, Nick Ryder, Mikhail Pavlov, Alethea Power, Lukasz Kaiser, Mohammad Bavarian, Clemens Winter, Philippe Tillet, Felipe Petroski Such, Dave Cummings, Matthias Plappert, Fotios Chantzis, Elizabeth Barnes, Ariel Herbert-Voss, William Hebgen Guss, Alex Nichol, Alex Paino, Nikolas Tezak, Jie Tang, Igor Babuschkin, Suchir Balaji, Shantanu Jain, William Saunders, Christopher Hesse, Andrew N. Carr, Jan Leike, Joshua Achiam, Vedant Misra, Evan Morikawa, Alec Radford, Matthew Knight, Miles Brundage, Mira Murati, Katie Mayer, Peter Welinder, Bob McGrew, Dario Amodei, Sam McCandlish, Ilya Sutskever, and Wojciech Zaremba. 2021. Evaluating large language models trained on code. CoRR, abs/2107.03374. Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. 2023a. Extending context window of large language models via positional interpolation. Xiangning Chen, Chen Liang, Da Huang, Esteban Real, Kaiyuan Wang, Yao Liu, Hieu Pham, Xuanyi Dong, Thang Luong, Cho-Jui Hsieh, Yifeng Lu, and Quoc V. Le. 2023b. Symbolic discovery of optimization algorithms. Ta-Chung Chi, Ting-Han Fan, Alexander I. Rudnicky, and Peter J. Ramadge. 2023. Dissecting transformer length extrapolation via the lens of receptive field analysis. Hyung Won Chung, Le Hou, Shayne Longpre, Barret Zoph, Yi Tay, William Fedus, Yunxuan Li, Xuezhi Wang, Mostafa Dehghani, Siddhartha Brahma, Albert Webson, Shixiang Shane Gu, Zhuyun Dai, Mirac Suzgun, Xinyun Chen, Aakanksha Chowdhery, Alex Castro-Ros, Marie Pellat, Kevin Robinson, Dasha Valter, Sharan Narang, Gaurav Mishra, Adams Yu, Vincent Zhao, Yanping Huang, Andrew Dai, Hongkun Yu, Slav Petrov, Ed H. Chi, Jeff Dean, Jacob Devlin, Adam Roberts, Denny Zhou, Quoc V. Le, and Jason Wei. 2022. Scaling instruction-finetuned language models. Jiaxi Cui, Zongjian Li, Yang Yan, Bohua Chen, and Li Yuan. 2023. Chatlaw: Open-source legal large language model with integrated external knowledge bases. Tri Dao, Daniel Y. Fu, Stefano Ermon, Atri Rudra, and Christopher Ré. 2022. Flashattention: Fast and memory-efficient exact attention with io-awareness. Tim Dettmers, Mike Lewis, Younes Belkada, and Luke Zettlemoyer. 2022. Llm.int8(): 8-bit matrix multiplication for transformers at scale. Tim Dettmers, Artidoro Pagnoni, Ari Holtzman, and Luke Zettlemoyer. 2023. Qlora: Efficient finetuning of quantized llms. Greg Diamos, Sharon Zhou, Samee Ibraheem, Daniel, and Arman. 2023. Lamini: The llm engine for rapidly customizing models. https://github.com/lamini-ai/lamini.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页先承认局限——复杂需求仍可能要改代码——然后进入参考文献。书目保持英文，便于按作者回查 LoRA、QLoRA、h2oGPT 等出处。
+类比：说明书末页的「本产品不保证」加上书架标签。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Zhengxiao Du, Yujie Qian, Xiao Liu, Ming Ding, Jiezhong Qiu, Zhilin Yang, and Jie Tang. 2022. Glm: General language model pretraining with autoregressive blank infilling. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 320–335. Amir Gholami, Sehoon Kim, Zhen Dong, Zhewei Yao, Michael W. Mahoney, and Kurt Keutzer. 2021. A survey of quantization methods for efficient neural network inference. Suriya Gunasekar, Yi Zhang, Jyoti Aneja, Caio César Teodoro Mendes, Allie Del Giorno, Sivakanth Gopi, Mojan Javaheripi, Piero Kauffmann, Gustavo de Rosa, Olli Saarikivi, Adil Salim, Shital Shah, Harkirat Singh Behl, Xin Wang, Sébastien Bubeck, Ronen Eldan, Adam Tauman Kalai, Yin Tat Lee, and Yuanzhi Li. 2023. Textbooks are all you need. Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. 2022. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations. Shengding Hu, Ning Ding, Weilin Zhao, Xingtai Lv, Zhen Zhang, Zhiyuan Liu, and Maosong Sun. 2023. OpenDelta: A plug-and-play library for parameterefficient adaptation of pre-trained models. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations), pages 274–281, Toronto, Canada. Association for Computational Linguistics. Oana Ignat, Zhijing Jin, Artem Abzaliev, Laura Biester, Santiago Castro, Naihao Deng, Xinyi Gao, Aylin Gunal, Jacky He, Ashkan Kazemi, Muhammad Khalifa, Namho Koh, Andrew Lee, Siyang Liu, Do June Min, Shinka Mori, Joan Nwatu, Veronica Perez-Rosas, Siqi Shen, Zekun Wang, Winston Wu, and Rada Mihalcea. 2023. A phd student’s perspective on research in nlp in the era of very large language models. Diederik P. Kingma and Jimmy Ba. 2017. Adam: A method for stochastic optimization. Peiyu Liu, Zikang Liu, Ze-Feng Gao, Dawei Gao, Wayne Xin Zhao, Yaliang Li, Bolin Ding, and JiRong Wen. 2023. Do emergent abilities exist in quantized large language models: An empirical study. Yang Luo, Xiaozhe Ren, Zangwei Zheng, Zhuo Jiang, Xin Jiang, and Yang You. 2023. Came: Confidenceguided adaptive memory efficient optimization. Kai Lv, Yuqing Yang, Tengxiao Liu, Qi jie Gao, Qipeng Guo, and Xipeng Qiu. 2023. Full parameter finetuning for large language models with limited resources. Sourab Mangrulkar, Sylvain Gugger, Lysandre Debut, Younes Belkada, and Sayak Paul. 2022. Peft: Stateof-the-art parameter-efficient fine-tuning methods. https://github.com/huggingface/peft. OpenAI. 2023. Gpt-4 technical report. Myle Ott, Sergey Edunov, Alexei Baevski, Angela Fan, Sam Gross, Nathan Ng, David Grangier, and Michael Auli. 2019. fairseq: A fast, extensible toolkit for sequence modeling. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics (Demonstrations), pages 48–53, Minneapolis, Minnesota. Association for Computational Linguistics. Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. 2022a. Training language models to follow instructions with human feedback. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Gray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. 2022b. Training language models to follow instructions with human feedback. In Advances in Neural Information Processing Systems. Alec Radford, Jeff Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. 2019. Language models are unsupervised multitask learners. Zhichu Ren, Zhen Zhang, Yunsheng Tian, and Ju Li.</p>
+<p>2023. Crest–copilot for real-world experimental scientist. Teven Le Scao, Angela Fan, Christopher Akiki, Ellie Pavlick, Suzana Ili´c, Daniel Hesslow, Roman Castagné, Alexandra Sasha Luccioni, François Yvon, Matthias Gallé, et al. 2022. Bloom: A 176bparameter open-access multilingual language model. arXiv preprint arXiv:2211.05100. Noam Shazeer. 2019. Fast transformer decoding: One write-head is all you need. Mohammad Shoeybi, Mostofa Patwary, Raul Puri, Patrick LeGresley, Jared Casper, and Bryan Catanzaro. 2020. Megatron-lm: Training multi-billion parameter language models using model parallelism. Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. 2022. Roformer: Enhanced transformer with rotary position embedding. Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim, Vishrav Chaudhary, Xia Song, and Furu Wei. 2022. A length-extrapolatable transformer. Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li, Carlos Guestrin, Percy Liang, and Tatsunori B. Hashimoto. 2023. Stanford alpaca: An instruction-following llama model. https:// github.com/tatsu-lab/stanford_alpaca.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>Zhengxiao Du, Yujie Qian, Xiao Liu, Ming Ding, Jiezhong Qiu, Zhilin Yang, and Jie Tang. 2022. Glm: General language model pretraining with autoregressive blank infilling. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 320–335. Amir Gholami, Sehoon Kim, Zhen Dong, Zhewei Yao, Michael W. Mahoney, and Kurt Keutzer. 2021. A survey of quantization methods for efficient neural network inference. Suriya Gunasekar, Yi Zhang, Jyoti Aneja, Caio César Teodoro Mendes, Allie Del Giorno, Sivakanth Gopi, Mojan Javaheripi, Piero Kauffmann, Gustavo de Rosa, Olli Saarikivi, Adil Salim, Shital Shah, Harkirat Singh Behl, Xin Wang, Sébastien Bubeck, Ronen Eldan, Adam Tauman Kalai, Yin Tat Lee, and Yuanzhi Li. 2023. Textbooks are all you need. Edward J Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean Wang, Lu Wang, and Weizhu Chen. 2022. LoRA: Low-rank adaptation of large language models. In International Conference on Learning Representations. Shengding Hu, Ning Ding, Weilin Zhao, Xingtai Lv, Zhen Zhang, Zhiyuan Liu, and Maosong Sun. 2023. OpenDelta: A plug-and-play library for parameterefficient adaptation of pre-trained models. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations), pages 274–281, Toronto, Canada. Association for Computational Linguistics. Oana Ignat, Zhijing Jin, Artem Abzaliev, Laura Biester, Santiago Castro, Naihao Deng, Xinyi Gao, Aylin Gunal, Jacky He, Ashkan Kazemi, Muhammad Khalifa, Namho Koh, Andrew Lee, Siyang Liu, Do June Min, Shinka Mori, Joan Nwatu, Veronica Perez-Rosas, Siqi Shen, Zekun Wang, Winston Wu, and Rada Mihalcea. 2023. A phd student’s perspective on research in nlp in the era of very large language models. Diederik P. Kingma and Jimmy Ba. 2017. Adam: A method for stochastic optimization. Peiyu Liu, Zikang Liu, Ze-Feng Gao, Dawei Gao, Wayne Xin Zhao, Yaliang Li, Bolin Ding, and JiRong Wen. 2023. Do emergent abilities exist in quantized large language models: An empirical study. Yang Luo, Xiaozhe Ren, Zangwei Zheng, Zhuo Jiang, Xin Jiang, and Yang You. 2023. Came: Confidenceguided adaptive memory efficient optimization. Kai Lv, Yuqing Yang, Tengxiao Liu, Qi jie Gao, Qipeng Guo, and Xipeng Qiu. 2023. Full parameter finetuning for large language models with limited resources. Sourab Mangrulkar, Sylvain Gugger, Lysandre Debut, Younes Belkada, and Sayak Paul. 2022. Peft: Stateof-the-art parameter-efficient fine-tuning methods. https://github.com/huggingface/peft. OpenAI. 2023. Gpt-4 technical report. Myle Ott, Sergey Edunov, Alexei Baevski, Angela Fan, Sam Gross, Nathan Ng, David Grangier, and Michael Auli. 2019. fairseq: A fast, extensible toolkit for sequence modeling. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics (Demonstrations), pages 48–53, Minneapolis, Minnesota. Association for Computational Linguistics. Long Ouyang, Jeff Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. 2022a. Training language models to follow instructions with human feedback. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Gray, John Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe. 2022b. Training language models to follow instructions with human feedback. In Advances in Neural Information Processing Systems. Alec Radford, Jeff Wu, Rewon Child, David Luan, Dario Amodei, and Ilya Sutskever. 2019. Language models are unsupervised multitask learners. Zhichu Ren, Zhen Zhang, Yunsheng Tian, and Ju Li. 2023. Crest–copilot for real-world experimental scientist. Teven Le Scao, Angela Fan, Christopher Akiki, Ellie Pavlick, Suzana Ilić, Daniel Hesslow, Roman Castagné, Alexandra Sasha Luccioni, François Yvon, Matthias Gallé, et al. 2022. Bloom: A 176bparameter open-access multilingual language model. arXiv preprint arXiv:2211.05100. Noam Shazeer. 2019. Fast transformer decoding: One write-head is all you need. Mohammad Shoeybi, Mostofa Patwary, Raul Puri, Patrick LeGresley, Jared Casper, and Bryan Catanzaro. 2020. Megatron-lm: Training multi-billion parameter language models using model parallelism. Jianlin Su, Yu Lu, Shengfeng Pan, Ahmed Murtadha, Bo Wen, and Yunfeng Liu. 2022. Roformer: Enhanced transformer with rotary position embedding. Yutao Sun, Li Dong, Barun Patra, Shuming Ma, Shaohan Huang, Alon Benhaim, Vishrav Chaudhary, Xia Song, and Furu Wei. 2022. A length-extrapolatable transformer. Rohan Taori, Ishaan Gulrajani, Tianyi Zhang, Yann Dubois, Xuechen Li, Carlos Guestrin, Percy Liang, and Tatsunori B. Hashimoto. 2023. Stanford alpaca: An instruction-following llama model. https://github.com/tatsu-lab/stanford_alpaca.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续参考文献，条目保持英文。需要核对 LoRA、InstructGPT、Megatron 等出处时再对照。
+类比：书架中间几层，标签不翻译以免检索对不上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, and Guillaume Lample. 2023a. Llama: Open and efficient foundation language models. Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn, Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa, Isabel Kloumann, Artem Korenev, Punit Singh Koura, Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra, Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi, Alan Schelten, Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aurelien Rodriguez, Robert Stojnic, Sergey Edunov, and Thomas Scialom. 2023b. Llama 2: Open foundation and fine-tuned chat models. Szymon Tworkowski, Konrad Staniszewski, Mikołaj Pacek, Yuhuai Wu, Henryk Michalewski, and Piotr Miło´s. 2023. Focused transformer: Contrastive training for context scaling. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. Guanhua Wang, Heyang Qin, Sam Ade Jacobs, Connor Holmes, Samyam Rajbhandari, Olatunji Ruwase, Feng Yan, Lei Yang, and Yuxiong He. 2023a. Zero++: Extremely efficient collective communication for giant model training. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023b. Voyager: An open-ended embodied agent with large language models. Zekun Wang, Ge Zhang, Kexin Yang, Ning Shi, Wangchunshu Zhou, Shaochun Hao, Guangzheng Xiong, Yizhi Li, Mong Yuan Sim, Xiuying Chen, Qingqing Zhu, Zhenzhu Yang, Adam Nik, Qi Liu, Chenghua Lin, Shi Wang, Ruibo Liu, Wenhu Chen, Ke Xu, Dayiheng Liu, Yike Guo, and Jie Fu. 2023c. Interactive natural language processing. Jason Wei, Maarten Bosma, Vincent Zhao, Kelvin Guu, Adams Wei Yu, Brian Lester, Nan Du, Andrew M Dai, and Quoc V Le. 2021. Finetuned language models are zero-shot learners. In International Conference on Learning Representations. Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama, Maarten Bosma, Denny Zhou, Donald Metzler, et al. 2022a. Emergent abilities of large language models. arXiv preprint arXiv:2206.07682. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed Chi, Quoc Le, and Denny Zhou. 2022b. Chain of thought prompting elicits reasoning in large language models. arXiv preprint arXiv:2201.11903. Yixuan Weng, Bin Li, Fei Xia, Minjun Zhu, Bing Sun, Shizhu He, Kang Liu, and Jun Zhao. 2023a. Large language models need holistically thought in medical conversational qa. ArXiv, abs/2305.05410. Yixuan Weng, Minjun Zhu, Shizhu He, Kang Liu, and Jun Zhao. 2022. Large language models are reasoners with self-verification. arXiv preprint arXiv:2212.09561. Yixuan Weng, Minjun Zhu, Fei Xia, Bin Li, Shizhu He, Kang Liu, and Jun Zhao. 2023b. Neural comprehension: Language models with compiled neural networks. arXiv preprint arXiv:2304.01665. Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Remi Louf, Morgan Funtowicz, Joe Davison, Sam Shleifer, Patrick von Platen, Clara Ma, Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao, Sylvain Gugger, Mariama Drame, Quentin Lhoest, and Alexander Rush. 2020. Transformers: State-of-the-art natural language processing. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 38–45, Online. Association for Computational Linguistics. Haocheng Xi, Changhao Li, Jianfei Chen, and Jun Zhu.</p>
+<p>2023. Training transformers with 4-bit integers. Fei Xia, Bin Li, Yixuan Weng, Shizhu He, Kang Liu, Bin Sun, Shutao Li, and Jun Zhao. 2022a. MedConQA: Medical conversational question answering system based on knowledge graphs. In Proceedings of the The 2022 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 148–158, Abu Dhabi, UAE. Association for Computational Linguistics. Fei Xia, Bin Li, Yixuan Weng, Shizhu He, Kang Liu, Bin Sun, Shutao Li, and Jun Zhao. 2022b. Medconqa: Medical conversational question answering system based on knowledge graphs. In Proceedings of the The 2022 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 148–158. Canwen Xu, Daya Guo, Nan Duan, and Julian McAuley. 2023. Baize: An open-source chat model with parameter-efficient tuning on self-chat data. arXiv preprint arXiv:2304.01196.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>Hugo Touvron, Thibaut Lavril, Gautier Izacard, Xavier Martinet, Marie-Anne Lachaux, Timothée Lacroix, Baptiste Rozière, Naman Goyal, Eric Hambro, Faisal Azhar, Aurelien Rodriguez, Armand Joulin, Edouard Grave, and Guillaume Lample. 2023a. Llama: Open and efficient foundation language models. Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher, Cristian Canton Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy Fu, Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn, Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa, Isabel Kloumann, Artem Korenev, Punit Singh Koura, Marie-Anne Lachaux, Thibaut Lavril, Jenya Lee, Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar Mishra, Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan Saladi, Alan Schelten, Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aurelien Rodriguez, Robert Stojnic, Sergey Edunov, and Thomas Scialom. 2023b. Llama 2: Open foundation and fine-tuned chat models. Szymon Tworkowski, Konrad Staniszewski, Mikołaj Pacek, Yuhuai Wu, Henryk Michalewski, and Piotr Miłoś. 2023. Focused transformer: Contrastive training for context scaling. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N. Gomez, Lukasz Kaiser, and Illia Polosukhin. 2017. Attention is all you need. Guanhua Wang, Heyang Qin, Sam Ade Jacobs, Connor Holmes, Samyam Rajbhandari, Olatunji Ruwase, Feng Yan, Lei Yang, and Yuxiong He. 2023a. Zero++: Extremely efficient collective communication for giant model training. Guanzhi Wang, Yuqi Xie, Yunfan Jiang, Ajay Mandlekar, Chaowei Xiao, Yuke Zhu, Linxi Fan, and Anima Anandkumar. 2023b. Voyager: An open-ended embodied agent with large language models. Zekun Wang, Ge Zhang, Kexin Yang, Ning Shi, Wangchunshu Zhou, Shaochun Hao, Guangzheng Xiong, Yizhi Li, Mong Yuan Sim, Xiuying Chen, Qingqing Zhu, Zhenzhu Yang, Adam Nik, Qi Liu, Chenghua Lin, Shi Wang, Ruibo Liu, Wenhu Chen, Ke Xu, Dayiheng Liu, Yike Guo, and Jie Fu. 2023c. Interactive natural language processing. Jason Wei, Maarten Bosma, Vincent Zhao, Kelvin Guu, Adams Wei Yu, Brian Lester, Nan Du, Andrew M Dai, and Quoc V Le. 2021. Finetuned language models are zero-shot learners. In International Conference on Learning Representations. Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama, Maarten Bosma, Denny Zhou, Donald Metzler, et al. 2022a. Emergent abilities of large language models. arXiv preprint arXiv:2206.07682. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Ed Chi, Quoc Le, and Denny Zhou. 2022b. Chain of thought prompting elicits reasoning in large language models. arXiv preprint arXiv:2201.11903. Yixuan Weng, Bin Li, Fei Xia, Minjun Zhu, Bing Sun, Shizhu He, Kang Liu, and Jun Zhao. 2023a. Large language models need holistically thought in medical conversational qa. ArXiv, abs/2305.05410. Yixuan Weng, Minjun Zhu, Shizhu He, Kang Liu, and Jun Zhao. 2022. Large language models are reasoners with self-verification. arXiv preprint arXiv:2212.09561. Yixuan Weng, Minjun Zhu, Fei Xia, Bin Li, Shizhu He, Kang Liu, and Jun Zhao. 2023b. Neural comprehension: Language models with compiled neural networks. arXiv preprint arXiv:2304.01665. Thomas Wolf, Lysandre Debut, Victor Sanh, Julien Chaumond, Clement Delangue, Anthony Moi, Pierric Cistac, Tim Rault, Remi Louf, Morgan Funtowicz, Joe Davison, Sam Shleifer, Patrick von Platen, Clara Ma, Yacine Jernite, Julien Plu, Canwen Xu, Teven Le Scao, Sylvain Gugger, Mariama Drame, Quentin Lhoest, and Alexander Rush. 2020. Transformers: State-of-the-art natural language processing. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 38–45, Online. Association for Computational Linguistics. Haocheng Xi, Changhao Li, Jianfei Chen, and Jun Zhu. 2023. Training transformers with 4-bit integers. Fei Xia, Bin Li, Yixuan Weng, Shizhu He, Kang Liu, Bin Sun, Shutao Li, and Jun Zhao. 2022a. MedConQA: Medical conversational question answering system based on knowledge graphs. In Proceedings of the The 2022 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 148–158, Abu Dhabi, UAE. Association for Computational Linguistics. Fei Xia, Bin Li, Yixuan Weng, Shizhu He, Kang Liu, Bin Sun, Shutao Li, and Jun Zhao. 2022b. Medconqa: Medical conversational question answering system based on knowledge graphs. In Proceedings of the The 2022 Conference on Empirical Methods in Natural Language Processing: System Demonstrations, pages 148–158. Canwen Xu, Daya Guo, Nan Duan, and Julian McAuley. 2023. Baize: An open-source chat model with parameter-efficient tuning on self-chat data. arXiv preprint arXiv:2304.01196.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页仍是参考文献，含 LLaMA、Voyager、思维链与 Transformers 等条目，保持英文。
+类比：书架继续往后排，需要某条再抽。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models. Aohan Zeng, Xiao Liu, Zhengxiao Du, Zihan Wang, Hanyu Lai, Ming Ding, Zhuoyi Yang, Yifan Xu, Wendi Zheng, Xiao Xia, et al. 2022. Glm-130b: An open bilingual pre-trained model. arXiv preprint arXiv:2210.02414. Guangtao Zeng, Wenmian Yang, Zeqian Ju, Yue Yang, Sicheng Wang, Ruisi Zhang, Meng Zhou, Jiaqi Zeng, Xiangyu Dong, Ruoyu Zhang, et al. 2020. Meddialog: Large-scale medical dialogue dataset. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP). Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, et al. 2022. Opt: Open pre-trained transformer language models. arXiv preprint arXiv:2205.01068. Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen Zhang, Junjie Zhang, Zican Dong, Yifan Du, Chen Yang, Yushuo Chen, Zhipeng Chen, Jinhao Jiang, Ruiyang Ren, Yifan Li, Xinyu Tang, Zikang Liu, Peiyu Liu, Jian-Yun Nie, and Ji-Rong Wen. 2023a. A survey of large language models. Zhe Zhao, Yudong Li, Cheng Hou, Jing Zhao, Rong Tian, Weijie Liu, Yiren Chen, Ningyuan Sun, Haoyan Liu, Weiquan Mao, Han Guo, Weigang Gou, Taiqiang Wu, Tao Zhu, Wenhang Shi, Chen Chen, Shan Huang, Sihong Chen, Liqun Liu, Feifei Li, Xiaoshuai Chen, Xingwu Sun, Zhanhui Kang, Xiaoyong Du, Linlin Shen, and Kimmo Yan. 2023b. TencentPretrain: A scalable and flexible toolkit for pretraining models of different modalities. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations), pages 217–225, Toronto, Canada. Association for Computational Linguistics. Chunting Zhou, Pengfei Liu, Puxin Xu, Srini Iyer, Jiao Sun, Yuning Mao, Xuezhe Ma, Avia Efrat, Ping Yu, Lili Yu, Susan Zhang, Gargi Ghosh, Mike Lewis, Luke Zettlemoyer, and Omer Levy. 2023. Lima: Less is more for alignment. Minjun Zhu, Yixuan Weng, Shizhu He, Kang Liu, and Jun Zhao. 2023. Towards graph-hop retrieval and reasoning in complex question answering over textual database. arXiv preprint arXiv:2305.14211. A Support Models LMTuner enables rapid deployment of large language models ranging from 300 million to 130 billion parameters, facilitating their application to textual data tasks. We list the models supported for training in LMTuner in Table 4. (Please note that some of these models are not fully allowed for commercial use.) LMTuner also provides capabilities to load pretrained models from Transformers, however this necessitates redefining the data tokenizer. In addition, LMTuner facilitates training models from scratch to incorporate specialized architectures such as FlashAttention and Multi-Query Attention through its flexible hook. The modular hook-based approach streamlines implementing customized attentional mechanisms and training objectives. This balancing of usability and flexibility makes LMTuner a promising platform for rapidly prototyping. B Support Datasets We have supported multiple QA datasets in different fields for quick training. The provision of ready-to-use domain-specific datasets eliminates the need for users to invest significant time and effort in dataset curation and preprocessing. With high-quality training data covering key domains, users can promptly initialize model training and optimization workflows.</p>
+<ul>
+<li>For English datasets, we default to loading the LIMA6 (Zhou et al., 2023) dataset, which includes 1,030 diverse and high-quality QA samples.</li>
+<li>For Chinese datasets, we manually translated the LIMA dataset and added an additional 60 Chinese samples covering different fields such as Chinese history, Marxism, essay writing, and Chinese humor, making it a QA dataset with 1,090 samples covering multiple fields and Chinese characteristics.</li>
+<li>For Chinese Medical datasets, We selected about 60,000 medical consultation dialogues from CMCQA (Xia et al., 2022b), which contained QA samples from over 30 different departments, including pediatrics, gynecology, internal medicine, oncology and more. C LMTuner’s GPU Memory Usage Normally, training LLMs requires a huge amount of GPU memory. Recent advancements in EFT techniques such as LoRA and LOMO have enabled the training of extremely large language models on consumer GPUs with as little as 24GB of memory. 6https://huggingface.co/datasets/GAIR/lima</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2023. React: Synergizing reasoning and acting in language models. Aohan Zeng, Xiao Liu, Zhengxiao Du, Zihan Wang, Hanyu Lai, Ming Ding, Zhuoyi Yang, Yifan Xu, Wendi Zheng, Xiao Xia, et al. 2022. Glm-130b: An open bilingual pre-trained model. arXiv preprint arXiv:2210.02414. Guangtao Zeng, Wenmian Yang, Zeqian Ju, Yue Yang, Sicheng Wang, Ruisi Zhang, Meng Zhou, Jiaqi Zeng, Xiangyu Dong, Ruoyu Zhang, et al. 2020. Meddialog: Large-scale medical dialogue dataset. In Proceedings of the 2020 Conference on Empirical Methods in Natural Language Processing (EMNLP). Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, et al. 2022. Opt: Open pre-trained transformer language models. arXiv preprint arXiv:2205.01068. Wayne Xin Zhao, Kun Zhou, Junyi Li, Tianyi Tang, Xiaolei Wang, Yupeng Hou, Yingqian Min, Beichen Zhang, Junjie Zhang, Zican Dong, Yifan Du, Chen Yang, Yushuo Chen, Zhipeng Chen, Jinhao Jiang, Ruiyang Ren, Yifan Li, Xinyu Tang, Zikang Liu, Peiyu Liu, Jian-Yun Nie, and Ji-Rong Wen. 2023a. A survey of large language models. Zhe Zhao, Yudong Li, Cheng Hou, Jing Zhao, Rong Tian, Weijie Liu, Yiren Chen, Ningyuan Sun, Haoyan Liu, Weiquan Mao, Han Guo, Weigang Gou, Taiqiang Wu, Tao Zhu, Wenhang Shi, Chen Chen, Shan Huang, Sihong Chen, Liqun Liu, Feifei Li, Xiaoshuai Chen, Xingwu Sun, Zhanhui Kang, Xiaoyong Du, Linlin Shen, and Kimmo Yan. 2023b. TencentPretrain: A scalable and flexible toolkit for pretraining models of different modalities. In Proceedings of the 61st Annual Meeting of the Association for Computational Linguistics (Volume 3: System Demonstrations), pages 217–225, Toronto, Canada. Association for Computational Linguistics. Chunting Zhou, Pengfei Liu, Puxin Xu, Srini Iyer, Jiao Sun, Yuning Mao, Xuezhe Ma, Avia Efrat, Ping Yu, Lili Yu, Susan Zhang, Gargi Ghosh, Mike Lewis, Luke Zettlemoyer, and Omer Levy. 2023. Lima: Less is more for alignment. Minjun Zhu, Yixuan Weng, Shizhu He, Kang Liu, and Jun Zhao. 2023. Towards graph-hop retrieval and reasoning in complex question answering over textual database. arXiv preprint arXiv:2305.14211. A 支持的模型 LMTuner 使从 3 亿到 1300 亿参数的大语言模型能够快速部署，便于应用于文本数据任务。我们在表 4 中列出 LMTuner 支持训练的模型。（请注意，其中部分模型并未完全允许商业使用。） LMTuner 也提供从 Transformers 加载预训练模型的能力，但这需要重新定义数据分词器。此外，LMTuner 便于从零训练模型，以通过灵活的钩子纳入 FlashAttention 与 Multi-Query Attention 等专用架构。基于模块化钩子的方法简化了定制注意力机制与训练目标的实现。这种可用性与灵活性的平衡，使 LMTuner 成为快速原型的有前景平台。 B 支持的数据集 我们已支持多个不同领域的 QA 数据集以便快速训练。提供即用的领域特定数据集，免除用户在数据策划与预处理上投入大量时间精力。凭借覆盖关键领域的高质量训练数据，用户可迅速初始化模型训练与优化流程。</p>
+<ul>
+<li>对于英语数据集，我们默认加载 LIMA（Zhou et al., 2023）数据集，包含 1,030 条多样、高质量的 QA 样本。</li>
+<li>对于中文数据集，我们人工翻译了 LIMA，并额外加入 60 条覆盖中国历史、马克思主义、作文与中文幽默等领域的中文样本，使其成为含 1,090 条样本、覆盖多领域与中文特色的 QA 数据集。</li>
+<li>对于中文医疗数据集，我们从 CMCQA（Xia et al., 2022b）中选取约 60,000 条医疗咨询对话，包含儿科、妇科、内科、肿瘤科等 30 余个不同科室的 QA 样本。 C LMTuner 的 GPU 显存占用 通常，训练 LLM 需要大量 GPU 显存。LoRA 与 LOMO 等 EFT 技术的近期进展，已使在仅 24GB 显存的消费级 GPU 上训练极大语言模型成为可能。</li>
+</ul></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献收束，并进入附录：支持哪些模型、自带哪些中英医疗数据、显存大概要多少。
+这很重要，因为它把「单机从 3 亿训到 1300 亿」落到具体底座和数据，而不是摘要里的口号。
+类比：电器说明书后面的兼容型号表和功耗表。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 11 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Model Size 16-bit Finetune 16-bit LOMO 16-bit LoRA 8-bit LoRA 4-bit LoRA &lt;= 1B 8 GB 4 GB 4 GB 6 GB 6 GB 7B 8 GB 6 GB 6 GB 8 GB 8 GB 13B 16 GB 10 GB 10 GB 12 GB 10 GB 33B 2x48 GB 24 GB 24 GB 32 GB 32 GB 70B 8x24 GB 4x48 GB 2x80 GB 2x24 GB 48 GB 2x24 GB 48 GB 2x32 GB 80 GB 2x24 GB 48 GB 130B 8x48 GB 4x80 GB 8x24 GB 4x48 GB 2x80 GB 8x24 GB 4x48 GB 2x80 GB 8x24 GB 4x48 GB 2x80 GB 8x24 GB 4x48 GB 2x80 GB Table 3: The minimum configuration required for different model size in LMTuner (when Batchsize=1). We suggest appropriately increasing the number of GPUs to accelerate training the models. GPT-2 (Radford et al., 2019) GPT-Neo-1.3B (Black et al., 2021) ChatGLM-6B (Du et al., 2022) ChatGLM2-6B (Du et al., 2022) Llama-7B (Touvron et al., 2023a) Llama-13B (Touvron et al., 2023a) Llama-33B (Touvron et al., 2023a) Llama-65B (Touvron et al., 2023a) Llama2-7B (Touvron et al., 2023b) Llama2-13B (Touvron et al., 2023b) Llama2-70B (Touvron et al., 2023b) GLM-130B (Zeng et al., 2022) Table 4: LMTuner supports pre-trained language models for rapid deployment. In addition, tensor parallelism techniques can split a model across different GPUs, making it possible to scale up training of even larger LLMs. In Table 3 we list the minimum recommended GPU memory configuration by LMTuner for training models of different sizes. D System Configuration and Requirements LMTuner (https://github.com/WENGSYX/ LMTuner) is an open-source system that offers a command-line interface for training LLMs, without requiring any coding experience. The system requirements include: Ubuntu 14.04+, Debian 8+, CentOS 6+, or Fedora 27+. And an NVIDIA GPU with driver version &gt;= 460.32.03 or AMD GPU with ROMc &gt;= 4.0. In addition, a series of Python libraries, including Apex7, Pytorch8 and DeepSpeed 9, are also required. For details, please refer to https:// wengsyx.github.io/LMTuner/install.html. After installation is complete, you can directly launch via Command-Line Interface with7https://github.com/NVIDIA/apex 8https://pytorch.org/ 9https://github.com/microsoft/DeepSpeed out modifying any code by using the one-line code Let_Lingo() . LMTuner requires the provision of an OpenAI Key to facilitate the collaborative determination of training parameters with GPT-4 through dialogue. However, we have also pre-defined ten sets of configuration questions related to training LLMs in a format similar to a questionnaire, to enable users in countries that do not support GPT-4 to quickly initiate LMTuner 10. Finally, LMTuner will automatically generate and run a command line to invoke deepspeed according to the requirements without needing to modify at the code level. This not only simplifies the training process, but also facilitates modifying and recording the configuration of hyperparameters, helping users without basic knowledge to also train LLMs. 10Take a look at the current list of Supported Countries and Territories for OpenAI: https://platform.openai.com/ docs/supported-countries</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 3：LMTuner 中不同模型规模所需的最低配置（当 Batchsize=1）。我们建议适当增加 GPU 数量以加速训练。</p>
+<p>表 4：LMTuner 支持用于快速部署的预训练语言模型（GPT-2、GPT-Neo-1.3B、ChatGLM-6B、ChatGLM2-6B、Llama 系列、Llama2 系列、GLM-130B）。</p>
+<p>此外，张量并行技术可将模型切分到不同 GPU，从而使更大规模 LLM 的训练成为可能。在表 3 中，我们列出 LMTuner 针对不同规模模型训练所建议的最低 GPU 显存配置。</p>
+<p>D 系统配置与要求</p>
+<p>LMTuner（https://github.com/WENGSYX/LMTuner）是一个开源系统，提供用于训练 LLM 的命令行接口，无需任何编码经验。系统要求包括：Ubuntu 14.04+、Debian 8+、CentOS 6+ 或 Fedora 27+；以及驱动程序版本 &gt;= 460.32.03 的 NVIDIA GPU，或 ROCm &gt;= 4.0 的 AMD GPU。</p>
+<p>此外，还需要一系列 Python 库，包括 Apex、Pytorch 与 DeepSpeed。细节请参阅 https://wengsyx.github.io/LMTuner/install.html。</p>
+<p>安装完成后，你可以直接通过命令行接口启动，无需修改任何代码，使用一行代码 Let_Lingo()。</p>
+<p>LMTuner 需要提供 OpenAI Key，以便通过对话与 GPT-4 协作确定训练参数。不过，我们也预定义了十组与训练 LLM 相关、类似问卷的配置问题，使不支持 GPT-4 的国家的用户也能迅速启动 LMTuner。</p>
+<p>最后，LMTuner 将根据需求自动生成并运行调用 deepspeed 的命令行，而无需在代码层面修改。这不仅简化了训练过程，也便于修改与记录超参数配置，帮助没有基础知识的用户也能训练 LLM。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是附录的硬件与安装页：表 3 给各规模最低显存，表 4 列支持的底座模型；并说明要 OpenAI Key 才能跟 GPT-4 聊配置，否则用预置问卷。
+这很重要，因为它暴露了「用户友好」仍依赖外部对话模型。
+类比：一体灶很好用，但点火器要连一家云端客服，断网就只能按说明书上的十个默认档。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>训练脚手架可以拼，运行时仍卸不干净</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。馆藏标题是多智能体综述，但抽出的 PDF 正文是 LMTuner；此处按实际文本评论。</p>
+
+<h2>它解决的是「训练工具包太碎」，不是「智能体可组合」</h2>
+<p>LMTuner 把交互、训练、推理收成一条流水线：GPT-4 问清需求，写出 <code>ARGS.json</code>，再调 DeepSpeed。对正在长出来的 <strong>agent harness</strong>，这最多算<strong>训练侧</strong>的省事——底座模型要微调时，少写胶水。</p>
+<p>Cordiverse 要的是运行时：卸掉组件时把副作用干净收回，以及依赖能声明、能随变化自动协调。这篇没有这两刀。PEFT、量化、位置插值以「模块 + 钩子」挂进训练脚本；换的是代码模块，不是带逆变换的热卸载。对话助手本身还依赖外部 OpenAI Key，配置智能体挂了，流水线并不知道如何降级。模块可替换，不等于拓扑可推理。</p>
+
+<h2>证据与设定要分开看</h2>
+<ul>
+  <li><strong>表 2</strong>用微调 10 epoch 的医疗模型对比 GPT-3 / GLM 的零样本 Direct / CoT。分数能说明「这套系统能训出可部署的领域模型」，不能说明 LMTuner 算法优于 175B 通用模型。</li>
+  <li><strong>表 1</strong>的对勾是功能覆盖清单，不是评测。用户友好仍可能卡在复杂需求要改代码（作者自己写在局限里）。</li>
+  <li><strong>交互模块</strong>把「会配超参」外包给 GPT-4，可用性与一个外部模型绑定；附录 D 的问卷只是降级入口。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把微调常用零件（ZeRO、LoRA、数据、显存探测）收进可对话启动的开源训练系统。<strong>缺口</strong>是：这是训练脚手架，不是多智能体，也不是带卸载与依赖语义的运行时；表 2 不能当通用能力证明。Cordiverse 要问的组合问题，这篇几乎没有碰到。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-3">第 3 页</a>交互模块把配置权交给谁，以及 <a href="#page-6">表 2</a>到底在比什么。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'multi-agent-survey-paper-cols-v1';
+const total = 11;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

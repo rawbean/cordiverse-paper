@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Toolformer：语言模型可自学使用工具 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="Toolformer：语言模型可自学使用工具">Toolformer：语言模型可自学使用工具</p>
+      <p class="paper-authors" title="T. Schick et al.">T. Schick et al.</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这篇是工具使用的经典论文，容易和 ReAct 的「边想边做」读成同一件事。下面先给出<strong>主张、自监督机制、证据与精读路径</strong>。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 不必为每种工具堆人类标注，也不必在下游题上写死「本题用计算器」：让语言模型在预训练语料上自己采样 API 调用，只留下能降低后续词损失的那些，再微调——模型就能决定<strong>调用哪些 API、何时调用、传什么参数、如何把结果写进下文</strong>。</p>
+</div>
+
+<h2>和 AI 工程、智能体 / Cordiverse 的关系</h2>
+<p>Toolformer 是协议 / 循环谱系里「<strong>工具使用</strong>」的基石：把计算器、问答、搜索、翻译、日历收成可插入文本的 API。对 AI 工程的用处可以收成一句：工具调用可以当语言建模目标来学，而不必先做智能体框架。</p>
+<p>它和 ReAct 不同：这里没有任务级的思考–行动交错示范，过滤标准是下一标记的损失。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：作者已写明不会链式调用、不会交互改查询；更没有卸载与依赖。此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>大模型会做很多事，却算不准、编造事实、不懂低资源语言、不知道今天几号。已有工具使用或靠大量标注，或绑死在具体任务上。作者要的是：自监督、且不牺牲一般语言能力。</p>
+
+<h2>机制</h2>
+<p>三步（图 2，<a href="#page-2">第 2–4 页</a>）：少样本提示采样调用 → 真执行 API → 用 L⁻ − L⁺ ≥ τ<sub>f</sub> 过滤。推理时生成到 “→” 就停下来调工具，再继续解码。五种工具进出皆文本。解码把 &lt;API&gt; 放进 top-k 以鼓励调用，每题最多一次。</p>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>自监督工具使用</strong>：有用 = 降低未来标记损失，不是人觉得该查。</li>
+  <li><strong>零样本涨分</strong>：6.7B GPT-J 在 LAMA / 数学上超过大得多的 GPT-3；问答仍落后，因搜索太朴素。</li>
+  <li><strong>不伤语言模型</strong>：禁用工具时困惑度不升（表 8）。</li>
+  <li><strong>规模门槛</strong>：约 7.75 亿参数才会真正用上工具（图 4）。</li>
+  <li><strong>自己写下的缺口</strong>：不能链式、不能交互浏览、对措辞敏感、不算调用成本。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>摘要 · 引言</td>
+      <td><a href="#page-1">1</a>–<a href="#page-2">2</a></td>
+      <td>短板与两项目标；图 1–2。</td>
+      <td>必读。</td>
+    </tr>
+    <tr>
+      <td>方法 · 工具</td>
+      <td><a href="#page-3">3</a>–<a href="#page-5">5</a></td>
+      <td>采样 / 执行 / 过滤公式；五种 API；零样本纪律。</td>
+      <td>关心机制必读。</td>
+    </tr>
+    <tr>
+      <td>下游结果</td>
+      <td><a href="#page-6">6</a>–<a href="#page-8">8</a></td>
+      <td>表 3–8：LAMA、数学、QA、MLQA、时间、困惑度、规模。</td>
+      <td>对证据精读表 3–4 与图 4。</td>
+    </tr>
+    <tr>
+      <td>分析 · 相关 · 局限</td>
+      <td><a href="#page-9">9</a>–<a href="#page-11">11</a></td>
+      <td>k 与校准；表 10；与 ReAct / TALM 的差别；不能链式。</td>
+      <td>关心 harness 必读局限。</td>
+    </tr>
+    <tr>
+      <td>参考文献 · 附录</td>
+      <td><a href="#page-11">11</a>–<a href="#page-17">17</a></td>
+      <td>书目；启发式、提示词、DATESET 模板。</td>
+      <td>复现再读附录；提示保持英文。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → 图 1–2 → 结论（<a href="#page-11">第 11 页</a>）。</p>
+  </div>
+  <div class="card">
+    <h3>核对数字</h3>
+    <p>表 3–5 → 图 4 → 表 8。盯「调用率」和「禁用工具」两栏。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / Cordiverse</h3>
+    <p>局限段（<a href="#page-11">第 11 页</a>）→ <a href="#commentary">读后评论</a>：一次调用、不能链式，离可组合运行时还远。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「L⁺ 和 L⁻ 到底在比什么」「TEMPLAMA 的涨分为何不是日历」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Toolformer: Language Models Can Teach Themselves to Use Tools Timo Schick Jane Dwivedi-Yu Roberto Dessì† Roberta Raileanu Maria Lomeli Luke Zettlemoyer Nicola Cancedda Thomas Scialom Meta AI Research †Universitat Pompeu Fabra</p>
+<h1>Abstract</h1>
+<p>Language models (LMs) exhibit remarkable abilities to solve new tasks from just a few examples or textual instructions, especially at scale. They also, paradoxically, struggle with basic functionality, such as arithmetic or factual lookup, where much simpler and smaller models excel. In this paper, we show that LMs can teach themselves to use external tools via simple APIs and achieve the best of both worlds. We introduce Toolformer, a model trained to decide which APIs to call, when to call them, what arguments to pass, and how to best incorporate the results into future token prediction. This is done in a self-supervised way, requiring nothing more than a handful of demonstrations for each API. We incorporate a range of tools, including a calculator, a Q&amp;A system, a search engine, a translation system, and a calendar. Toolformer achieves substantially improved zero-shot performance across a variety of downstream tasks, often competitive with much larger models, without sacriﬁcing its core language modeling abilities. Introduction Large language models achieve impressive zeroand few-shot results on a variety of natural language processing tasks (Brown et al., 2020; Chowdhery et al., 2022, i.a.) and show several emergent capabilities (Wei et al., 2022). However, all of these models have several inherent limitations that can at best be partially addressed by further scaling. These limitations include an inability to access up-to-date information on recent events (Komeili et al., 2022) and the related tendency to hallucinate facts (Maynez et al., 2020; Ji et al., 2022), difﬁculties in understanding low-resource languages (Lin et al., 2021), a lack of mathematical skills to perform precise calculations (Patel et al., 2021) and an unawareness of the progression of time (Dhingra et al., 2022). The New England Journal of Medicine is a registered trademark of [QA(“Who is the publisher of The New England Journal of Medicine?”) → Massachusetts Medical Society] the MMS. Out of 1400 participants, 400 (or [Calculator(400 / 1400) → 0.29] 29%) passed the test. The name derives from “la tortuga”, the Spanish word for [MT(“tortuga”) → turtle] turtle. The Brown Act is California’s law [WikiSearch(“Brown Act”) → The Ralph M. Brown Act is an act of the California State Legislature that guarantees the public&#x27;s right to attend and participate in meetings of local legislative bodies.] that requires legislative bodies, like city councils, to hold their meetings open to the public. Figure 1: Exemplary predictions of Toolformer. The model autonomously decides to call different APIs (from top to bottom: a question answering system, a calculator, a machine translation system, and a Wikipedia search engine) to obtain information that is useful for completing a piece of text. A simple way to overcome these limitations of today’s language models is to give them the ability to use external tools such as search engines, calculators, or calendars. However, existing approaches either rely on large amounts of human annotations (Komeili et al., 2022; Thoppilan et al., 2022) or limit tool use to task-speciﬁc settings only (e.g., Gao et al., 2022; Parisi et al., 2022), hindering a more widespread adoption of tool use in LMs. Therefore, we propose Toolformer, a model that learns to use tools in a novel way, which fulﬁlls the following desiderata:</p>
+<ul>
+<li>The use of tools should be learned in a self-supervised way without requiring large amounts of human annotations. This is imporarXiv:2302.04761v1 [cs.CL] 9 Feb 2023</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>Toolformer：语言模型可自学使用工具</p>
+<p>Timo Schick</p>
+<p>Jane Dwivedi-Yu</p>
+<p>Roberto Dessì†</p>
+<p>Roberta Raileanu</p>
+<p>Maria Lomeli</p>
+<p>Luke Zettlemoyer</p>
+<p>Nicola Cancedda</p>
+<p>Thomas Scialom</p>
+<p>Meta AI Research †Universitat Pompeu Fabra</p>
+<h1>摘要</h1>
+<p>语言模型（LM）表现出仅从少量示例或文本指令就能解决新任务的显著能力，尤其是在规模增大时。它们也悖论式地在算术或事实查找等基本功能上挣扎，而这些正是更简单、更小的模型所擅长的。在本文中，我们表明 LM 可以经由简单 API 自学使用外部工具，并同时获得两方面的优点。我们引入 Toolformer，一个被训练来决定调用哪些 API、何时调用、传递什么参数、以及如何最好地将结果纳入未来标记预测的模型。这以自监督方式完成，每种 API 只需少量示范。我们纳入一系列工具，包括计算器、问答系统、搜索引擎、翻译系统与日历。Toolformer 在多种下游任务上取得显著改善的零样本性能，常常可与大得多的模型竞争，同时不牺牲其核心语言建模能力。</p>
+<p>引言</p>
+<p>大语言模型在各种自然语言处理任务上取得令人印象深刻的零样本与少样本结果（Brown et al., 2020; Chowdhery et al., 2022, 等），并展现若干涌现能力（Wei et al., 2022）。然而，所有这些模型都有若干固有局限，最多只能通过进一步扩展被部分解决。这些局限包括无法访问关于近期事件的最新信息（Komeili et al., 2022）以及相关的虚构事实倾向（Maynez et al., 2020; Ji et al., 2022），在理解低资源语言上的困难（Lin et al., 2021），缺乏执行精确计算的数学技能（Patel et al., 2021），以及对时间进程的无觉察（Dhingra et al., 2022）。</p>
+<pre class="math">《新英格兰医学杂志》是 [QA(“Who is the publisher of The New England Journal of Medicine?”) → Massachusetts Medical Society] MMS 的注册商标。</pre>
+<p>在 1400 名参与者中，400 名（或 [Calculator(400 / 1400) → 0.29] 29%）通过了测试。</p>
+<p>该名称源自 “la tortuga”，西班牙语中 [MT(“tortuga”) → turtle] 海龟一词。</p>
+<pre class="math">布朗法案是加州的法律 [WikiSearch(“Brown Act”) → The Ralph M. Brown Act is an act of the California State Legislature that guarantees the public&#x27;s right to attend and participate in meetings of local legislative bodies.] 要求立法机构如市议会公开举行会议。</pre>
+<p>图 1：Toolformer 的示例预测。模型自主决定调用不同 API（从上到下：问答系统、计算器、机器翻译系统与维基百科搜索引擎）以获得对完成一段文本有用的信息。</p>
+<p>克服今日语言模型这些局限的一种简单方式，是赋予它们使用搜索引擎、计算器或日历等外部工具的能力。然而，现有方法或依赖大量人类标注（Komeili et al., 2022; Thoppilan et al., 2022），或将工具使用限制在特定任务设定（例如 Gao et al., 2022; Parisi et al., 2022），阻碍了工具使用在 LM 中更广泛的采用。</p>
+<p>因此，我们提出 Toolformer，一个以新颖方式学习使用工具的模型，它满足以下期望：</p>
+<ul>
+<li>工具的使用应以自监督方式学习，而不需要大量人类标注。这一点很重要</li>
+</ul>
+<p>arXiv:2302.04761v1 [cs.CL] 9 Feb 2023</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开场：模型会做很多事，却算不准、查不了新事实。Toolformer 用自监督学会何时调哪些 API（计算器、问答、搜索、翻译、日历），每种工具只需几条示范。
+这很重要，因为它把「工具使用」从人工标注或任务专用提示里解放出来。
+类比：小孩不是背完整本说明书才学会用计算器，而是发现一按就能让下一句更好写，于是记住什么时候该按。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>x1:i-1 = Pittsburgh is also known as xi:n = the Steel City x* = Pittsburgh is also known as [QA(What …? → Steel City)] the Steel City. ci 1 = What other name is Pittsburgh known by? ci 2 = Which country is Pittsburgh in? ri 1 = Steel City ri 2 = United States Li(ci 1 → Steel City) &lt; min(Li(ci 1 → ε), Li(ε)) Li(ci 2 → United States) &gt; min(Li(ci 2 → ε), Li(ε)) Sample API Calls Execute API Calls Filter API Calls LM Dataset LM Dataset with API Calls Figure 2: Key steps in our approach, illustrated for a question answering tool: Given an input text x, we ﬁrst sample a position i and corresponding API call candidates c1 i , c2 i , . . . , ck i . We then execute these API calls and ﬁlter out all calls which do not reduce the loss Li over the next tokens. All remaining API calls are interleaved with the original text, resulting in a new text x∗. tant not only because of the costs associated with such annotations, but also because what humans ﬁnd useful may be different from what a model ﬁnds useful.</p>
+<ul>
+<li>The LM should not lose any of its generality and should be able to decide for itself when and how to use which tool. In contrast to existing approaches, this enables a much more comprehensive use of tools that is not tied to speciﬁc tasks. Our approach for achieving these goals is based on the recent idea of using large LMs with incontext learning (Brown et al., 2020) to generate entire datasets from scratch (Schick and Schütze, 2021b; Honovich et al., 2022; Wang et al., 2022): Given just a handful of human-written examples of how an API can be used, we let a LM annotate a huge language modeling dataset with potential API calls. We then use a self-supervised loss to determine which of these API calls actually help the model in predicting future tokens. Finally, we ﬁnetune the LM itself on the API calls that it considers useful. As illustrated in Figure 1, through this simple approach, LMs can learn to control a variety of tools, and to choose for themselves which tool to use when and how. As our approach is agnostic of the dataset being used, we can apply it to the exact same dataset that was used to pretrain a model in the ﬁrst place. This ensures that the model does not lose any of its generality and language modeling abilities. We conduct experiments on a variety of different downstream tasks, demonstrating that after learning to use tools, Toolformer, which is based on a pretrained GPT-J model (Wang and Komatsuzaki, 2021) with 6.7B parameters, achieves much stronger zero-shot results, clearly outperforming a much larger GPT-3 model (Brown et al., 2020) and several other baselines on various tasks. Approach Our aim is to equip a language model M with the ability to use different tools by means of API calls. We require that inputs and outputs for each API can be represented as text sequences. This allows seamless insertion of API calls into any given text, using special tokens to mark the start and end of each such call. We represent each API call as a tuple c = (ac, ic) where ac is the name of the API and ic is the corresponding input. Given an API call c with a corresponding result r, we denote the linearized sequences of the API call not including and including its result, respectively, as: e(c) = &lt;API&gt; ac(ic) &lt;/API&gt; e(c, r) = &lt;API&gt; ac(ic) →r &lt;/API&gt; where “&lt;API&gt;”, “&lt;/API&gt;” and “→” are special tokens.1 Some examples of linearized API calls inserted into text sequences are shown in Figure 1. Given a dataset C = {x1, . . . , x|C|} of plain texts, we ﬁrst convert this dataset into a dataset C∗augmented with API calls. This is done in three steps, illustrated in Figure 2: First, we exploit the in-context learning ability of M to sample a large number of potential API calls. We then execute these API calls and ﬁnally check whether the obtained responses are helpful for predicting future tokens; this is used as a ﬁltering criterion. After ﬁltering, we merge API calls for different tools, resulting in the augmented dataset C∗, and ﬁnetune 1In practice, we use the token sequences “ [”, “]” and “-&gt;” to represent “&lt;API&gt;”, “&lt;/API&gt;” and “→”, respectively. This enables our approach to work without modifying the existing LM’s vocabulary. For reasons of readability, we still refer to them as “&lt;API&gt;”, “&lt;/API&gt;” and “→” throughout this section.</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>图 2：我们方法的关键步骤，以问答工具为例：给定输入文本 x，我们首先采样位置 i 以及相应的 API 调用候选 c1_i, c2_i, …, ck_i。然后执行这些 API 调用，并过滤掉所有不能降低后续标记上损失 Li 的调用。所有剩余的 API 调用与原文交错，得到新文本 x*。</p>
+<p>不仅因为此类标注的成本，也因为人类觉得有用的，可能与模型觉得有用的不同。</p>
+<ul>
+<li>LM 不应失去任何一般性，并应能自行决定何时以及如何使用哪种工具。与现有方法相比，这使工具的使用全面得多，且不绑定到特定任务。</li>
+</ul>
+<p>我们实现这些目标的方法基于近期的想法：用具备上下文学习的大 LM（Brown et al., 2020）从零生成整个数据集（Schick and Schütze, 2021b; Honovich et al., 2022; Wang et al., 2022）：仅给定少量人类撰写的、关于如何使用某 API 的示例，我们让 LM 用潜在的 API 调用标注一个巨大的语言建模数据集。然后我们用自监督损失确定这些 API 调用中哪些真正帮助模型预测未来标记。最后，我们在它认为有用的 API 调用上对 LM 自身进行微调。如图 1 所示，通过这一简单方法，LM 可以学会控制多种工具，并自行选择何时以及如何使用哪种工具。</p>
+<p>由于我们的方法与所用数据集无关，我们可以将它应用到最初预训练模型所用的完全同一数据集上。这确保模型不失去任何一般性与语言建模能力。我们在多种不同下游任务上开展实验，表明在学会使用工具之后，基于 67 亿参数的预训练 GPT-J 模型（Wang and Komatsuzaki, 2021）的 Toolformer 取得强得多的零样本结果，在各种任务上明显优于大得多的 GPT-3 模型（Brown et al., 2020）以及若干其他基线。</p>
+<p>方法</p>
+<p>我们的目标是通过 API 调用为语言模型 M 装备使用不同工具的能力。我们要求每个 API 的输入与输出都能表示为文本序列。这允许将 API 调用无缝插入任何给定文本，用特殊标记标出每次调用的起止。</p>
+<p>我们将每个 API 调用表示为元组 c = (ac, ic)，其中 ac 是 API 名称，ic 是相应输入。给定带相应结果 r 的 API 调用 c，我们分别将不包括与包括其结果的线性化序列记为：</p>
+<p>e(c) = &lt;API&gt; ac(ic) &lt;/API&gt;</p>
+<pre class="math">e(c, r) = &lt;API&gt; ac(ic) → r &lt;/API&gt;</pre>
+<p>其中 “&lt;API&gt;”、“&lt;/API&gt;” 与 “→” 是特殊标记。插入文本序列中的线性化 API 调用的一些示例如图 1 所示。</p>
+<p>给定纯文本数据集 C = {x1, …, x|C|}，我们首先将此数据集转换为用 API 调用增强的数据集 C*。这分三步完成，如图 2 所示：首先，我们利用 M 的上下文学习能力采样大量潜在 API 调用。然后执行这些 API 调用，并最终检查所得响应是否有助于预测未来标记；以此作为过滤标准。过滤之后，我们合并不同工具的 API 调用，得到增强数据集 C*，并在此数据集上对 M 自身进行微调。下面更详细描述这些步骤中的每一步。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把方法收成三步：先让模型自己在语料上采样「这里要不要调 API」，再真去执行，最后只留下能降低后续词损失的调用，拿去微调。
+这很重要，因为它用「对下一句有没有帮助」当老师，而不是人逐条标该不该调。
+类比：先让学生在书页空白处乱写公式，算一遍，只把能帮他写出下一句的公式留在书上，再整本重读。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Your task is to add calls to a Question Answering API to a piece of text. The questions should help you get information required to complete the text. You can call the API by writing &quot;[QA(question)]&quot; where &quot;question&quot; is the question you want to ask. Here are some examples of API calls: Input: Joe Biden was born in Scranton, Pennsylvania. Output: Joe Biden was born in [QA(&quot;Where was Joe Biden born?&quot;)] Scranton, [QA(&quot;In which state is Scranton?&quot;)] Pennsylvania. Input: Coca-Cola, or Coke, is a carbonated soft drink manufactured by the Coca-Cola Company. Output: Coca-Cola, or [QA(&quot;What other name is Coca-Cola known by?&quot;)] Coke, is a carbonated soft drink manufactured by [QA(&quot;Who manufactures Coca-Cola?&quot;)] the Coca-Cola Company. Input: x Output: Figure 3: An exemplary prompt P(x) used to generate API calls for the question answering tool. M itself on this dataset. Each of these steps is described in more detail below. Sampling API Calls For each API, we write a prompt P(x) that encourages the LM to annotate an example x = x1, . . . , xn with API calls. An example of such a prompt for a question answering tool is shown in Figure 3; all prompts used are shown in Appendix A.2. Let pM(zn+1 | z1, . . . , zn) be the probability that M assigns to token zn+1 as a continuation for the sequence z1, . . . , zn. We ﬁrst sample up to k candidate positions for doing API calls by computing, for each i ∈{1, . . . , n}, the probability pi = pM(&lt;API&gt; | P(x), x1:i−1) that M assigns to starting an API call at position i. Given a sampling threshold τs, we keep all positions I = {i | pi &gt; τs}; if there are more than k such positions, we only keep the top k. For each position i ∈I, we then obtain up to m API calls c1 i , . . . , cm i by sampling from M given the sequence [P(x), x1, . . . , xi−1, &lt;API&gt;] as a preﬁx and &lt;/API&gt; as an end-of-sequence token.2 2We discard all examples where M does not generate the &lt;/API&gt; token. Executing API Calls As a next step, we execute all API calls generated by M to obtain the corresponding results. How this is done depends entirely on the API itself – for example, it can involve calling another neural network, executing a Python script or using a retrieval system to perform search over a large corpus. The response for each API call ci needs to be a single text sequence ri. Filtering API Calls Let i be the position of the API call ci in the sequence x = x1, . . . , xn, and let ri be the response from the API. Further, given a sequence (wi | i ∈N) of weights, let Li(z) = − n X j=i wj−i · log pM(xj | z, x1:j−1) be the weighted cross entropy loss for M over the tokens xi, . . . , xn if the model is preﬁxed with z. We compare two different instantiations of this loss: L+ i = Li(e(ci, ri)) L− i = min (Li(ε), Li(e(ci, ε))) where ε denotes an empty sequence. The former is the weighted loss over all tokens xi, . . . , xn if the API call and its result are given to M as a preﬁx;3 the latter is the minimum of the losses obtained from (i) doing no API call at all and (ii) doing an API call, but not providing the response. Intuitively, an API call is helpful to M if providing it with both the input and the output of this call makes it easier for the model to predict future tokens, compared to not receiving the API call at all, or receiving only its input. Given a ﬁltering threshold τf, we thus only keep API calls for which L− i −L+ i ≥τf holds, i.e., adding the API call and its result reduces the loss by at least τf, compared to not doing any API call or obtaining no result from it. Model Finetuning After sampling and ﬁltering calls for all APIs, we ﬁnally merge the remaining API calls and interleave them with the original inputs. That is, for an input text x = x1, . . . , xn with a corresponding API call and result (ci, ri) at position i, we construct the new sequence x∗= 3We provide e(ci, ri) as a preﬁx instead of inserting it at position i because M is not yet ﬁnetuned on any examples containing API calls, so inserting it in the middle of x would interrupt the ﬂow and not align with patterns in the pretraining corpus, thus hurting perplexity.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>图 3：用于为问答工具生成 API 调用的示例提示 P(x)。</p>
+<p>采样 API 调用</p>
+<p>对每个 API，我们写一个提示 P(x)，鼓励 LM 用 API 调用标注示例 x = x1, …, xn。问答工具的此类提示示例如图 3 所示；所用全部提示见附录 A.2。令 pM(zn+1 | z1, …, zn) 为 M 将标记 zn+1 作为序列 z1, …, zn 续写所赋的概率。我们首先通过计算对每个 i ∈ {1, …, n}，M 赋给在位置 i 开始一次 API 调用的概率</p>
+<p>pi = pM(&lt;API&gt; | P(x), x1:i−1)</p>
+<p>来采样最多 k 个候选位置。给定采样阈值 τs，我们保留所有位置 I = {i | pi &gt; τs}；若此类位置超过 k 个，我们只保留 top k。</p>
+<p>对每个位置 i ∈ I，我们随后以序列 [P(x), x1, …, xi−1, &lt;API&gt;] 为前缀、以 &lt;/API&gt; 为序列结束标记，从 M 采样最多 m 个 API 调用 c1_i, …, cm_i。</p>
+<p>执行 API 调用</p>
+<p>下一步，我们执行 M 生成的所有 API 调用以获得相应结果。如何做完全取决于 API 本身——例如，它可以涉及调用另一个神经网络、执行一段 Python 脚本，或使用检索系统在大语料上搜索。每个 API 调用 ci 的响应需要是单一文本序列 ri。</p>
+<p>过滤 API 调用</p>
+<p>令 i 为 API 调用 ci 在序列 x = x1, …, xn 中的位置，令 ri 为来自 API 的响应。进一步，给定权重序列 (wi | i ∈ N)，令</p>
+<p>Li(z) = − ∑_{j=i}^{n} w_{j−i} · log pM(xj | z, x1:j−1)</p>
+<p>为若模型以 z 为前缀，M 在标记 xi, …, xn 上的加权交叉熵损失。我们比较此损失的两种不同实例化：</p>
+<p>L+_i = Li(e(ci, ri))</p>
+<p>L−_i = min (Li(ε), Li(e(ci, ε)))</p>
+<p>其中 ε 表示空序列。前者是若将 API 调用及其结果作为前缀给 M，在所有标记 xi, …, xn 上的加权损失；后者是（i）完全不做 API 调用与（ii）做 API 调用但不提供响应所得损失的最小值。直观上，一次 API 调用对 M 有帮助，如果同时向它提供此次调用的输入与输出，使它比完全不接收 API 调用、或只接收其输入更容易预测未来标记。给定过滤阈值 τf，我们因而只保留满足</p>
+<p>L−_i − L+_i ≥ τf</p>
+<p>的 API 调用，即加入 API 调用及其结果使损失至少降低 τf，相比不做任何 API 调用或从中得不到结果。</p>
+<p>模型微调</p>
+<p>在为所有 API 采样并过滤调用之后，我们最终合并剩余的 API 调用并将它们与原始输入交错。也即，对在位置 i 带相应 API 调用与结果 (ci, ri) 的输入文本 x = x1, …, xn，我们构造新序列 x* =</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是公式页：在哪里插入调用看 &lt;API&gt; 的概率；过滤看「带上工具结果」是否比「不调或调了没结果」更能降低后面词的损失。
+这很重要，因为它把「有用」定义成可算的 Δloss，而不是人觉得这段该查百科。
+类比：开卷考试只允许夹对答题有用的纸条；夹了反而更糊涂的纸条全部扔掉。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>x1:i−1, e(ci, ri), xi:n; we proceed analogously for texts with multiple API calls. Doing this for all x ∈ C results in the new dataset C∗augmented with API calls. We use this new dataset to ﬁnetune M, using a standard language modeling objective. Crucially, apart from inserted API calls the augmented dataset C∗contains the exact same texts as C, the original dataset. As a consequence, ﬁnetuning M on C∗ exposes it to the same content as ﬁnetuning on C. Moreover, as API calls are inserted in exactly those positions and with exactly those inputs that help M predict future tokens, ﬁnetuning on C∗enables the language model to decide when and how to use which tool, based purely on its own feedback. Inference When generating text with M after ﬁnetuning with our approach, we perform regular decoding until M produces the “→” token, indicating that it next expects the response for an API call. At this point, we interrupt the decoding process, call the appropriate API to get a response, and continue the decoding process after inserting both the response and the &lt;/API&gt; token. Tools We explore a variety of tools to address different shortcomings of regular LMs. The only constraints we impose on these tools is that (i) both their inputs and outputs can be represented as text sequences, and (ii) we can obtain a few demonstrations of their intended use. Concretely, we explore the following ﬁve tools: a question answering system, a Wikipedia search engine, a calculator, a calendar, and a machine translation system. Some examples of potential calls and return strings for the APIs associated with each of these tools are shown in Table 1. We brieﬂy discuss all tools below; further details can be found in Appendix A. Question Answering Our ﬁrst tool is a question answering system based on another LM that can answer simple factoid questions. Speciﬁcally, we use Atlas (Izacard et al., 2022), a retrieval-augmented LM ﬁnetuned on Natural Questions (Kwiatkowski et al., 2019). Calculator As a second tool, we use a calculator that can perform simple numeric calculations; we only support the four basic arithmetic operations. Results are always rounded to two decimal places. Wikipedia Search Our third tool is a search engine that, given a search term, returns short text snippets from Wikipedia. Compared to our question answering tool, this search enables a model to get more comprehensive information on a subject, but requires it to extract the relevant parts by itself. As our search engine, we use a BM25 retriever (Robertson et al., 1995; Baeza-Yates et al., 1999) that indexes the Wikipedia dump from KILT (Petroni et al., 2021). Machine Translation System Our fourth tool is a machine translation system based on a LM that can translate a phrase from any language into English. More concretely, we use the 600M parameter NLLB (Costa-jussà et al., 2022) as our multilingual machine translation model that works for 200 languages (including low-resource ones). The source language is automatically detected using the fastText classiﬁer (Joulin et al., 2016), while the target language is always set to English. Calendar Our ﬁnal tool is a calendar API that, when queried, returns the current date without taking any input. This provides temporal context for predictions that require some awareness of time. Experiments We investigate whether our approach enables a model to use tools without any further supervision and to decide for itself when and how to call which of the available tools. To test this, we select a variety of downstream tasks where we assume at least one of the considered tools to be useful, and evaluate performance in zero-shot settings (Section 4.2). Beyond that, we also ensure that our approach does not hurt the model’s core language modeling abilities; we verify this by looking at perplexity on two language modeling datasets (Section 4.3). Finally, we investigate how the ability to learn using tools is affected by model size (Section 4.4). 4.1 Experimental Setup Dataset Generation Throughout all of our experiments, we use a subset of CCNet (Wenzek et al., 2020) as our language modeling dataset C and GPTJ (Wang and Komatsuzaki, 2021) as our language model M. To reduce the computational cost of annotating C with API calls, we deﬁne heuristics for some APIs to get a subset of C for which API calls are more likely to be helpful than for an average text. For example, we only consider texts for the calculator tool if they contain at least three numbers. Details of the heuristics used are given in</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>x1:i−1, e(ci, ri), xi:n；对带多次 API 调用的文本我们类似进行。对所有 x ∈ C 这样做，得到用 API 调用增强的新数据集 C*。我们用此新数据集以标准语言建模目标微调 M。关键在于，除插入的 API 调用外，增强数据集 C* 包含与原始数据集 C 完全相同的文本。因此，在 C* 上微调 M 使其接触与在 C 上微调相同的内容。而且，由于 API 调用恰好插在那些位置、并带有恰好那些帮助 M 预测未来标记的输入，在 C* 上微调使语言模型能够纯粹基于其自身反馈，决定何时以及如何使用哪种工具。</p>
+<p>推理</p>
+<p>当我们的方法微调之后用 M 生成文本时，我们执行常规解码，直到 M 产生 “→” 标记，表明它接下来期望一次 API 调用的响应。此时，我们中断解码过程，调用适当的 API 以获得响应，并在插入响应与 &lt;/API&gt; 标记之后继续解码过程。</p>
+<p>工具</p>
+<p>我们探索一系列工具以应对常规 LM 的不同短板。我们加诸这些工具的唯一约束是：（i）其输入与输出都能表示为文本序列；（ii）我们能获得其预期用途的少量示范。具体而言，我们探索以下五种工具：问答系统、维基百科搜索引擎、计算器、日历与机器翻译系统。与这些工具关联的 API 的一些潜在调用与返回字符串示例见表 1。我们在下面简要讨论所有工具；进一步细节见附录 A。</p>
+<p>问答</p>
+<p>我们的第一种工具是基于另一个 LM、能够回答简单事实性问题的问答系统。具体而言，我们使用 Atlas（Izacard et al., 2022），一个在 Natural Questions（Kwiatkowski et al., 2019）上微调的检索增强 LM。</p>
+<p>计算器</p>
+<p>作为第二种工具，我们使用能够执行简单数值计算的计算器；我们只支持四种基本算术运算。结果始终四舍五入到两位小数。</p>
+<p>维基百科搜索</p>
+<p>我们的第三种工具是搜索引擎，给定搜索词，返回来自维基百科的短文本片段。与问答工具相比，此搜索使模型能够获得关于某一主题更全面的信息，但要求它自己提取相关部分。作为我们的搜索引擎，我们使用索引了来自 KILT（Petroni et al., 2021）的维基百科转储的 BM25 检索器（Robertson et al., 1995; Baeza-Yates et al., 1999）。</p>
+<p>机器翻译系统</p>
+<p>我们的第四种工具是基于 LM、能够将短语从任何语言译成英语的机器翻译系统。更具体地，我们使用 6 亿参数的 NLLB（Costa-jussà et al., 2022）作为我们的多语言机器翻译模型，它适用于 200 种语言（包括低资源语言）。源语言用 fastText 分类器（Joulin et al., 2016）自动检测，目标语言始终设为英语。</p>
+<p>日历</p>
+<p>我们的最后一种工具是日历 API，被查询时返回当前日期而不接受任何输入。这为需要一定时间觉察的预测提供时间上下文。</p>
+<p>实验</p>
+<p>我们研究我们的方法是否使模型能在无进一步监督的情况下使用工具，并自行决定何时以及如何调用哪种可用工具。为测试这一点，我们选择多种下游任务，其中我们假定所考虑工具中至少有一种有用，并在零样本设定下评估性能（第 4.2 节）。</p>
+<p>除此之外，我们也确保我们的方法不损害模型的核心语言建模能力；我们通过查看两个语言建模数据集上的困惑度来验证这一点（第 4.3 节）。最后，我们研究学会使用工具的能力如何受模型规模影响（第 4.4 节）。</p>
+<p class="meta-line">4.1 实验设置</p>
+<p>数据集生成</p>
+<p>在我们所有实验中，我们使用 CCNet（Wenzek et al., 2020）的一个子集作为语言建模数据集 C，使用 GPT-J（Wang and Komatsuzaki, 2021）作为语言模型 M。为降低用 API 调用标注 C 的计算成本，我们为某些 API 定义启发式，以得到 C 的一个子集，对该子集 API 调用比对平均文本更可能有帮助。例如，我们只在文本包含至少三个数字时才为计算器工具考虑它们。所用启发式的细节在</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把微调与推理说完：插入的调用不改原文内容，生成时碰到箭头就停下来真调工具；五种工具都是「进出皆文本」。
+这很重要，因为它保证学会用工具之后，模型还是原来那个语言模型，只是多了插孔。
+类比：在小说行间夹计算器纸条，故事还是同一本；朗读到纸条处就真去按一下，再接着念。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>API Name Example Input Example Output Question Answering Where was the Knights of Columbus founded? New Haven, Connecticut Wikipedia Search Fishing Reel Types Spin ﬁshing &gt; Spin ﬁshing is distinguished between ﬂy ﬁshing and bait cast ﬁshing by the type of rod and reel used. There are two types of reels used when spin ﬁshing, the open faced reel and the closed faced reel. Calculator 27 + 4 * 2 Calendar ε Today is Monday, January 30, 2023. Machine Translation sûreté nucléaire nuclear safety Table 1: Examples of inputs and outputs for all APIs used. Number of Examples API τf = 0.5 τf = 1.0 τf = 2.0 Question Answering 51,987 18,526 5,135 Wikipedia Search 207,241 60,974 13,944 Calculator 3,680 Calendar 61,811 20,587 3,007 Machine Translation 3,156 1,034 Table 2: Number of examples with API calls in C∗for different values of our ﬁltering threshold τf. Appendix A. For obtaining C∗from C, we perform all steps described in Section 2 and additionally ﬁlter out all examples for which all API calls were eliminated in the ﬁltering step.4 For the weighting function, we use wt = ˜wt P s∈N ˜ws with ˜wt = max(0, 1 −0.2 · t) to make sure that API calls happen close to where the information provided by the API is actually helpful for the model. The thresholds τs and τf are chosen individually for each tool to ensure a sufﬁ- ciently larger number of examples; see Appendix A for details. Table 2 shows relevant statistics of our ﬁnal dataset augmented with API calls. Model Finetuning We ﬁnetune M on C∗using a batch size of 128 and a learning rate of 1 · 10−5 with linear warmup for the ﬁrst 10% of training. Details of our ﬁnetuning procedure are given in Appendix B. Baseline Models Throughout the remainder of this section, we mainly compare the following models: 4While this ﬁltering alters the distribution of training examples, we assume that the remaining examples are close enough to the original distribution so that M’s language modeling abilities remain unaffected. This assumption is empirically validated in Section 4.3.</p>
+<ul>
+<li>GPT-J: A regular GPT-J model without any ﬁnetuning.</li>
+<li>GPT-J + CC: GPT-J ﬁnetuned on C, our subset of CCNet without any API calls.</li>
+<li>Toolformer: GPT-J ﬁnetuned on C∗, our subset of CCNet augmented with API calls.</li>
+<li>Toolformer (disabled): The same model as Toolformer, but API calls are disabled during decoding.5 For most tasks, we additionally compare to OPT (66B) (Zhang et al., 2022) and GPT-36 (175B) (Brown et al., 2020), two models that are about 10 and 25 times larger than our other baseline models, respectively. 4.2 Downstream Tasks We evaluate all models on a variety of downstream tasks. In all cases, we consider a prompted zeroshot setup – i.e., models are instructed to solve each task in natural language, but we do not provide any in-context examples. This is in contrast to prior work on tool use (e.g., Gao et al., 2022; Parisi et al., 2022), where models are provided with dataset-speciﬁc examples of how a tool can be used to solve a concrete task. We choose the more challenging zero-shot setup as we are interested in seeing whether Toolformer works in precisely those cases where a user does not specify in advance which tools should be used in which way for solving a speciﬁc problem. We use standard greedy decoding, but with one modiﬁcation for Toolformer: We let the model start an API call not just when &lt;API&gt; is the most likely 5This is achieved by manually setting the probability of the &lt;API&gt; token to 0. 6We use the original davinci variant that is not ﬁnetuned on any instructions.</li>
+</ul></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>附录 A 中给出。为从 C 获得 C*，我们执行第 2 节描述的所有步骤，并额外过滤掉在过滤步骤中所有 API 调用都被淘汰的示例。对于加权函数，我们使用</p>
+<p>wt = w̃t / ∑_{s∈N} w̃s</p>
+<p>其中 w̃t = max(0, 1 − 0.2 · t)</p>
+<p>以确保 API 调用发生在 API 所提供信息对模型真正有帮助的位置附近。阈值 τs 与 τf 为每种工具单独选择，以确保足够多的示例；见附录 A。表 2 显示我们最终用 API 调用增强的数据集的相关统计。</p>
+<p>模型微调</p>
+<p>我们在 C* 上微调 M，批大小为 128，学习率为 1 · 10^{−5}，并在训练的前 10% 使用线性预热。微调程序细节见附录 B。</p>
+<p>基线模型</p>
+<p>在本节其余部分，我们主要比较以下模型：</p>
+<ul>
+<li>GPT-J：常规 GPT-J 模型，无任何微调。</li>
+<li>GPT-J + CC：在 C 上微调的 GPT-J，即我们不含任何 API 调用的 CCNet 子集。</li>
+<li>Toolformer：在 C* 上微调的 GPT-J，即我们用 API 调用增强的 CCNet 子集。</li>
+<li>Toolformer（禁用）：与 Toolformer 相同的模型，但解码时禁用 API 调用。</li>
+</ul>
+<p>对大多数任务，我们额外与 OPT（66B）（Zhang et al., 2022）和 GPT-3（175B）（Brown et al., 2020）比较，这两个模型分别比我们的其他基线大约 10 倍与 25 倍。</p>
+<p class="meta-line">4.2 下游任务</p>
+<p>我们在多种下游任务上评估所有模型。在所有情形中，我们考虑带提示的零样本设置——即，模型被用自然语言指示去解决每项任务，但我们不提供任何上下文中的示例。这与先前关于工具使用的工作（例如 Gao et al., 2022; Parisi et al., 2022）形成对比，那些工作向模型提供数据集特定的、关于如何用工具解决具体任务的示例。我们选择更具挑战性的零样本设置，因为我们感兴趣的是 Toolformer 是否恰恰在用户事先不指定应以何种方式使用哪些工具来解决特定问题的情形下仍然有效。</p>
+<p>我们使用标准贪心解码，但对 Toolformer 有一处修改：我们不仅在 &lt;API&gt; 是最可能标记时让模型开始一次 API 调用，而且只要它是 k 个最可能标记之一。对 k = 1，这对应于常规贪心解码；我们改用 k = 10 以增加我们模型使用其所能访问 API 的倾向。同时，我们对每个输入最多只做一次 API 调用，以确保模型不会陷入不断调用 API 而不产生任何实际输出的循环。这些修改的效果在第 5 节探讨。</p>
+<p class="meta-line">4.2.1 LAMA</p>
+<p>我们在 LAMA 基准（Petroni et al., 2019）的 SQuAD、Google-RE 与 T-REx 子集上评估我们的模型。对这些子集中的每一个，任务是用缺失事实（例如日期或地点）完成一句短陈述。由于 LAMA 最初被设计来评估掩码语言模型（例如 Devlin et al., 2019），我们过滤掉掩码标记不是最终标记的示例，以便剩余示例可以从左到右处理。为考虑不同的分词，以及未告知模型需要单个词所增加的复杂性，我们使用比精确匹配稍宽松的评估标准，并简单检查正确的词是否在模型预测的前五个词之内。由于 LAMA 基于直接从维基百科获得的陈述，我们阻止 Toolformer 使用维基百科搜索 API，以避免给它不公平的优势。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页交代评测纪律：零样本、不给「这题该用计算器」的示范；解码时把 &lt;API&gt; 放进 top-10 以鼓励调用，但每题最多调一次。LAMA 还禁止用维基搜索，免得原句就在百科里。
+这很重要，因为它测的是模型自己决定用不用工具，不是跟读的提示工程。
+类比：开卷考试不告诉你哪一题该翻哪一章，还限制你每题只准翻一次。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>token, but whenever it is one of the k most likely tokens. For k = 1, this corresponds to regular greedy decoding; we instead use k = 10 to increase the disposition of our model to make use of the APIs that it has access to. At the same time, we only at most one API call per input to make sure the model does not get stuck in a loop where it constantly calls APIs without producing any actual output. The effect of these modiﬁcations is explored in Section 5. 4.2.1 LAMA We evaluate our models on the SQuAD, GoogleRE and T-REx subsets of the LAMA benchmark (Petroni et al., 2019). For each of these subsets, the task is to complete a short statement with a missing fact (e.g., a date or a place). As LAMA was originally designed to evaluate masked language models (e.g., Devlin et al., 2019), we ﬁlter out examples where the mask token is not the ﬁnal token, so that the remaining examples can be processed in a left-to-right fashion. To account for different tokenizations and added complexity from not informing the model that a single word is required, we use a slightly more lenient evaluation criterion than exact match and simply check whether the correct word is within the ﬁrst ﬁve words predicted by the model. As LAMA is based on statements obtained directly from Wikipedia, we prevent Toolformer from using the Wikipedia Search API to avoid giving it an unfair advantage. Results for all models can be seen in Table 3. All GPT-J models without tool use achieve similar performance. Crucially, Toolformer clearly outperforms these baseline models, improving upon the best baseline by 11.7, 5.2 and 18.6 points, respectively. It also clearly outperforms OPT (66B) and GPT-3 (175B), despite both models being much larger. This is achieved because the model independently decides to ask the question answering tool for the required information in almost all cases (98.1%); for only very few examples, it uses a different tool (0.7%) or no tool at all (1.2%). 4.2.2 Math Datasets We test mathematical reasoning abilities on ASDiv (Miao et al., 2020), SVAMP (Patel et al., 2021) and the MAWPS benchmark (Koncel-Kedziorski et al., 2016). We again account for the fact that we test all models in a zero-shot setup by using a more lenient evaluation criterion: As the required output is always a number, we simply check for the ﬁrst Model SQuAD Google-RE T-REx GPT-J 17.8 4.9 31.9 GPT-J + CC 19.2 5.6 33.2 Toolformer (disabled) 22.1 6.3 34.9 Toolformer 33.8 11.5 53.5 OPT (66B) 21.6 2.9 30.1 GPT-3 (175B) 26.8 7.0 39.8 Table 3: Results on subsets of LAMA. Toolformer uses the question answering tool for most examples, clearly outperforming all baselines of the same size and achieving results competitive with GPT-3 (175B). Model ASDiv SVAMP MAWPS GPT-J 7.5 5.2 9.9 GPT-J + CC 9.6 5.0 9.3 Toolformer (disabled) 14.8 6.3 15.0 Toolformer 40.4 29.4 44.0 OPT (66B) 6.0 4.9 7.9 GPT-3 (175B) 14.0 10.0 19.8 Table 4: Results for various benchmarks requiring mathematical reasoning. Toolformer makes use of the calculator tool for most examples, clearly outperforming even OPT (66B) and GPT-3 (175B). number predicted by the model.7 Table 4 shows results for all benchmarks. While GPT-J and GPT-J + CC perform about the same, Toolformer achieves stronger results even when API calls are disabled. We surmise that this is because the model is ﬁnetuned on many examples of API calls and their results, improving its own mathematical capabilities. Nonetheless, allowing the model to make API calls more than doubles performance for all tasks, and also clearly outperforms the much larger OPT and GPT-3 models. This is because across all benchmarks, for 97.9% of all examples the model decides to ask the calculator tool for help. 4.2.3 Question Answering We look at Web Questions (Berant et al., 2013), Natural Questions (Kwiatkowski et al., 2019) and TriviaQA (Joshi et al., 2017), the three question answering datasets considered by Brown et al. (2020). For evaluation, we check whether the ﬁrst 20 words predicted by a model contain the correct answer instead of requiring an exact match. For Toolformer, we disable the question answering tool as 7An exception to this is if the model’s prediction contains an equation (e.g., “The correct answer is 5+3=8”), in which case we consider the ﬁrst number after the “=” sign to be its prediction.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>所有模型的结果可见表 3。所有不使用工具的 GPT-J 模型取得相似性能。关键的是，Toolformer 明显优于这些基线模型，分别比最佳基线提高 11.7、5.2 与 18.6 个点。它也明显优于 OPT（66B）与 GPT-3（175B），尽管这两个模型大得多。这是因为模型在几乎所有情形（98.1%）中独立决定向问答工具询问所需信息；仅对极少示例，它使用不同工具（0.7%）或根本不使用工具（1.2%）。</p>
+<p class="meta-line">4.2.2 数学数据集</p>
+<p>我们在 ASDiv（Miao et al., 2020）、SVAMP（Patel et al., 2021）与 MAWPS 基准（Koncel-Kedziorski et al., 2016）上测试数学推理能力。我们再次通过使用更宽松的评估标准来考虑我们在零样本设置中测试所有模型这一事实：由于所需输出始终是数字，我们简单检查模型预测的第一个数字。</p>
+<p>表 4 显示所有基准的结果。尽管 GPT-J 与 GPT-J + CC 表现大致相同，即便禁用 API 调用，Toolformer 也取得更强结果。我们推测这是因为模型在许多 API 调用及其结果的示例上微调，改善了它自身的数学能力。尽管如此，允许模型进行 API 调用使所有任务的性能提高一倍以上，并且也明显优于大得多的 OPT 与 GPT-3 模型。这是因为在所有基准上，对 97.9% 的示例，模型决定向计算器工具求助。</p>
+<p class="meta-line">4.2.3 问答</p>
+<p>我们查看 Web Questions（Berant et al., 2013）、Natural Questions（Kwiatkowski et al., 2019）与 TriviaQA（Joshi et al., 2017），即 Brown et al.（2020）所考虑的三个问答数据集。为评估，我们检查模型预测的前 20 个词是否包含正确答案，而不是要求精确匹配。对 Toolformer，我们禁用问答工具，因为这会使求解任务变得平凡，尤其考虑到底层 QA 系统是在 Natural Questions 上微调的。</p>
+<p>表 1：所有所用 API 的输入与输出示例。</p>
+<pre class="math">问答：Where was the Knights of Columbus founded? → New Haven, Connecticut</pre>
+<p>维基百科搜索：Fishing Reel Types → 关于纺车钓的短片段</p>
+<p>计算器：27 + 4 * 2</p>
+<pre class="math">日历：ε → Today is Monday, January 30, 2023.</pre>
+<pre class="math">机器翻译：sûreté nucléaire → nuclear safety</pre>
+<p>表 2：对我们过滤阈值 τf 的不同值，C* 中带 API 调用的示例数。</p>
+<p>表 3：LAMA 子集上的结果。Toolformer 对大多数示例使用问答工具，明显优于同规模所有基线，并取得与 GPT-3（175B）竞争的结果。</p>
+<p>表 4：需要数学推理的各种基准结果。Toolformer 对大多数示例使用计算器工具，甚至明显优于 OPT（66B）与 GPT-3（175B）。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是成绩单：LAMA 上几乎总是问 QA 工具，6.7B 超过 175B；数学上 98% 调计算器，分数翻倍。作者还承认：禁用工具时数学也涨了一点，可能是微调时看过太多算式。
+这很重要，因为它把「会用工具」从体感写成调用率 + 分数。
+类比：开卷的人不是更聪明，而是 98% 的题真的去按了计算器——没按的那一栏分数就普通。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Model WebQS NQ TriviaQA GPT-J 18.5 12.8 43.9 GPT-J + CC 18.4 12.2 45.6 Toolformer (disabled) 18.9 12.6 46.7 Toolformer 26.3 17.7 48.8 OPT (66B) 18.6 11.4 45.7 GPT-3 (175B) 29.0 22.6 65.9 Table 5: Results for various question answering dataset. Using the Wikipedia search tool for most examples, Toolformer clearly outperforms baselines of the same size, but falls short of GPT-3 (175B). this would make solving the tasks trivial, especially given that the underlying QA system was ﬁnetuned on Natural Questions. Results are shown in Table 5. Once again, Toolformer clearly outperforms all other models based on GPT-J, this time mostly relying on the Wikipedia search API (99.3%) to ﬁnd relevant information. However, Toolformer still lags behind the much larger GPT-3 (175B) model. This is likely due to both the simplicity of our search engine (in many cases, it returns results that are clearly not a good match for a given query) and the inability of Toolformer to interact with it, e.g., by reformulating its query if results are not helpful or by browsing through multiple of the top results. We believe that adding this functionality is an exciting direction for future work. 4.2.4 Multilingual Question Answering We evaluate Toolformer and all baseline models on MLQA (Lewis et al., 2019), a multilingual question-answering benchmark. A context paragraph for each question is provided in English, while the question can be in Arabic, German, Spanish, Hindi, Vietnamese, or Simpliﬁed Chinese. In order to solve the task, the model needs to be able to understand both the paragraph and the question, so it may beneﬁt from translating the question into English. Our evaluation metric is the percentage of times the model’s generation, capped at 10 words, contains the correct answer. Results are shown in Table 6. Using API calls consistently improves Toolformer’s performance for all languages, suggesting that it has learned to make use of the machine translation tool. Depending on the language, this tool is used for 63.8% to 94.9% of all examples; the only exception to this is Hindi, for which the machine translation tool is used in only 7.3% of cases. However, ToolModel Es De Hi Vi Zh Ar GPT-J 15.2 16.5 1.3 8.2 18.2 8.2 GPT-J + CC 15.7 14.9 0.5 8.3 13.7 4.6 Toolformer (disabled) 19.8 11.9 1.2 10.1 15.0 3.1 Toolformer 20.6 13.5 1.4 10.6 16.8 3.7 OPT (66B) 0.3 0.1 1.1 0.2 0.7 0.1 GPT-3 (175B) 3.4 1.1 0.1 1.7 17.7 0.1 GPT-J (All En) 24.3 27.0 23.9 23.3 23.1 23.6 GPT-3 (All En) 24.7 27.2 26.1 24.9 23.6 24.0 Table 6: Results on MLQA for Spanish (Es), German (De), Hindi (Hi), Vietnamese (Vi), Chinese (Zh) and Arabic (Ar). While using the machine translation tool to translate questions is helpful across all languages, further pretraining on CCNet deteriorates performance; consequently, Toolformer does not consistently outperform GPT-J. The ﬁnal two rows correspond to models that are given contexts and questions in English. former does not consistently outperform vanilla GPT-J. This is mainly because for some languages, ﬁnetuning on CCNet deteriorates performance; this might be due to a distribution shift compared to GPT-J’s original pretraining data. OPT and GPT-3 perform surprisingly weak across all languages, mostly because they fail to provide an answer in English despite being instructed to do so. A potential reason for GPT-J not suffering from this problem is that it was trained on more multilingual data than both OPT and GPT-3, including the EuroParl corpus (Koehn, 2005; Gao et al., 2020). As an upper bound, we also evaluate GPT-J and GPT-3 on a variant of MLQA where both the context and the question are provided in English. In this setup, GPT-3 performs better than all other models, supporting our hypothesis that its subpar performance on MLQA is due to the multilingual aspect of the task. 4.2.5 Temporal Datasets To investigate the calendar API’s utility, we evaluate all models on TEMPLAMA (Dhingra et al., 2022) and a new dataset that we call DATESET. TEMPLAMA is a dataset built from Wikidata that contains cloze queries about facts that change with time (e.g., “Cristiano Ronaldo plays for ___”) as well as the correct answer for the years between 2010 and 2020. DATESET, described in Appendix D, is also generated through a series of templates, but populated using a combination of random dates/durations (e.g., “What day of the week was it 30 days ago?”). Critically, knowing the current date is required to answer these questions.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 5：各种问答数据集的结果。对大多数示例使用维基百科搜索工具，Toolformer 明显优于同规模基线，但落后于 GPT-3（175B）。</p>
+<p>表 5 显示结果。再一次，Toolformer 明显优于所有基于 GPT-J 的其他模型，这次主要依赖维基百科搜索 API（99.3%）来查找相关信息。然而，Toolformer 仍落后于大得多的 GPT-3（175B）模型。这很可能既由于我们搜索引擎的简单性（在许多情形中，它返回的结果明显不是给定查询的良好匹配），也由于 Toolformer 无法与之交互，例如在结果无帮助时改写查询，或浏览多个顶部结果。我们相信加入这一功能是未来工作的一个令人兴奋的方向。</p>
+<p class="meta-line">4.2.4 多语言问答</p>
+<p>我们在 MLQA（Lewis et al., 2019）上评估 Toolformer 与所有基线模型，这是一个多语言问答基准。每道题的上下文段落以英语提供，而问题可以是阿拉伯语、德语、西班牙语、印地语、越南语或简体中文。为解决该任务，模型需要能够理解段落与问题，因此它可能受益于将问题译成英语。我们的评估指标是模型生成（截断为 10 个词）包含正确答案的百分比。</p>
+<p>结果如表 6 所示。使用 API 调用一致地改善 Toolformer 在所有语言上的性能，表明它已学会使用机器翻译工具。取决于语言，此工具用于 63.8% 到 94.9% 的示例；唯一例外是印地语，机器翻译工具仅在 7.3% 的情形中被使用。然而，Toolformer 并不一致地优于原版 GPT-J。这主要是因为对某些语言，在 CCNet 上微调会损害性能；这可能是由于相对 GPT-J 原始预训练数据的分布偏移。</p>
+<p>OPT 与 GPT-3 在所有语言上表现得出奇地弱，主要因为它们未能按指示用英语提供答案。GPT-J 不受此问题困扰的一个潜在原因是，它在比 OPT 与 GPT-3 更多的多语言数据上训练，包括 EuroParl 语料（Koehn, 2005; Gao et al., 2020）。作为上界，我们也在 MLQA 的一个变体上评估 GPT-J 与 GPT-3，其中上下文与问题都以英语提供。在此设置中，GPT-3 优于所有其他模型，支持我们的假设：它在 MLQA 上的不佳表现是由于该任务的多语言方面。</p>
+<p class="meta-line">4.2.5 时间数据集</p>
+<p>为研究日历 API 的效用，我们在 TEMPLAMA（Dhingra et al., 2022）和一个我们称为 DATESET 的新数据集上评估所有模型。TEMPLAMA 是一个从 Wikidata 构建的数据集，包含关于随时间变化的事实的填空查询（例如，“Cristiano Ronaldo plays for ___”）以及 2010 至 2020 年间的正确答案。DATESET 在附录 D 中描述，也通过一系列模板生成，但用随机日期 / 时长的组合填充（例如，“What day of the week was it 30 days ago?”）。关键的是，知道当前日期是回答这些问题所必需的。</p>
+<p>表 6：MLQA 上西班牙语（Es）、德语（De）、印地语（Hi）、越南语（Vi）、中文（Zh）与阿拉伯语（Ar）的结果。尽管用机器翻译工具翻译问题在所有语言上都有帮助，在 CCNet 上进一步预训练会损害性能；因此 Toolformer 并不一致地优于 GPT-J。最后两行对应被给予英语上下文与问题的模型。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把短板摊开：开放域问答仍输给 GPT-3，因为搜索太朴素、也不能改写查询；多语言靠翻译工具有帮助，但在 CCNet 上微调本身会伤某些语言；时间题要靠日历。
+这很重要，因为它说明「会调工具」≠「会跟工具互动」。
+类比：会拿百科全书，但不会翻到不对就换词再查——书在手里，检索策略还是一轮定生死。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Model TEMPLAMA DATESET GPT-J 13.7 3.9 GPT-J + CC 12.9 2.9 Toolformer (disabled) 12.7 5.9 Toolformer 16.3 27.3 OPT (66B) 14.5 1.3 GPT-3 (175B) 15.5 0.8 Table 7: Results for the temporal datasets. Toolformer outperforms all baselines, but does not make use of the calendar tool for TEMPLAMA. For both tasks, we use the same evaluation as for the original LAMA dataset. Results shown in Table 7 illustrate that Toolformer outperforms all baselines for both TEMPLAMA and DATESET. However, closer inspection shows that improvements on TEMPLAMA can not be attributed to the calendar tool, which is only used for 0.2% of all examples, but mostly to the Wikipedia search and question answering tools, which Toolformer calls the most. This makes sense given that named entities in TEMPLAMA are often so speciﬁc and rare that even knowing the exact date alone would be of little help. The best course of action for this dataset – ﬁrst querying the calendar API to get the current date, and then querying the question answering system with this date – is not only prohibited by our restriction of using at most one API call per example, but also hard to learn for Toolformer given that all API calls in its training data are sampled independently. For DATESET, on the other hand, the considerable improvement of Toolformer compared to other models can be fully accredited to the calendar tool, which it makes use of for 54.8% of all examples. 4.3 Language Modeling In addition to verifying improved performance on various downstream tasks, we also want to ensure that language modeling performance of Toolformer does not degrade through our ﬁnetuning with API calls. To this end, we evaluate our models on two language modeling datasets: WikiText (Merity et al., 2017) and a subset of 10,000 randomly selected documents from CCNet (Wenzek et al., 2020) that were not used during training. Perplexities of various models are shown in Table 8. As one would expect, ﬁnetuning on CCNet leads to slightly improved performance on a different CCNet subset, but it slightly deteriorates performance on WikiText, presumably because the original preModel WikiText CCNet GPT-J 9.9 10.6 GPT-J + CC 10.3 10.5 Toolformer (disabled) 10.3 10.5 Table 8: Perplexities of different models on WikiText and our validation subset of CCNet. Adding API calls comes without a cost in terms of perplexity for language modeling without any API calls. training data for GPT-J is more similar to WikiText than our randomly selected subset of CCNet. Most importantly, however, training on C∗(our dataset annotated with API calls) does not lead to an increase in perplexity compared to training on C when API calls are disabled at inference time.8 4.4 Scaling Laws We investigate how the ability to ask external tools for help affects performance as we vary the size of our LM. To this end, we apply our approach not just to GPT-J, but also to four smaller models from the GPT-2 family (Radford et al., 2019), with 124M, 355M, 775M and 1.6B parameters, respectively. We do so using only a subset of three tools: the question answering system, the calculator, and the Wikipedia search engine. Apart from this, we follow the experimental setup described in Section 4.1. Figure 4 shows that the ability to leverage the provided tools only emerges at around 775M parameters: smaller models achieve similar performance both with and without tools. An exception to this is the Wikipedia search engine used mostly for QA benchmarks; we hypothesize that this is because the API is comparably easy to use. While models become better at solving tasks without API calls as they grow in size, their ability to make good use of the provided API improves at the same time. As a consequence, there remains a large gap between predictions with and without API calls even for our biggest model. Analysis Decoding Strategy We investigate the effect of our modiﬁed decoding strategy introduced in Section 4.2, where instead of always generating the 8We do not evaluate the perplexity of Toolformer with API calls enabled as computing the probability pM(xt | x1, . . . , xt−1) of token xt given x1, . . . , xt−1 would require marginalizing over all potential API calls that the model could make at position t, which is intractable.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>对两项任务，我们使用与原始 LAMA 数据集相同的评估。</p>
+<p>表 7 所示结果表明，Toolformer 在 TEMPLAMA 与 DATESET 上都优于所有基线。然而，更仔细的检查显示，TEMPLAMA 上的改善不能归因于日历工具（仅用于 0.2% 的示例），而主要归因于维基百科搜索与问答工具，这是 Toolformer 调用最多的。这说得通，因为 TEMPLAMA 中的命名实体常常如此具体而罕见，即使知道确切日期也帮助不大。该数据集的最佳行动过程——先查询日历 API 以获得当前日期，再带此日期查询问答系统——不仅被我们每示例最多一次 API 调用的限制所禁止，而且对 Toolformer 也很难学，因为其训练数据中的所有 API 调用都是独立采样的。</p>
+<p>另一方面，对 DATESET，Toolformer 相对其他模型的可观改善可以完全归于日历工具，它对其 54.8% 的示例使用该工具。</p>
+<p class="meta-line">4.3 语言建模</p>
+<p>除验证在各种下游任务上改善的性能外，我们也想确保 Toolformer 的语言建模性能不因我们带 API 调用的微调而下降。</p>
+<p>为此，我们在两个语言建模数据集上评估我们的模型：WikiText（Merity et al., 2017）以及训练期间未使用的、从 CCNet（Wenzek et al., 2020）随机选择的 10,000 篇文档子集。各种模型的困惑度如表 8 所示。如人所料，在 CCNet 上微调导致在不同 CCNet 子集上性能略有改善，但略微损害 WikiText 上的性能，大概是因为 GPT-J 的原始预训练数据比我们随机选择的 CCNet 子集更类似于 WikiText。</p>
+<p>最重要的是，然而，在 C*（我们用 API 调用标注的数据集）上训练，当推理时禁用 API 调用时，并不导致相对在 C 上训练的困惑度增加。</p>
+<p class="meta-line">4.4 扩展定律</p>
+<p>我们研究向外部工具求助的能力如何随我们改变 LM 规模而影响性能。为此，我们不仅将方法应用到 GPT-J，也应用到 GPT-2 家族中四个更小的模型（Radford et al., 2019），分别具有 1.24 亿、3.55 亿、7.75 亿与 16 亿参数。我们这样做时只使用三种工具的子集：问答系统、计算器与维基百科搜索引擎。除此之外，我们遵循第 4.1 节描述的实验设置。</p>
+<p>图 4 显示，利用所提供工具的能力大约在 7.75 亿参数时才出现：更小的模型无论有无工具都取得相似性能。对此的一个例外是主要用于 QA 基准的维基百科搜索引擎；我们假设这是因为该 API 相对容易使用。尽管模型随规模增大在不进行 API 调用时也变得更擅长解决问题，它们良好使用所提供 API 的能力同时改善。</p>
+<p>因此，即便对我们最大的模型，带与不带 API 调用的预测之间仍保持巨大差距。</p>
+<p>分析</p>
+<p>解码策略</p>
+<p>我们研究第 4.2 节引入的修改解码策略的效果，其中我们不是始终生成最可能的标记，而是如果 &lt;API&gt; 是 k 个最可能标记之一就生成它。表 9 显示</p>
+<p>表 7：时间数据集的结果。Toolformer 优于所有基线，但在 TEMPLAMA 上不使用日历工具。</p>
+<p>表 8：不同模型在 WikiText 与我们的 CCNet 验证子集上的困惑度。加入 API 调用在不进行任何 API 调用的语言建模方面不带来代价。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页有三句关键限制：工具不能串联（先查日历再问 QA 学不会）；困惑度没掉，说明没把语言模型训废；大约 7.75 亿参数才会真正用上工具。
+这很重要，因为它画出能力门槛，也解释 TEMPLAMA 的涨分其实靠的是搜索，不是日历。
+类比：小孩会按一个按钮，但还不会「先看墙上日历，再去查百科」——两步动作从没在作业本上同时出现过。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>2000 4000 6000 Model Parameters (M) LAMA Toolformer Toolformer (disabled) GPT3 2000 4000 6000 Model Parameters (M) QA Benchmarks 2000 4000 6000 Model Parameters (M) Math Benchmarks Figure 4: Average performance on LAMA, our math benchmarks and our QA benchmarks for GPT-2 models of different sizes and GPT-J ﬁnetuned with our approach, both with and without API calls. While API calls are not helpful to the smallest models, larger models learn how to make good use of them. Even for bigger models, the gap between model predictions with and without API calls remains high. most likely token, we generate the &lt;API&gt; token if it is one of the k most likely tokens. Table 9 shows performance on the T-REx subset of LAMA and on WebQS for different values of k. As expected, increasing k leads to the model doing API calls for more examples – from 40.3% and 8.5% with k = 1 (i.e., regular greedy decoding) to 98.1% and 100% for k = 10. While for T-REx, there is already a clear improvement in performance with greedy decoding, on WebQS our model only starts to make a substantial number of API calls as we slightly increase k. Interestingly, for k = 1 the model is calibrated to some extent: It decides to call APIs for examples that it would perform particularly badly on without making API calls. This can be seen from the fact that performance on examples where it decides not to make an API call (44.3 and 19.9) is higher than average performance if no API calls are made at all (34.9 and 18.9). However, this calibration is lost for higher values of k. Data Quality We qualitatively analyze some API calls generated with our approach for different APIs. Table 10 shows some examples of texts from CCNet augmented with API calls, as well as the corresponding score L− i −L+ i that is used as a ﬁltering criterion, and whether the API calls made by the model are intuitively useful in the given context. As can be seen, high values of L− i −L+ i typically correspond to useful API calls, whereas low values correspond to API calls that do not provide any information that is useful for predicting future tokens. There are some exceptions, e.g., an API call for T-REx WebQS k All AC NC % All AC NC % 34.9 – 34.9 0.0 18.9 – 18.9 0.0 47.8 53.0 44.3 40.3 19.3 17.1 19.9 8.5 52.9 58.0 29.0 82.8 26.3 26.5 6.6 99.3 53.5 54.0 22.5 98.1 26.3 26.4 – 100.0 Table 9: Toolformer results on the T-REx subset of LAMA and on WebQS for different values of k used during decoding. Numbers shown are overall performance (All), performance on the subset where the model decides to make an API call (AC) and all remaining examples (NC), as well as the percentage of examples for which the model decides to call an API (%). “Fast train success” in the fourth example that does not give any relevant information but still reduces perplexity. However, some amount of noise in the API calls that are not ﬁltered can actually be useful as it forces the model ﬁnetuned on C∗to not always blindly follow the results of each call it makes. Related Work Language Model Pretraining There are various approaches that augment language models with some form of additional textual information during pretraining, including various forms of metadata (Keskar et al., 2019), HTML tags (Aghajanyan et al., 2021), Wikipedia markup (Schick et al., 2022), or related texts obtained from an information retrieval system (Guu et al., 2020; Borgeaud et al., 2021; Izacard et al., 2022). For all of these</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>不同 k 值下 T-REx 子集与 WebQS 上的性能。如预期，增大 k 导致模型对更多示例进行 API 调用——从 k = 1（即常规贪心解码）时的 40.3% 与 8.5%，到 k = 10 时的 98.1% 与 100%。尽管对 T-REx，贪心解码已有明显性能改善，在 WebQS 上我们的模型只有在我们略微增大 k 时才开始进行可观数量的 API 调用。有趣的是，对 k = 1，模型在某种程度上是校准的：它决定对那些若不进行 API 调用就会表现特别差的示例调用 API。这可以从以下事实看出：它决定不进行 API 调用的示例上的性能（44.3 与 19.9）高于完全不进行 API 调用时的平均性能（34.9 与 18.9）。然而，对更高的 k 值，这种校准丢失。</p>
+<p>数据质量</p>
+<p>我们定性分析用我们的方法为不同 API 生成的一些 API 调用。表 10 显示一些来自 CCNet、用 API 调用增强的文本示例，以及用作过滤标准的相应分数 L−_i − L+_i，以及模型所做 API 调用在给定上下文中是否直观有用。</p>
+<p>如可见，L−_i − L+_i 的高值通常对应有用的 API 调用，而低值对应不提供任何对预测未来标记有用信息的 API 调用。有一些例外，例如第四个示例中对 “Fast train success” 的 API 调用，它不给出任何相关信息但仍降低困惑度。然而，未被过滤掉的 API 调用中的一定量噪声实际上可能有用，因为它迫使在 C* 上微调的模型不始终盲目遵循它所做的每次调用的结果。</p>
+<p>相关工作</p>
+<p>语言模型预训练</p>
+<p>有各种方法在预训练期间用某种形式的额外文本信息增强语言模型，包括各种形式的元数据（Keskar et al., 2019）、HTML 标签（Aghajanyan et al., 2021）、维基百科标记（Schick et al., 2022），或从信息检索系统获得的相关文本（Guu et al., 2020; Borgeaud et al., 2021; Izacard et al., 2022）。对所有这些</p>
+<p>图 4：不同规模 GPT-2 模型以及用我们方法微调的 GPT-J 在 LAMA、我们的数学基准与我们的 QA 基准上的平均性能，分别带与不带 API 调用。尽管 API 调用对最小的模型没有帮助，更大的模型学会如何良好使用它们。即便对更大的模型，带与不带 API 调用的模型预测之间的差距仍然很高。</p>
+<p>表 9：不同解码所用 k 值下，Toolformer 在 LAMA 的 T-REx 子集与 WebQS 上的结果。所示数字为总体性能（All）、模型决定进行 API 调用的子集上的性能（AC）与所有剩余示例（NC），以及模型决定调用 API 的示例百分比（%）。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页分析解码：k 越大越爱调工具，但校准会丢——本来不该调的也调了。过滤分数大体对得上「直观有用」，偶尔噪声反而防止模型迷信每次返回。
+这很重要，因为它说明成绩有一部分来自「把调用按钮放得更松」，不是纯学会判断。
+类比：把「要不要查字典」的门槛从满分才查改成前十名就能查——查得更多，也不再只查自己最没把握的题。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Example L− i −L+ i Useful The Flodden Window (a war memorial dedicated to The Middleton Archers), in the Grade I-listed Church of St Leonard in Middleton is said to be the oldest war memorial in the United Kingdom. &lt;API&gt; WikiSearch(War memorial Flodden) →Battle of Flodden &gt; Commemoration &gt; The stained-glass Flodden Window in Middleton Parish Church [. . . ] was constructed by Sir Richard Assheton in memory of the Battle of Flodden and the archers from Middleton who fought in it. &lt;/API&gt; Sir Richard Assheton of Middleton (who built St Leonard) was granted knighthood [. ..] 5.49  Note: The WL will be open on Friday, &lt;API&gt; Calendar() →Today is Thursday, March 9, 2017. &lt;/API&gt; March 10, and Sunday, March 19 for regular hours. 2.11  The Nile has an approximate length of &lt;API&gt; QA(What is the approximate length of the Nile?) →6,853 km &lt;/API&gt; 6,853 kilometers, the White Nile being its main source. 2.08  If Venus had an atmosphere similar to Earth’s then you would expect Venus’ mean temperature to be 499 K (1.74 x 287) rather than 735 K which is &lt;API&gt; Calculator(735 / 499) →1.47 &lt;/API&gt; 1.47 (735 / 499) times hotter than it should be. 1.59  You are here: Home / Featured / Catch this fast train to success! &lt;API&gt; WikiSearch(Fast train success) →Fast Train &gt; It also peaked at #23 on the Canadian CHUM singles chart, on June 26, 1971. The success of this single established Myles Goodwyn as the band’s main songwriter, and made it possible for April Wine to record a second album. &lt;/API&gt; Don’t wait weeks and [. . .] 0.92  Os Melhores Escolas em Jersey 2020 &lt;API&gt; MT(Os Melhores Escolas em Jersey) →The Best Schools in Jersey &lt;/API&gt; On this page you can search for Universities, Colleges and Business schools in Jersey 0.70  Enjoy these pictures from the &lt;API&gt; Calendar() →Today is Friday, April 19, 2013. &lt;/API&gt; Easter Egg Hunt. 0.33  85 patients (23%) were hospitalised alive and admitted to a hospital ward. Of them, &lt;API&gt; Calculator(85 / 23) →3.70 &lt;/API&gt; 65% had a cardiac aetiology [. . .] −0.02  But hey, after the &lt;API&gt; Calendar() →Today is Saturday, June 25, 2011. &lt;/API&gt; Disneyland ﬁasco with the ﬁre drill, I think it’s safe to say Chewey won’t let anyone die in a ﬁre. −0.41  The last time I was with &lt;API&gt; QA(Who was last time I was with?) →The Last Time &lt;/API&gt; him I asked what he likes about me and he said he would tell me one day. −1.23  Table 10: Examples of API calls for different tools, sorted by the value of L− i −L+ i that is used as a ﬁltering criterion. High values typically correspond to API calls that are intuitively useful for predicting future tokens. approaches, additional information is always provided, regardless of whether it is helpful or not. In contrast, Toolformer learns for itself to explicitly asks for the right information. Tool Use Several approaches aim to equip LMs with the ability to use external tools such as search engines (Komeili et al., 2022; Thoppilan et al., 2022; Lazaridou et al., 2022; Shuster et al., 2022; Yao et al., 2022), web browsers (Nakano et al., 2021), calculators (Cobbe et al., 2021; Thoppilan et al., 2022), translation systems (Thoppilan et al., 2022) and Python interpreters (Gao et al., 2022). The way these models learn to use tools can roughly be divided into two approaches: Either they rely on large amounts of human supervision (Komeili et al., 2022; Nakano et al., 2021; Thoppilan et al., 2022) or they work by prompting the language model in a few-shot setup tailored towards a speciﬁc task where it is known a priori which tools needs to be used (Gao et al., 2022; Lazaridou et al., 2022; Yao et al., 2022). In contrast, the self-supervised nature of Toolformer enables it to learn how and when to use tools without requiring a speciﬁc prompt that shows task-speciﬁc examples of how a tool could be used. Perhaps most closely related to our work is TALM (Parisi et al., 2022), an approach that uses a similar self-supervised objective for teaching a model to use a calculator and a search engine, but explores this only in settings where a model is ﬁnetuned for downstream tasks. Bootstrapping The idea of using self-training and bootstrapping techniques to improve models has been investigated in various contexts, ranging from word sense disambiguation (Yarowsky, 1995), relation extraction (Brin, 1999; Agichtein and Gravano, 2000), parsing (McClosky et al., 2006; Reichart and Rappoport, 2007), sequence generation (He et al., 2020), few-shot text classi-</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>表 10：不同工具的 API 调用示例，按用作过滤标准的 L−_i − L+_i 值排序。高值通常对应直观上对预测未来标记有用的 API 调用。</p>
+<p>方法，额外信息总是被提供，无论它是否有帮助。相比之下，Toolformer 为自己学习显式索要正确的信息。</p>
+<p>工具使用</p>
+<p>若干方法旨在为 LM 装备使用外部工具的能力，例如搜索引擎（Komeili et al., 2022; Thoppilan et al., 2022; Lazaridou et al., 2022; Shuster et al., 2022; Yao et al., 2022）、网络浏览器（Nakano et al., 2021）、计算器（Cobbe et al., 2021; Thoppilan et al., 2022）、翻译系统（Thoppilan et al., 2022）与 Python 解释器（Gao et al., 2022）。这些模型学习使用工具的方式大致可分为两种：它们或依赖大量人类监督（Komeili et al., 2022; Nakano et al., 2021; Thoppilan et al., 2022），或通过针对特定任务、事先已知需要使用哪些工具的少样本设置来提示语言模型（Gao et al., 2022; Lazaridou et al., 2022; Yao et al., 2022）。相比之下，Toolformer 的自监督性质使它能够学习如何以及何时使用工具，而不需要展示如何使用工具来解决具体任务的特定提示。也许与我们工作最密切相关的是 TALM（Parisi et al., 2022），一种使用类似自监督目标来教模型使用计算器与搜索引擎的方法，但仅在模型为下游任务微调的设定中探索这一点。</p>
+<p>自举</p>
+<p>使用自训练与自举技术改善模型的想法已在各种情境中被研究，从词义消歧（Yarowsky, 1995）、关系抽取（Brin, 1999; Agichtein and Gravano, 2000）、句法分析（McClosky et al., 2006; Reichart and Rappoport, 2007）、序列生成（He et al., 2020）、少样本文本分类</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把谱系讲清：别人总是把检索结果塞给你，或靠大量标注 / 任务专用少样本；Toolformer 自己决定要什么。最接近的是 TALM，但那是为下游任务微调。
+这很重要，因为它防止读者把这篇读成又一个 ReAct 提示。
+类比：不是老师发参考书，也不是考试纸上印好「本题用计算器」，而是学生自己发现哪一页该夹纸条。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>ﬁcation (Schick and Schütze, 2021a) and retrieval (Izacard and Grave, 2021) to reasoning (Zelikman et al., 2022). In a similar spirit to these approaches, Toolformer is trained on its own predictions after applying a perplexity-based ﬁltering step. Limitations While our approach enables LMs to learn how to use a variety of tools in a self-supervised way, there are some clear limitations to what can be achieved with our method in its current form. One such limitation is the inability of Toolformer to use tools in a chain (i.e., using the output of one tool as an input for another tool). This is due to the fact that API calls for each tool are generated independently; as a consequence, there are no examples of chained tool use in the ﬁnetuning dataset. Our current approach also does not allow the LM to use a tool in an interactive way – especially for tools such as search engines, that could potentially return hundreds of different results, enabling a LM to browse through these results or to reﬁne its search query in a similar spirit to Nakano et al. (2021) can be crucial for certain applications. Beyond this, we found models trained with Toolformer to often be sensitive to the exact wording of their input when deciding whether or not to call an API; this is perhaps unsurprising given that LMs are known to be very sensitive to the prompt they are provided with in both zeroand few-shot settings (Jiang et al., 2020; Schick and Schütze, 2021a). Depending on the tool, our method is also very sample-inefﬁcient; for example, processing more than a million documents results in only a few thousand examples of useful calls to the calculator API. A potential solution to this problem might be to iteratively apply our approach, similar to how this is done in related bootstrapping approaches (Schick and Schütze, 2021a; Izacard and Grave, 2021; Parisi et al., 2022). Finally, when deciding whether or not to make an API call, Toolformer currently does not take into account the tool-dependent, computational cost incurred from making an API call. Conclusion We have introduced Toolformer, a language model that learns in a self-supervised way how to use different tools such as search engines, calculators, and translation systems via simple API calls. This is done by ﬁnetuning on a large number of sampled API calls that are ﬁltered based on whether they reduce perplexity on future tokens. Toolformer considerably improves zero-shot performance of a 6.7B parameter GPT-J model, enabling it to even outperform a much larger GPT-3 model on a range of different downstream tasks.</p>
+<h1>References</h1>
+<p>Armen Aghajanyan, Dmytro Okhonko, Mike Lewis, Mandar Joshi, Hu Xu, Gargi Ghosh, and Luke Zettlemoyer. 2021. Htlm: Hyper-text pre-training and prompting of language models. Eugene Agichtein and Luis Gravano. 2000. Snowball: Extracting relations from large plain-text collections. In Proceedings of the Fifth ACM Conference on Digital Libraries, DL ’00, page 85–94, New York, NY, USA. Association for Computing Machinery. Ricardo Baeza-Yates, Berthier Ribeiro-Neto, et al. 1999. Modern information retrieval, volume 463. ACM press New York. Jonathan Berant, Andrew Chou, Roy Frostig, and Percy Liang. 2013. Semantic parsing on Freebase from question-answer pairs. In Proceedings of the 2013 Conference on Empirical Methods in Natural Language Processing, pages 1533–1544, Seattle, Washington, USA. Association for Computational Linguistics. Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann, Trevor Cai, Eliza Rutherford, Katie Millican, George van den Driessche, Jean-Baptiste Lespiau, Bogdan Damoc, Aidan Clark, Diego de Las Casas, Aurelia Guy, Jacob Menick, Roman Ring, Tom Hennigan, Saffron Huang, Loren Maggiore, Chris Jones, Albin Cassirer, Andy Brock, Michela Paganini, Geoffrey Irving, Oriol Vinyals, Simon Osindero, Karen Simonyan, Jack W. Rae, Erich Elsen, and Laurent Sifre. 2021. Improving language models by retrieving from trillions of tokens. Sergey Brin. 1999. Extracting patterns and relations from the world wide web. In The World Wide Web and Databases, pages 172–183, Berlin, Heidelberg. Springer Berlin Heidelberg. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel HerbertVoss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever, and Dario Amodei.</p>
+<p>2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems, volume 33, pages 1877–1901. Curran Associates, Inc.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（Schick and Schütze, 2021a）与检索（Izacard and Grave, 2021）到推理（Zelikman et al., 2022）。与这些方法精神相似，Toolformer 在应用基于困惑度的过滤步骤之后，在其自身预测上训练。 局限 尽管我们的方法使 LM 能够以自监督方式学习如何使用多种工具，对我们方法当前形式所能实现的，有一些清晰的局限。这样一种局限是 Toolformer 无法链式使用工具（即，将一种工具的输出用作另一种工具的输入）。这是因为每种工具的 API 调用是独立生成的；因此，微调数据集中没有链式工具使用的示例。我们当前的方法也不允许 LM 以交互方式使用工具——尤其对搜索引擎这类工具，它可能返回数百条不同结果，使 LM 能够浏览这些结果或精炼其搜索查询（类似于 Nakano et al., 2021 的精神）对某些应用可能至关重要。除此之外，我们发现用 Toolformer 训练的模型在决定是否调用 API 时，常常对输入的精确措辞敏感；这也许并不令人惊讶，因为已知 LM 在零样本与少样本设置中对所提供的提示非常敏感（Jiang et al., 2020; Schick and Schütze, 2021a）。取决于工具，我们的方法也非常样本低效；例如，处理超过一百万篇文档只产生几千个对计算器 API 有用的调用示例。对此问题的一个潜在解决方案可能是迭代应用我们的方法，类似于相关自举方法中的做法（Schick and Schütze, 2021a; Izacard and Grave, 2021; Parisi et al., 2022）。最后，在决定是否进行 API 调用时，Toolformer 当前不考虑因进行 API 调用而产生的、依赖于工具的计算成本。 结论 我们引入了 Toolformer，一个以自监督方式学习如何经由简单 API 调用使用搜索引擎、计算器与翻译系统等不同工具的语言模型。这通过在大量采样的、基于它们是否降低未来标记上的困惑度而被过滤的 API 调用上微调来完成。Toolformer 显著改善 67 亿参数 GPT-J 模型的零样本性能，使其甚至能在一系列不同下游任务上优于大得多的 GPT-3 模型。</p>
+<h1>参考文献</h1>
+<p>Armen Aghajanyan, Dmytro Okhonko, Mike Lewis, Mandar Joshi, Hu Xu, Gargi Ghosh, and Luke Zettlemoyer. 2021. Htlm: Hyper-text pre-training and prompting of language models. Eugene Agichtein and Luis Gravano. 2000. Snowball: Extracting relations from large plain-text collections. In Proceedings of the Fifth ACM Conference on Digital Libraries, DL ’00, page 85–94, New York, NY, USA. Association for Computing Machinery. Ricardo Baeza-Yates, Berthier Ribeiro-Neto, et al. 1999. Modern information retrieval, volume 463. ACM press New York. Jonathan Berant, Andrew Chou, Roy Frostig, and Percy Liang. 2013. Semantic parsing on Freebase from question-answer pairs. In Proceedings of the 2013 Conference on Empirical Methods in Natural Language Processing, pages 1533–1544, Seattle, Washington, USA. Association for Computational Linguistics. Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann, Trevor Cai, Eliza Rutherford, Katie Millican, George van den Driessche, Jean-Baptiste Lespiau, Bogdan Damoc, Aidan Clark, Diego de Las Casas, Aurelia Guy, Jacob Menick, Roman Ring, Tom Hennigan, Saffron Huang, Loren Maggiore, Chris Jones, Albin Cassirer, Andy Brock, Michela Paganini, Geoffrey Irving, Oriol Vinyals, Simon Osindero, Karen Simonyan, Jack W. Rae, Erich Elsen, and Laurent Sifre. 2021. Improving language models by retrieving from trillions of tokens. Sergey Brin. 1999. Extracting patterns and relations from the world wide web. In The World Wide Web and Databases, pages 172–183, Berlin, Heidelberg. Springer Berlin Heidelberg. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, Sandhini Agarwal, Ariel HerbertVoss, Gretchen Krueger, Tom Henighan, Rewon Child, Aditya Ramesh, Daniel Ziegler, Jeffrey Wu, Clemens Winter, Chris Hesse, Mark Chen, Eric Sigler, Mateusz Litwin, Scott Gray, Benjamin Chess, Jack Clark, Christopher Berner, Sam McCandlish, Alec Radford, Ilya Sutskever, and Dario Amodei. 2020. Language models are few-shot learners. In Advances in Neural Information Processing Systems, volume 33, pages 1877–1901. Curran Associates, Inc.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页作者自己写局限：不会把工具串起来，不会交互式改查询，对措辞敏感，计算器样本极少，也不算调用成本。结论仍是 6.7B 零样本可超 GPT-3。随后开始参考文献。
+这很重要，因为它已经点名 Cordiverse 式组合还没碰到的那几刀——链、交互、成本。
+类比：会用锤子和会用螺丝刀，但说明书里从来没有「先锤再拧」这一课。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, Parker Schuh, Kensen Shi, Sasha Tsvyashchenko, Joshua Maynez, Abhishek Rao, Parker Barnes, Yi Tay, Noam Shazeer, Vinodkumar Prabhakaran, Emily Reif, Nan Du, Ben Hutchinson, Reiner Pope, James Bradbury, Jacob Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin, Toju Duke, Anselm Levskaya, Sanjay Ghemawat, Sunipa Dev, Henryk Michalewski, Xavier Garcia, Vedant Misra, Kevin Robinson, Liam Fedus, Denny Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim, Barret Zoph, Alexander Spiridonov, Ryan Sepassi, David Dohan, Shivani Agrawal, Mark Omernick, Andrew M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov, Katherine Lee, Zongwei Zhou, Xuezhi Wang, Brennan Saeta, Mark Diaz, Orhan Firat, Michele Catasta, Jason Wei, Kathy Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov, and Noah Fiedel. 2022. Palm: Scaling language modeling with pathways. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. 2021. Training veriﬁers to solve math word problems. arXiv preprint arXiv:2110.14168. Marta R Costa-jussà, James Cross, Onur Çelebi, Maha Elbayad, Kenneth Heaﬁeld, Kevin Heffernan, Elahe Kalbassi, Janice Lam, Daniel Licht, Jean Maillard, et al. 2022. No language left behind: Scaling human-centered machine translation. arXiv preprint arXiv:2207.04672. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2019. BERT: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pages 4171–4186, Minneapolis, Minnesota. Association for Computational Linguistics. Bhuwan Dhingra, Jeremy R. Cole, Julian Martin Eisenschlos, Daniel Gillick, Jacob Eisenstein, and William W. Cohen. 2022. Time-aware language models as temporal knowledge bases. Transactions of the Association for Computational Linguistics, 10:257–273. Leo Gao, Stella Biderman, Sid Black, Laurence Golding, Travis Hoppe, Charles Foster, Jason Phang, Horace He, Anish Thite, Noa Nabeshima, et al. 2020. The pile: An 800gb dataset of diverse text for language modeling. arXiv preprint arXiv:2101.00027. Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. 2022. Pal: Program-aided language models. Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Ming-Wei Chang. 2020. Realm: Retrievalaugmented language model pre-training. Junxian He, Jiatao Gu, Jiajun Shen, and Marc’Aurelio Ranzato. 2020. Revisiting self-training for neural sequence generation. In International Conference on Learning Representations. Or Honovich, Thomas Scialom, Omer Levy, and Timo Schick. 2022. Unnatural instructions: Tuning language models with (almost) no human labor. Gautier Izacard and Edouard Grave. 2021. Distilling knowledge from reader to retriever for question answering. In International Conference on Learning Representations. Gautier Izacard, Patrick Lewis, Maria Lomeli, Lucas Hosseini, Fabio Petroni, Timo Schick, Jane DwivediYu, Armand Joulin, Sebastian Riedel, and Edouard Grave. 2022. Atlas: Few-shot learning with retrieval augmented language models. Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Yejin Bang, Andrea Madotto, and Pascale Fung. 2022. Survey of hallucination in natural language generation. ACM Computing Surveys. Zhengbao Jiang, Frank F. Xu, Jun Araki, and Graham Neubig. 2020. How can we know what language models know? Transactions of the Association for Computational Linguistics, 8:423–438. Mandar Joshi, Eunsol Choi, Daniel Weld, and Luke Zettlemoyer. 2017. TriviaQA: A large scale distantly supervised challenge dataset for reading comprehension. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 1601–1611, Vancouver, Canada. Association for Computational Linguistics. Armand Joulin, Edouard Grave, Piotr Bojanowski, Matthijs Douze, Hérve Jégou, and Tomas Mikolov.</p>
+<p>2016. Fasttext. zip: Compressing text classiﬁcation models. arXiv preprint arXiv:1612.03651. Nitish Shirish Keskar, Bryan McCann, Lav R. Varshney, Caiming Xiong, and Richard Socher. 2019. Ctrl: A conditional transformer language model for controllable generation. Philipp Koehn. 2005. Europarl: A parallel corpus for statistical machine translation. In Proceedings of machine translation summit x: papers, pages 79–86. Mojtaba Komeili, Kurt Shuster, and Jason Weston.</p>
+<p>2022. Internet-augmented dialogue generation. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 8460–8478, Dublin, Ireland. Association for Computational Linguistics.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>Aakanksha Chowdhery, Sharan Narang, Jacob Devlin, Maarten Bosma, Gaurav Mishra, Adam Roberts, Paul Barham, Hyung Won Chung, Charles Sutton, Sebastian Gehrmann, Parker Schuh, Kensen Shi, Sasha Tsvyashchenko, Joshua Maynez, Abhishek Rao, Parker Barnes, Yi Tay, Noam Shazeer, Vinodkumar Prabhakaran, Emily Reif, Nan Du, Ben Hutchinson, Reiner Pope, James Bradbury, Jacob Austin, Michael Isard, Guy Gur-Ari, Pengcheng Yin, Toju Duke, Anselm Levskaya, Sanjay Ghemawat, Sunipa Dev, Henryk Michalewski, Xavier Garcia, Vedant Misra, Kevin Robinson, Liam Fedus, Denny Zhou, Daphne Ippolito, David Luan, Hyeontaek Lim, Barret Zoph, Alexander Spiridonov, Ryan Sepassi, David Dohan, Shivani Agrawal, Mark Omernick, Andrew M. Dai, Thanumalayan Sankaranarayana Pillai, Marie Pellat, Aitor Lewkowycz, Erica Moreira, Rewon Child, Oleksandr Polozov, Katherine Lee, Zongwei Zhou, Xuezhi Wang, Brennan Saeta, Mark Diaz, Orhan Firat, Michele Catasta, Jason Wei, Kathy Meier-Hellstern, Douglas Eck, Jeff Dean, Slav Petrov, and Noah Fiedel. 2022. Palm: Scaling language modeling with pathways. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, et al. 2021. Training verifiers to solve math word problems. arXiv preprint arXiv:2110.14168. Marta R Costa-jussà, James Cross, Onur Çelebi, Maha Elbayad, Kenneth Heafield, Kevin Heffernan, Elahe Kalbassi, Janice Lam, Daniel Licht, Jean Maillard, et al. 2022. No language left behind: Scaling human-centered machine translation. arXiv preprint arXiv:2207.04672. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2019. BERT: Pre-training of deep bidirectional transformers for language understanding. In Proceedings of the 2019 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, Volume 1 (Long and Short Papers), pages 4171–4186, Minneapolis, Minnesota. Association for Computational Linguistics. Bhuwan Dhingra, Jeremy R. Cole, Julian Martin Eisenschlos, Daniel Gillick, Jacob Eisenstein, and William W. Cohen. 2022. Time-aware language models as temporal knowledge bases. Transactions of the Association for Computational Linguistics, 10:257–273. Leo Gao, Stella Biderman, Sid Black, Laurence Golding, Travis Hoppe, Charles Foster, Jason Phang, Horace He, Anish Thite, Noa Nabeshima, et al. 2020. The pile: An 800gb dataset of diverse text for language modeling. arXiv preprint arXiv:2101.00027. Luyu Gao, Aman Madaan, Shuyan Zhou, Uri Alon, Pengfei Liu, Yiming Yang, Jamie Callan, and Graham Neubig. 2022. Pal: Program-aided language models. Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Ming-Wei Chang. 2020. Realm: Retrievalaugmented language model pre-training. Junxian He, Jiatao Gu, Jiajun Shen, and Marc’Aurelio Ranzato. 2020. Revisiting self-training for neural sequence generation. In International Conference on Learning Representations. Or Honovich, Thomas Scialom, Omer Levy, and Timo Schick. 2022. Unnatural instructions: Tuning language models with (almost) no human labor. Gautier Izacard and Edouard Grave. 2021. Distilling knowledge from reader to retriever for question answering. In International Conference on Learning Representations. Gautier Izacard, Patrick Lewis, Maria Lomeli, Lucas Hosseini, Fabio Petroni, Timo Schick, Jane DwivediYu, Armand Joulin, Sebastian Riedel, and Edouard Grave. 2022. Atlas: Few-shot learning with retrieval augmented language models. Ziwei Ji, Nayeon Lee, Rita Frieske, Tiezheng Yu, Dan Su, Yan Xu, Etsuko Ishii, Yejin Bang, Andrea Madotto, and Pascale Fung. 2022. Survey of hallucination in natural language generation. ACM Computing Surveys. Zhengbao Jiang, Frank F. Xu, Jun Araki, and Graham Neubig. 2020. How can we know what language models know? Transactions of the Association for Computational Linguistics, 8:423–438. Mandar Joshi, Eunsol Choi, Daniel Weld, and Luke Zettlemoyer. 2017. TriviaQA: A large scale distantly supervised challenge dataset for reading comprehension. In Proceedings of the 55th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 1601–1611, Vancouver, Canada. Association for Computational Linguistics. Armand Joulin, Edouard Grave, Piotr Bojanowski, Matthijs Douze, Hérve Jégou, and Tomas Mikolov. 2016. Fasttext. zip: Compressing text classification models. arXiv preprint arXiv:1612.03651. Nitish Shirish Keskar, Bryan McCann, Lav R. Varshney, Caiming Xiong, and Richard Socher. 2019. Ctrl: A conditional transformer language model for controllable generation. Philipp Koehn. 2005. Europarl: A parallel corpus for statistical machine translation. In Proceedings of machine translation summit x: papers, pages 79–86. Mojtaba Komeili, Kurt Shuster, and Jason Weston. 2022. Internet-augmented dialogue generation. In Proceedings of the 60th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers), pages 8460–8478, Dublin, Ireland. Association for Computational Linguistics.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开始参考文献，条目保持英文，便于回查 PaLM、PAL、Atlas 与幻觉综述等出处。
+类比：书架标签不翻译，免得检索对不上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Rik Koncel-Kedziorski, Subhro Roy, Aida Amini, Nate Kushman, and Hannaneh Hajishirzi. 2016. MAWPS: A math word problem repository. In Proceedings of the 2016 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 1152–1157, San Diego, California. Association for Computational Linguistics. Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redﬁeld, Michael Collins, Ankur Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, Kristina Toutanova, Llion Jones, Matthew Kelcey, Ming-Wei Chang, Andrew M. Dai, Jakob Uszkoreit, Quoc Le, and Slav Petrov. 2019. Natural questions: A benchmark for question answering research. Transactions of the Association for Computational Linguistics, 7:452–466. Angeliki Lazaridou, Elena Gribovskaya, Wojciech Stokowiec, and Nikolai Grigorev. 2022. Internetaugmented language models through few-shot prompting for open-domain question answering. arXiv preprint arXiv:2203.05115. Patrick Lewis, Barlas O˘guz, Ruty Rinott, Sebastian Riedel, and Holger Schwenk. 2019. Mlqa: Evaluating cross-lingual extractive question answering. arXiv preprint arXiv:1910.07475. Xi Victoria Lin, Todor Mihaylov, Mikel Artetxe, Tianlu Wang, Shuohui Chen, Daniel Simig, Myle Ott, Naman Goyal, Shruti Bhosale, Jingfei Du, Ramakanth Pasunuru, Sam Shleifer, Punit Singh Koura, Vishrav Chaudhary, Brian O’Horo, Jeff Wang, Luke Zettlemoyer, Zornitsa Kozareva, Mona Diab, Veselin Stoyanov, and Xian Li. 2021. Few-shot learning with multilingual language models. Joshua Maynez, Shashi Narayan, Bernd Bohnet, and Ryan McDonald. 2020. On faithfulness and factuality in abstractive summarization. David McClosky, Eugene Charniak, and Mark Johnson. 2006. Effective self-training for parsing. In Proceedings of the Human Language Technology Conference of the NAACL, Main Conference, pages 152– 159, New York City, USA. Association for Computational Linguistics. Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher. 2017. Pointer sentinel mixture models. In International Conference on Learning Representations. Shen-yun Miao, Chao-Chun Liang, and Keh-Yih Su.</p>
+<p>2020. A diverse corpus for evaluating and developing English math word problem solvers. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, pages 975–984, Online. Association for Computational Linguistics. Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu Jain, Vineet Kosaraju, William Saunders, Xu Jiang, Karl Cobbe, Tyna Eloundou, Gretchen Krueger, Kevin Button, Matthew Knight, Benjamin Chess, and John Schulman. 2021. Webgpt: Browserassisted question-answering with human feedback. Aaron Parisi, Yao Zhao, and Noah Fiedel. 2022. Talm: Tool augmented language models. Arkil Patel, Satwik Bhattamishra, and Navin Goyal.</p>
+<h1>2021. Are NLP models really able to solve simple</h1>
+<p>math word problems? In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 2080–2094, Online. Association for Computational Linguistics. Fabio Petroni, Aleksandra Piktus, Angela Fan, Patrick Lewis, Majid Yazdani, Nicola De Cao, James Thorne, Yacine Jernite, Vladimir Karpukhin, Jean Maillard, Vassilis Plachouras, Tim Rocktäschel, and Sebastian Riedel. 2021. KILT: a benchmark for knowledge intensive language tasks. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 2523–2544, Online. Association for Computational Linguistics. Fabio Petroni, Tim Rocktäschel, Sebastian Riedel, Patrick Lewis, Anton Bakhtin, Yuxiang Wu, and Alexander Miller. 2019. Language models as knowledge bases? In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLPIJCNLP), pages 2463–2473, Hong Kong, China. Association for Computational Linguistics. Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, Ilya Sutskever, et al. 2019. Language models are unsupervised multitask learners. OpenAI blog, 1(8):9. Roi Reichart and Ari Rappoport. 2007. Self-training for enhancement and domain adaptation of statistical parsers trained on small datasets. In Proceedings of the 45th Annual Meeting of the Association of Computational Linguistics, pages 616–623, Prague, Czech Republic. Association for Computational Linguistics. Stephen E Robertson, Steve Walker, Susan Jones, Micheline M Hancock-Beaulieu, Mike Gatford, et al.</p>
+<p>1995. Okapi at trec-3. Nist Special Publication Sp, 109:109. Timo Schick, Jane Dwivedi-Yu, Zhengbao Jiang, Fabio Petroni, Patrick Lewis, Gautier Izacard, Qingfei You, Christoforos Nalmpantis, Edouard Grave, and Sebastian Riedel. 2022. Peer: A collaborative language model. Timo Schick and Hinrich Schütze. 2021a. Exploiting cloze-questions for few-shot text classiﬁcation and natural language inference. In Proceedings of the</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>Rik Koncel-Kedziorski, Subhro Roy, Aida Amini, Nate Kushman, and Hannaneh Hajishirzi. 2016. MAWPS: A math word problem repository. In Proceedings of the 2016 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 1152–1157, San Diego, California. Association for Computational Linguistics. Tom Kwiatkowski, Jennimaria Palomaki, Olivia Redfield, Michael Collins, Ankur Parikh, Chris Alberti, Danielle Epstein, Illia Polosukhin, Jacob Devlin, Kenton Lee, Kristina Toutanova, Llion Jones, Matthew Kelcey, Ming-Wei Chang, Andrew M. Dai, Jakob Uszkoreit, Quoc Le, and Slav Petrov. 2019. Natural questions: A benchmark for question answering research. Transactions of the Association for Computational Linguistics, 7:452–466. Angeliki Lazaridou, Elena Gribovskaya, Wojciech Stokowiec, and Nikolai Grigorev. 2022. Internetaugmented language models through few-shot prompting for open-domain question answering. arXiv preprint arXiv:2203.05115. Patrick Lewis, Barlas Oğuz, Ruty Rinott, Sebastian Riedel, and Holger Schwenk. 2019. Mlqa: Evaluating cross-lingual extractive question answering. arXiv preprint arXiv:1910.07475. Xi Victoria Lin, Todor Mihaylov, Mikel Artetxe, Tianlu Wang, Shuohui Chen, Daniel Simig, Myle Ott, Naman Goyal, Shruti Bhosale, Jingfei Du, Ramakanth Pasunuru, Sam Shleifer, Punit Singh Koura, Vishrav Chaudhary, Brian O’Horo, Jeff Wang, Luke Zettlemoyer, Zornitsa Kozareva, Mona Diab, Veselin Stoyanov, and Xian Li. 2021. Few-shot learning with multilingual language models. Joshua Maynez, Shashi Narayan, Bernd Bohnet, and Ryan McDonald. 2020. On faithfulness and factuality in abstractive summarization. David McClosky, Eugene Charniak, and Mark Johnson. 2006. Effective self-training for parsing. In Proceedings of the Human Language Technology Conference of the NAACL, Main Conference, pages 152–159, New York City, USA. Association for Computational Linguistics. Stephen Merity, Caiming Xiong, James Bradbury, and Richard Socher. 2017. Pointer sentinel mixture models. In International Conference on Learning Representations. Shen-yun Miao, Chao-Chun Liang, and Keh-Yih Su. 2020. A diverse corpus for evaluating and developing English math word problem solvers. In Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics, pages 975–984, Online. Association for Computational Linguistics. Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu Jain, Vineet Kosaraju, William Saunders, Xu Jiang, Karl Cobbe, Tyna Eloundou, Gretchen Krueger, Kevin Button, Matthew Knight, Benjamin Chess, and John Schulman. 2021. Webgpt: Browserassisted question-answering with human feedback. Aaron Parisi, Yao Zhao, and Noah Fiedel. 2022. Talm: Tool augmented language models. Arkil Patel, Satwik Bhattamishra, and Navin Goyal. 2021. Are NLP models really able to solve simple math word problems? In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 2080–2094, Online. Association for Computational Linguistics. Fabio Petroni, Aleksandra Piktus, Angela Fan, Patrick Lewis, Majid Yazdani, Nicola De Cao, James Thorne, Yacine Jernite, Vladimir Karpukhin, Jean Maillard, Vassilis Plachouras, Tim Rocktäschel, and Sebastian Riedel. 2021. KILT: a benchmark for knowledge intensive language tasks. In Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies, pages 2523–2544, Online. Association for Computational Linguistics. Fabio Petroni, Tim Rocktäschel, Sebastian Riedel, Patrick Lewis, Anton Bakhtin, Yuxiang Wu, and Alexander Miller. 2019. Language models as knowledge bases? In Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing (EMNLPIJCNLP), pages 2463–2473, Hong Kong, China. Association for Computational Linguistics. Alec Radford, Jeffrey Wu, Rewon Child, David Luan, Dario Amodei, Ilya Sutskever, et al. 2019. Language models are unsupervised multitask learners. OpenAI blog, 1(8):9. Roi Reichart and Ari Rappoport. 2007. Self-training for enhancement and domain adaptation of statistical parsers trained on small datasets. In Proceedings of the 45th Annual Meeting of the Association of Computational Linguistics, pages 616–623, Prague, Czech Republic. Association for Computational Linguistics. Stephen E Robertson, Steve Walker, Susan Jones, Micheline M Hancock-Beaulieu, Mike Gatford, et al. 1995. Okapi at trec-3. Nist Special Publication Sp, 109:109. Timo Schick, Jane Dwivedi-Yu, Zhengbao Jiang, Fabio Petroni, Patrick Lewis, Gautier Izacard, Qingfei You, Christoforos Nalmpantis, Edouard Grave, and Sebastian Riedel. 2022. Peer: A collaborative language model. Timo Schick and Hinrich Schütze. 2021a. Exploiting cloze-questions for few-shot text classification and natural language inference. In Proceedings of the</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续参考文献，含 TALM、WebGPT、LAMA 与数学应用题库，保持英文。
+类比：书架中段，需要对上工具学习文献时再抽。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>16th Conference of the European Chapter of the Association for Computational Linguistics: Main Volume, pages 255–269, Online. Association for Computational Linguistics. Timo Schick and Hinrich Schütze. 2021b. Generating datasets with pretrained language models. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, pages 6943– 6951, Online and Punta Cana, Dominican Republic. Association for Computational Linguistics. Kurt Shuster, Jing Xu, Mojtaba Komeili, Da Ju, Eric Michael Smith, Stephen Roller, Megan Ung, Moya Chen, Kushal Arora, Joshua Lane, Morteza Behrooz, William Ngan, Spencer Poff, Naman Goyal, Arthur Szlam, Y-Lan Boureau, Melanie Kambadur, and Jason Weston. 2022. Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage. Romal Thoppilan, Daniel De Freitas, Jamie Hall, Noam Shazeer, Apoorv Kulshreshtha, Heng-Tze Cheng, Alicia Jin, Taylor Bos, Leslie Baker, Yu Du, YaGuang Li, Hongrae Lee, Huaixiu Steven Zheng, Amin Ghafouri, Marcelo Menegali, Yanping Huang, Maxim Krikun, Dmitry Lepikhin, James Qin, Dehao Chen, Yuanzhong Xu, Zhifeng Chen, Adam Roberts, Maarten Bosma, Vincent Zhao, Yanqi Zhou, Chung-Ching Chang, Igor Krivokon, Will Rusch, Marc Pickett, Pranesh Srinivasan, Laichee Man, Kathleen Meier-Hellstern, Meredith Ringel Morris, Tulsee Doshi, Renelito Delos Santos, Toju Duke, Johnny Soraker, Ben Zevenbergen, Vinodkumar Prabhakaran, Mark Diaz, Ben Hutchinson, Kristen Olson, Alejandra Molina, Erin HoffmanJohn, Josh Lee, Lora Aroyo, Ravi Rajakumar, Alena Butryna, Matthew Lamm, Viktoriya Kuzmina, Joe Fenton, Aaron Cohen, Rachel Bernstein, Ray Kurzweil, Blaise Aguera-Arcas, Claire Cui, Marian Croak, Ed Chi, and Quoc Le. 2022. Lamda: Language models for dialog applications. Ben Wang and Aran Komatsuzaki. 2021. GPTJ-6B: A Billion Parameter Autoregressive Language Model. https://github.com/ kingoflolz/mesh-transformer-jax. Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel Khashabi, and Hannaneh Hajishirzi. 2022. Self-instruct: Aligning language model with self generated instructions. Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama, Maarten Bosma, Denny Zhou, Donald Metzler, Ed H. Chi, Tatsunori Hashimoto, Oriol Vinyals, Percy Liang, Jeff Dean, and William Fedus. 2022. Emergent abilities of large language models. Guillaume Wenzek, Marie-Anne Lachaux, Alexis Conneau, Vishrav Chaudhary, Francisco Guzmán, Armand Joulin, and Edouard Grave. 2020. CCNet: Extracting high quality monolingual datasets from web crawl data. In Proceedings of the Twelfth Language Resources and Evaluation Conference, pages 4003–4012, Marseille, France. European Language Resources Association. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. David Yarowsky. 1995. Unsupervised word sense disambiguation rivaling supervised methods. In 33rd Annual Meeting of the Association for Computational Linguistics, pages 189–196, Cambridge, Massachusetts, USA. Association for Computational Linguistics. Eric Zelikman, Yuhuai Wu, Jesse Mu, and Noah D. Goodman. 2022. Star: Bootstrapping reasoning with reasoning. Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, Todor Mihaylov, Myle Ott, Sam Shleifer, Kurt Shuster, Daniel Simig, Punit Singh Koura, Anjali Sridhar, Tianlu Wang, and Luke Zettlemoyer. 2022. Opt: Open pretrained transformer language models.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><h1>参考文献</h1>
+<p>16th Conference of the European Chapter of the Association for Computational Linguistics: Main Volume, pages 255–269, Online. Association for Computational Linguistics. Timo Schick and Hinrich Schütze. 2021b. Generating datasets with pretrained language models. In Proceedings of the 2021 Conference on Empirical Methods in Natural Language Processing, pages 6943–6951, Online and Punta Cana, Dominican Republic. Association for Computational Linguistics. Kurt Shuster, Jing Xu, Mojtaba Komeili, Da Ju, Eric Michael Smith, Stephen Roller, Megan Ung, Moya Chen, Kushal Arora, Joshua Lane, Morteza Behrooz, William Ngan, Spencer Poff, Naman Goyal, Arthur Szlam, Y-Lan Boureau, Melanie Kambadur, and Jason Weston. 2022. Blenderbot 3: a deployed conversational agent that continually learns to responsibly engage. Romal Thoppilan, Daniel De Freitas, Jamie Hall, Noam Shazeer, Apoorv Kulshreshtha, Heng-Tze Cheng, Alicia Jin, Taylor Bos, Leslie Baker, Yu Du, YaGuang Li, Hongrae Lee, Huaixiu Steven Zheng, Amin Ghafouri, Marcelo Menegali, Yanping Huang, Maxim Krikun, Dmitry Lepikhin, James Qin, Dehao Chen, Yuanzhong Xu, Zhifeng Chen, Adam Roberts, Maarten Bosma, Vincent Zhao, Yanqi Zhou, Chung-Ching Chang, Igor Krivokon, Will Rusch, Marc Pickett, Pranesh Srinivasan, Laichee Man, Kathleen Meier-Hellstern, Meredith Ringel Morris, Tulsee Doshi, Renelito Delos Santos, Toju Duke, Johnny Soraker, Ben Zevenbergen, Vinodkumar Prabhakaran, Mark Diaz, Ben Hutchinson, Kristen Olson, Alejandra Molina, Erin HoffmanJohn, Josh Lee, Lora Aroyo, Ravi Rajakumar, Alena Butryna, Matthew Lamm, Viktoriya Kuzmina, Joe Fenton, Aaron Cohen, Rachel Bernstein, Ray Kurzweil, Blaise Aguera-Arcas, Claire Cui, Marian Croak, Ed Chi, and Quoc Le. 2022. Lamda: Language models for dialog applications. Ben Wang and Aran Komatsuzaki. 2021. GPTJ-6B: A Billion Parameter Autoregressive Language Model. https://github.com/kingoflolz/mesh-transformer-jax. Yizhong Wang, Yeganeh Kordi, Swaroop Mishra, Alisa Liu, Noah A. Smith, Daniel Khashabi, and Hannaneh Hajishirzi. 2022. Self-instruct: Aligning language model with self generated instructions. Jason Wei, Yi Tay, Rishi Bommasani, Colin Raffel, Barret Zoph, Sebastian Borgeaud, Dani Yogatama, Maarten Bosma, Denny Zhou, Donald Metzler, Ed H. Chi, Tatsunori Hashimoto, Oriol Vinyals, Percy Liang, Jeff Dean, and William Fedus. 2022. Emergent abilities of large language models. Guillaume Wenzek, Marie-Anne Lachaux, Alexis Conneau, Vishrav Chaudhary, Francisco Guzmán, Armand Joulin, and Edouard Grave. 2020. CCNet: Extracting high quality monolingual datasets from web crawl data. In Proceedings of the Twelfth Language Resources and Evaluation Conference, pages 4003–4012, Marseille, France. European Language Resources Association. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. 2022. React: Synergizing reasoning and acting in language models. David Yarowsky. 1995. Unsupervised word sense disambiguation rivaling supervised methods. In 33rd Annual Meeting of the Association for Computational Linguistics, pages 189–196, Cambridge, Massachusetts, USA. Association for Computational Linguistics. Eric Zelikman, Yuhuai Wu, Jesse Mu, and Noah D. Goodman. 2022. Star: Bootstrapping reasoning with reasoning. Susan Zhang, Stephen Roller, Naman Goyal, Mikel Artetxe, Moya Chen, Shuohui Chen, Christopher Dewan, Mona Diab, Xian Li, Xi Victoria Lin, Todor Mihaylov, Myle Ott, Sam Shleifer, Kurt Shuster, Daniel Simig, Punit Singh Koura, Anjali Sridhar, Tianlu Wang, and Luke Zettlemoyer. 2022. Opt: Open pretrained transformer language models.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页参考文献收束，含 ReAct、LaMDA、GPT-J 与 CCNet，保持英文。
+类比：书架最后一层。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>A API Details When sampling and ﬁltering API calls, by default we use values of τs = 0.05 and τf = 1.0 – i.e., we only make API calls at positions where the probability of the &lt;API&gt; token is at least 5%, and we keep API calls if they reduce the loss by at least</p>
+<h2>1.0. We only keep the top k = 5 such positions and</h2>
+<p>sample up to m = 5 API calls for each position identiﬁed in a piece of text. Due to the heuristic ﬁltering described below, we generate API calls for the calculator and machine translation system on only a small subset of C; to compensate for this, we set τs = 0.0, k = 20 and m = 10 for these tools. As the resulting sets of API calls are still comparably small, we additionally set τf = 0.5. A.1 Implementation Question Answering We use the Atlas model of Izacard et al. (2022) ﬁnetuned on Natural Questions (Kwiatkowski et al., 2019) as our question answering system. For creating C∗we use Atlaslarge, enabling us to efﬁciently process millions of API calls; during inference, we use the larger Atlas-xxl model. Calculator Our calculator is based on a simple Python script and only supports the operators “+”, “−”, “∗”, and “/”. It does not return any result for syntactically invalid equations. For sampling API calls, we apply heuristic ﬁlters to our subset of CCNet and only process documents that either (i) contain at least three numbers within a window of 100 tokens, where one of these numbers is the result of applying a mathematical operation to the other two, (ii) contain one of the sequences “=”, “equals”, “equal to”, “total of”, “average of” followed by a number, or (iii) contain at least three numbers; for texts that only match the last criterion, we only keep a random subset of 1%. Calendar For creating our dataset C∗, we operate under the assumption that the calendar date in such cases should be the date that the document was created. We approximate this by extracting the date from the URL, if it is present. We ﬁlter out texts for which a date cannot be extracted, leaving around 18% of the documents. Machine Translation For both training and inference, we use the 600M parameter NLLB (Costajussà et al., 2022) as our machine translation (MT) model. The source language is automatically detected using the fastText classiﬁer (Joulin et al., 2016), while the target language is always set to English. Since most of the CCNet dataset is in English, we ﬁlter out the parts that contain only English text before generating API calls. More speciﬁcally, we only keep those paragraphs which contain text chunks in a language other than English preceded and followed by English text. We use text chunks of size 10 tokens. To determine whether the middle text chunk is in a language different than English we again use the fastText classiﬁer with a conﬁdence greater than 0.8. We also ﬁlter out any text chunks that contain only numbers or special symbols. This ﬁltering mechanism allows us to generate data more efﬁciently by focusing our API call generations in places where the MT tool is likely to be helpful. After generating the MT API calls, we additionally remove from our training set those where the input to the MT tool appears after the API call but not before it. While during data generation the model can look ahead to generate API calls, this is not possible at inference time, so we want to dissuade the model from calling the API in such cases. A.2 Prompts Below, we list the prompts used to sample API calls for each tool considered. Question Answering We use the following prompt for the question answering tool: Your task is to add calls to a Question Answering API to a piece of text. The questions should help you get information required to complete the text. You can call the API by writing &quot;[QA(question)]&quot; where &quot;question&quot; is the question you want to ask. Here are some examples of API calls: Input: Joe Biden was born in Scranton, Pennsylvania. Output: Joe Biden was born in [QA(&quot;Where was Joe Biden born?&quot;)] Scranton, [QA(&quot;In which state is Scranton?&quot;)] Pennsylvania. Input: Coca-Cola, or Coke, is a carbonated soft drink manufactured by the Coca-Cola Company. Output: Coca-Cola, or [QA(&quot;What other name is Coca-Cola known by?&quot;)] Coke, is a carbonated soft drink manufactured by [QA(&quot;Who manufactures Coca-Cola?&quot;)] the Coca-Cola Company. Input: x Output: Calculator We use the following prompt for the calculator: Your task is to add calls to a Calculator API to a piece of text.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>A API 细节</p>
+<p>在采样与过滤 API 调用时，我们默认使用 τs = 0.05 与 τf = 1.0——即，我们只在 &lt;API&gt; 标记的概率至少为 5% 的位置进行 API 调用，并且如果它们使损失至少降低 1.0 则保留 API 调用。我们只保留 top k = 5 个此类位置，并对一段文本中识别的每个位置采样最多 m = 5 个 API 调用。由于下面描述的启发式过滤，我们只在 C 的一个小子集上为计算器与机器翻译系统生成 API 调用；为补偿这一点，对这些工具我们设 τs = 0.0、k = 20 与 m = 10。由于所得 API 调用集合仍然相对较小，我们额外设 τf = 0.5。</p>
+<p>A.1 实现</p>
+<p>问答</p>
+<p>我们使用 Izacard et al.（2022）在 Natural Questions（Kwiatkowski et al., 2019）上微调的 Atlas 模型作为问答系统。为创建 C* 我们使用 Atlas-large，使我们能高效处理数百万次 API 调用；推理时，我们使用更大的 Atlas-xxl 模型。</p>
+<p>计算器</p>
+<p>我们的计算器基于简单的 Python 脚本，只支持运算符 “+”、“−”、“∗” 与 “/”。对句法无效的等式它不返回任何结果。为采样 API 调用，我们对 CCNet 子集应用启发式过滤器，只处理（i）在 100 个标记窗口内包含至少三个数字、且其中一个数字是对另外两个应用数学运算的结果的文档，（ii）包含序列 “=”、“equals”、“equal to”、“total of”、“average of” 后跟一个数字的文档，或（iii）包含至少三个数字的文档；对只匹配最后一条标准的文本，我们只保留 1% 的随机子集。</p>
+<p>日历</p>
+<p>为创建我们的数据集 C*，我们在此类情形下假设日历日期应为文档被创建的日期。我们通过从 URL 提取日期来近似这一点（若其存在）。我们过滤掉无法提取日期的文本，留下大约 18% 的文档。</p>
+<p>机器翻译</p>
+<p>对训练与推理，我们使用 6 亿参数的 NLLB（Costa-jussà et al., 2022）作为机器翻译（MT）模型。源语言用 fastText 分类器（Joulin et al., 2016）自动检测，目标语言始终设为英语。由于 CCNet 数据集大部分是英语，我们在生成 API 调用前过滤掉只包含英语文本的部分。更具体地，我们只保留那些包含非英语文本块、且其前后为英语文本的段落。我们使用大小为 10 个标记的文本块。为确定中间文本块是否为与英语不同的语言，我们再次使用置信度大于 0.8 的 fastText 分类器。我们也过滤掉只包含数字或特殊符号的任何文本块。这一过滤机制使我们能通过把 API 调用生成聚焦在 MT 工具很可能有帮助的位置，更高效地生成数据。生成 MT API 调用之后，我们额外从训练集中移除那些 MT 工具的输入出现在 API 调用之后而非之前的调用。尽管在数据生成期间模型可以向前看以生成 API 调用，这在推理时不可能，因此我们希望劝阻模型在此类情形中调用 API。</p>
+<p>A.2 提示</p>
+<p>下面，我们列出为所考虑的每种工具采样 API 调用所用的提示。</p>
+<p>问答</p>
+<p>我们对问答工具使用如下提示：</p>
+<p>Your task is to add calls to a Question</p>
+<p>Answering API to a piece of text.</p>
+<p>The questions should help you get</p>
+<p>information required to complete the</p>
+<p>text. You can call the API by writing</p>
+<p>&quot;[QA(question)]&quot; where &quot;question&quot; is the</p>
+<p>question you want to ask. Here are some</p>
+<p>examples of API calls:</p>
+<p>Input: Joe Biden was born in Scranton,</p>
+<p>Pennsylvania.</p>
+<p>Output: Joe Biden was born in [QA(&quot;Where</p>
+<p>was Joe Biden born?&quot;)] Scranton,</p>
+<p>[QA(&quot;In which state is Scranton?&quot;)]</p>
+<p>Pennsylvania.</p>
+<p>Input: Coca-Cola, or Coke, is a</p>
+<p>carbonated soft drink manufactured by</p>
+<p>the Coca-Cola Company.</p>
+<p>Output: Coca-Cola, or [QA(&quot;What other</p>
+<p>name is Coca-Cola known by?&quot;)] Coke, is</p>
+<p>a carbonated soft drink manufactured by</p>
+<p>[QA(&quot;Who manufactures Coca-Cola?&quot;)] the</p>
+<p>Coca-Cola Company.</p>
+<p>Input: x</p>
+<p>Output:</p>
+<p>计算器</p>
+<p>我们对计算器使用如下提示：</p>
+<p>Your task is to add calls to a</p>
+<p>Calculator API to a piece of text.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页进入附录：阈值、启发式（计算器要看见数字、日历要从 URL 抠日期、翻译只盯夹在英语里的外语块），以及采样用的英文提示。提示词保持英文。
+这很重要，因为它说明「自监督」前面仍有不少人工篱笆，不是在整网上盲目采样。
+类比：自学之前，老师先把可能用得上计算器的书页抽出来，免得整本小说都拿去试算。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>The calls should help you get information required to complete the text. You can call the API by writing &quot;[Calculator(expression)]&quot; where &quot;expression&quot; is the expression to be computed. Here are some examples of API calls: Input: The number in the next term is 18 + 12 x 3 = 54. Output: The number in the next term is 18 + 12 x 3 = [Calculator(18 + 12 * 3)] 54. Input: The population is 658,893 people. This is 11.4% of the national average of 5,763,868 people. Output: The population is 658,893 people. This is 11.4% of the national average of [Calculator(658,893 / 11.4%)] 5,763,868 people. Input: A total of 252 qualifying matches were played, and 723 goals were scored (an average of 2.87 per match). This is three times less than the 2169 goals last year. Output: A total of 252 qualifying matches were played, and 723 goals were scored (an average of [Calculator(723 / 252)] 2.87 per match). This is twenty goals more than the [Calculator(723 - 20)] 703 goals last year. Input: I went to Paris in 1994 and stayed there until 2011, so in total, it was 17 years. Output: I went to Paris in 1994 and stayed there until 2011, so in total, it was [Calculator(2011 - 1994)] 17 years. Input: From this, we have 4 * 30 minutes = 120 minutes. Output: From this, we have 4 * 30 minutes = [Calculator(4 * 30)] 120 minutes. Input: x Output: Wikipedia Search We use the following prompt for the Wikipedia search tool: Your task is to complete a given piece of text. You can use a Wikipedia Search API to look up information. You can do so by writing &quot;[WikiSearch(term)]&quot; where &quot;term&quot; is the search term you want to look up. Here are some examples of API calls: Input: The colors on the flag of Ghana have the following meanings: red is for the blood of martyrs, green for forests, and gold for mineral wealth. Output: The colors on the flag of Ghana have the following meanings: red is for [WikiSearch(&quot;Ghana flag red meaning&quot;)] the blood of martyrs, green for forests, and gold for mineral wealth. Input: But what are the risks during production of nanomaterials? Some nanomaterials may give rise to various kinds of lung damage. Output: But what are the risks during production of nanomaterials? [WikiSearch(&quot;nanomaterial production risks&quot;)] Some nanomaterials may give rise to various kinds of lung damage. Input: Metformin is the first-line drug for patients with type 2 diabetes and obesity. Output: Metformin is the first-line drug for [WikiSearch(&quot;Metformin first-line drug&quot;)] patients with type 2 diabetes and obesity. Input: x Output: Machine Translation We use the following prompt for the machine translation tool: Your task is to complete a given piece of text by using a Machine Translation API. You can do so by writing &quot;[MT(text)]&quot; where text is the text to be translated into English. Here are some examples: Input: He has published one book: O homem suprimido (“The Supressed Man”) Output: He has published one book: O homem suprimido [MT(O homem suprimido)] (“The Supressed Man”) Input: In Morris de Jonge’s Jeschuah, der klassische jüdische Mann, there is a description of a Jewish writer Output: In Morris de Jonge’s Jeschuah, der klassische jüdische Mann [MT(der klassische jüdische Mann)], there is a description of a Jewish writer Input: 南京高淳县住房和城乡建设局城市新 区 设 计a plane of reference Gaochun is one of seven districts of the provincial capital Nanjing Output: [MT(南京高淳县住房和城乡建设局城市新 区设计)] a plane of reference Gaochun is one of seven districts of the provincial capital Nanjing Input: x Output: Calendar We use the following prompt for the calendar tool: Your task is to add calls to a Calendar API to a piece of text. The API calls should help you get information required to complete the text. You can call the API by writing &quot;[Calendar()]&quot; Here are some examples of API calls: Input: Today is the first Friday of the year. Output: Today is the first [Calendar()] Friday of the year.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>The calls should help you get information required to complete the text. You can call the API by writing &quot;[Calculator(expression)]&quot; where &quot;expression&quot; is the expression to be computed. Here are some examples of API calls: Input: The number in the next term is 18 + 12 x 3 = 54. Output: The number in the next term is 18 + 12 x 3 = [Calculator(18 + 12 * 3)] 54. （其余计算器、维基搜索、机器翻译示例提示保持英文，见原文。） 维基百科搜索提示以 &quot;[WikiSearch(term)]&quot; 插入检索；机器翻译提示以 &quot;[MT(text)]&quot; 将短语译成英语。 日历 我们对日历工具使用如下提示： Your task is to add calls to a Calendar API to a piece of text. The API calls should help you get information required to complete the text. You can call the API by writing &quot;[Calendar()]&quot; Here are some examples of API calls: Input: Today is the first Friday of the year. Output: Today is the first [Calendar()] Friday of the year. Input: The president of the United States is Joe Biden. Output: The president of the United States is [Calendar()] Joe Biden. Input: The current day of the week is Wednesday. Output: The current day of the week is [Calendar()] Wednesday. Input: The number of days from now until Christmas is 30. Output: The number of days from now until Christmas is [Calendar()] 30. Input: The store is never open on the weekend, so today it is closed. Output: The store is never open on the weekend, so today [Calendar()] it is closed. Input: x Output: B Toolformer 训练 我们每种 API 最多使用 25k 个示例。最大序列长度 1,024。有效批大小 128。所有模型使用 DeepSpeed 的 ZeRO-3（Rasley et al., 2020）训练。我们使用 8 块 NVIDIA A100 40GB GPU 与 BF16。训练最多 2k 步，每 500 步在包含 1,000 个示例的 CCNet 小型开发集上评估 PPL。我们挑选表现最好的检查点。 C 零样本提示 C.1 LAMA 与 TEMPLAMA 对 LAMA 与 TEMPLAMA，给定输入文本 x，我们使用如下提示：Please complete the following text so that it is factually correct: x. C.2 数学基准 对所有数学基准，给定上下文 x 与问题 q，我们的提示是：x q The answer is. C.3 问答 对所有问答数据集，包括 DATESET，我们简单地用 Answer the following question: 作为问题前缀。若问题尚未以问号结尾，我们追加问号。 C.4 多语言问答 对 MLQA，给定上下文 x 与问题 q，我们的提示是：Your task is to answer a question based on the following paragraph: x Now answer the following question in English: q. D DATESET DATESET 通过首先随机选择 500 个「当前日期」创建。对每个当前日期，在四年范围内随机选择另一个相对过去 / 未来的日期，并用这两个日期填充表 11 中的查询模板。使用第一个模板的此类查询的一个例子会是，“How many days ago was August 14, 2020?” 若被调用，日历工具将返回假定的当前日期（例如，“Today is Sunday, November 20, 2020”）。 表 11：用于创建 DATESET 的模板，其中 current_date 被随机选择。对每个 current_date，生成一个随机的 past_date 与 future_date 并用于填充每个模板（若相关）。涉及节日的模板使用美国联邦节日（例如感恩节）。总计 9,400 条。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束附录：五种工具的英文少样本提示、训练超参，以及 DATESET 如何用随机日期填模板。评测提示保持英文。
+这很重要，因为它让「零样本」可复现——下游题干仍是自然语言指令，不是工具说明书。
+类比：练习册上的例题教你怎么夹纸条；期末试卷只写「请完成下列句子」，不再提醒该用哪一科。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 17 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Input: The president of the United States is Joe Biden. Output: The president of the United States is [Calendar()] Joe Biden. Input: The current day of the week is Wednesday. Output: The current day of the week is [Calendar()] Wednesday. Input: The number of days from now until Christmas is 30. Output: The number of days from now until Christmas is [Calendar()] 30. Input: The store is never open on the weekend, so today it is closed. Output: The store is never open on the weekend, so today [Calendar()] it is closed. Input: x Output: B Toolformer Training We use up to 25k examples per API. Max sequence length 1,024. Effective batch size of 128. All models are trained using DeepSpeed’s ZeRO-3 (Rasley et al., 2020). We used 8 NVIDIA A100 40GB GPUs with BF16. Training up to 2k steps, where we evaluate PPL on a small development set from CCNet containing 1,000 examples every 500 steps. We pick the checkpoint that performs best. C Zero-Shot Prompts C.1 LAMA and TEMPLAMA For both LAMA and TEMPLAMA, given an input text x, we use the following prompt: Please complete the following text so that it is factually correct: x. C.2 Math Benchmarks For all math benchmarks, given a context x and a question q, our prompt is: x q The answer is. C.3 Question Answering For all question answering datasets, including DATESET, we simply preﬁx the question with Answer the following question:. We append a question mark if the question does not already end with one. C.4 Multilingual Question Answering For MLQA, given a context x and a question q, our prompt is: Your task is Template Size How many days {ago was, are there until} {past_date, future_date}? What {day of the week, day of the month, month, year} was it (current_date – past_date) {days, weeks, months, years} ago? What {day of the week, day of the month, month, year} will it be in (future_date – current_date) days? What day of the week {is, was} it on {past_date, future_date}? What {day of the week, day of the month, month, year} {is, was} it {the day before yesterday, yesterday, today, tomorrow, the day after tomorrow}? 4,000 What {day of the week, day of the month, month} {is, was} holiday this year? 1,800 How many {days, weeks, months, years} {ago was, are there until} holiday this year? 1,200 Total 9,400 Table 11: Templates used to create DATESET where a current_date is randomly selected. For each current_date, a random past_date and future_date is generated and used to ﬁll each template, if relevant. The federal holidays in the United States (e.g., Thanksgiving) were used in the templates involving holidays. to answer a question based on the following paragraph: x Now answer the following question in English: q. D DATESET DATESET is created by ﬁrst randomly selecting 500 “current dates”. For each current date, another relatively past/future date is randomly selected within a four-year range, and the two dates are used to ﬁll the query templates in Table 11. An example of one such query using the ﬁrst template would be, “How many days ago was August 14, 2020?” If called, the Calendar tool would return the presumed current date (e.g., “Today is Sunday, November 20, 2020”).</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>D DATESET（续）</p>
+<p>表 11 模板包括：距离某日还有 / 已过多少天；若干天 / 周 / 月 / 年前是星期几或几号；未来某日是星期几；昨天 / 今天 / 明天是什么；今年节日是哪一天、距今多久。规模从 1,200 到 4,000 不等，合计 9,400。</p>
+<p>对每个随机选出的 current_date，再生成相对的 past_date 与 future_date 填入模板（若相关）。涉及节日的模板使用美国联邦节日（例如感恩节）。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页几乎整页是 DATESET 模板表：用随机「今天」去生成「三十天前是星期几」这类必须先知道日期的题。
+这很重要，因为它解释表 7 里日历工具为何在 DATESET 上突然有用——题是为日历量身造的。
+类比：先规定墙上挂哪一天的日历，再出「上周三是几号」——不看日历就只能蒙。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>会自己决定调用，还不会装卸与串联</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完方法、表 3–4 与局限段之后展开。</p>
+
+<h2>它解决的是「工具调用靠人标」，不是「工具可组合」</h2>
+<p>Toolformer 把工具使用收成语言建模：采样、执行、按 Δloss 过滤、再微调。对后来的 <strong>agent harness</strong>，这是关键一刀——模型可以自学何时插入 <code>[Calculator(...)]</code>，而不必每道题写示范。</p>
+<p>Cordiverse 要的是运行时：卸掉时把副作用干净收回，以及依赖能声明、能随变化自动协调。这篇没有这两刀。作者自己写得更窄：调用独立采样，所以<strong>不能链式</strong>；搜索不能改写查询、不能翻多页；也不计算调用成本。工具是插进文本的一次性 API，不是带生命周期的组件。学会调用，不等于拓扑可推理，更不等于可逆卸载。</p>
+
+<h2>成绩旁边要一起读的</h2>
+<ul>
+  <li><strong>每题最多一次调用</strong>：TEMPLAMA 上「先看日期再问 QA」被纪律禁止，也因训练里从未同时出现。</li>
+  <li><strong>解码 k=10</strong>：调用率被人为抬高；贪心时 WebQS 几乎不怎么调。</li>
+  <li><strong>规模门槛</strong>：小于约 7.75 亿参数，工具几乎帮不上忙——又一次「弱模型过不了工具使用这道门」。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于证明工具使用可以自监督地从语言建模里长出来，6.7B 模型在若干零样本任务上压过更大的不会调工具的模型。<strong>缺口</strong>是：一次调用、不能交互、没有卸载与依赖语义；过滤标准是下一词，不是任务成功或副作用可回收。Cordiverse 要问的组合问题，这篇刚把插头造出来。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-3">第 3 页</a>的过滤不等式，和 <a href="#page-11">第 11 页</a>作者亲口写的「不能链式」。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'toolformer-paper-cols-v1';
+const total = 17;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

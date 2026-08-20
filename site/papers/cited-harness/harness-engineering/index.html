@@ -1,0 +1,1536 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Harness 工程：在智能体优先的世界里用好 Codex — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="Harness 工程：在智能体优先的世界里用好 Codex">Harness 工程：在智能体优先的世界里用好 Codex</p>
+      <p class="paper-authors" title="R. Lopopolo / OpenAI">R. Lopopolo / OpenAI</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这是 OpenAI 的工程博文，不是评测论文。数字好看（零行人手写、约百万行、约 1,500 个 PR），但主张容易被收成「Codex 已经能代替工程师」。下面先给出<strong>主张、机制、证据与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 智能体优先之后，稀缺的是人的注意力；工程师的主业变成设计<strong>智能体运行框架 / harness</strong>——环境、意图规格与反馈环——让 Codex 能可靠地写、评、修、合。</p>
+</div>
+
+<h2>和 AI 工程、智能体、Cordiverse 的关系</h2>
+<p>Cordiverse 把本文标成引用 <strong>[8]</strong>：它是工业界对 harness 工程的现场报告。这里的 harness 不是又一套工具调用协议，而是整座仓库如何对 Codex <strong>可读、可强制、可回收</strong>：短 <code>AGENTS.md</code> 当地图，<code>docs/</code> 当记录源，定制 linter 焊死分层，后台任务像垃圾回收一样清「AI slop」。</p>
+<p>对 AI 工程的用处可以收成一句：把「催模型再试一次」改成「缺什么能力，就把它做成智能体读得懂、机器强制得了的东西」。它和 Anthropic 的长时 harness（<strong>[9]</strong>）同一条谱系——都承认模型会漂、会自我表扬、会复制仓里的坏模式——但切口不同：本文几乎不谈多智能体对抗式评审之外的生成–评估拆分，而把力气花在仓库作为系统的记录源。</p>
+<p>它没有处理组件卸载时如何收回副作用，也没有声明工具之间的依赖该如何随拓扑变化自动协调。那是 Cordiverse 要补的时空可组合性。展开判断见独立的<a href="#commentary">读后评论</a>，此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>团队给自己加上约束：<strong>零行人工手写代码</strong>，数周内交付约百万行。早期慢，不是 Codex 不会写，而是环境欠规范：没有对智能体可读的 UI、日志、架构边界和知识地图。人的时间成了唯一固定约束。</p>
+<p>缺的不是更长的系统提示，而是一套能让智能体深度优先拆任务、自审互评、按 worktree 启动应用、用指标验收，并在高吞吐下便宜纠错的控制系统。</p>
+
+<h2>机制（地图 · 可读性 · 不变量 · 回收）</h2>
+<ul>
+  <li><strong>人提示、智能体执行</strong>：PR 由 Codex 打开；Ralph Wiggum Loop 让它本地自审、请求额外智能体评审，循环到评审者满意。</li>
+  <li><strong>仓库当记录源</strong>：放弃「一份巨大的 <code>AGENTS.md</code>」；约 100 行目录指向结构化 <code>docs/</code>。Google Docs 与 Slack 对智能体等于不存在。</li>
+  <li><strong>应用与可观测性可读</strong>：按 git worktree 启动实例；Chrome DevTools Protocol + skills 看 DOM / 截图；隔离的 LogQL / PromQL 让 SLO 提示可执行。</li>
+  <li><strong>强制架构与品味</strong>：每域固定层（Types → … → UI），横切只经 Providers；定制 lint 把修复说明注入上下文。约束是速度的前置条件，不是事后补丁。</li>
+  <li><strong>高吞吐合并 + 垃圾回收</strong>：最少阻塞门、短 PR、片状失败后续补；「黄金原则」后台扫描偏差并开小重构 PR，避免每周五人工清 slop。</li>
+</ul>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>现场约束</strong>：内部 beta、外部 alpha、数百内部用户；约百万行、约 1,500 个 PR；三人阶段人均每天 3.5 个 PR。</li>
+  <li><strong>角色重定义</strong>：人排优先级、译验收、看结果；卡住就补工具 / 护栏 / 文档，并仍由 Codex 写修复。</li>
+  <li><strong>端到端门槛</strong>：单提示可核验现状、复现并录像、修复、再核验、开 PR、修构建、必要时升级、再合并——作者明确说<strong>不可无类似投入就外推</strong>。</li>
+  <li><strong>仍开放</strong>：完全由智能体生成的系统，架构连贯性如何跨年演化；人的判断如何编码成复利。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>主张与约束</td>
+      <td><a href="#page-1">1</a>–<a href="#page-3">3</a></td>
+      <td>零行手写；人掌舵、智能体执行；空仓起步；吞吐与日活。</td>
+      <td>必读。先建立「稀缺的是注意力」。</td>
+    </tr>
+    <tr>
+      <td>工程师改做什么</td>
+      <td><a href="#page-4">4</a>–<a href="#page-7">7</a></td>
+      <td>深度优先拆积木；Ralph Wiggum Loop；UI / CDP / 日志指标可读。</td>
+      <td>关心「如何让智能体干得完」必读。</td>
+    </tr>
+    <tr>
+      <td>知识作为记录源</td>
+      <td><a href="#page-8">8</a>–<a href="#page-14">14</a></td>
+      <td>第 8 页空白；巨型 AGENTS.md 失败；docs/ 布局；渐进披露；无聊技术。</td>
+      <td>盯「地图 vs 百科」。第 8、13 页可快翻。</td>
+    </tr>
+    <tr>
+      <td>架构、合并、自主</td>
+      <td><a href="#page-15">15</a>–<a href="#page-21">21</a></td>
+      <td>分层与 Providers；品味 lint；高吞吐合并；端到端清单；黄金原则 / GC。</td>
+      <td>关心落地必读。对「纠错便宜」和 slop 回收。</td>
+    </tr>
+    <tr>
+      <td>仍在学 · 页脚</td>
+      <td><a href="#page-22">22</a>–<a href="#page-24">24</a></td>
+      <td>脚手架比代码更要纪律；致谢与站点导航。</td>
+      <td>第 22 页看开放问题；第 24 页可跳过。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的三条精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → <a href="#page-1">第 1 页</a>主张 → <a href="#page-9">第 9–10 页</a>地图 vs 百科 → <a href="#page-22">第 22 页</a>脚手架纪律。用白话列快翻。</p>
+  </div>
+  <div class="card">
+    <h3>核对现场怎么跑</h3>
+    <p><a href="#page-4">第 4 页</a>循环 → <a href="#page-5">第 5–7 页</a>可读性 → <a href="#page-19">第 19–20 页</a>端到端清单。盯「不可无投入就外推」。</p>
+  </div>
+  <div class="card">
+    <h3>关心 harness / Cordiverse</h3>
+    <p><a href="#page-15">第 15–17 页</a>不变量 → <a href="#page-21">第 21 页</a>垃圾回收 → <a href="#commentary">读后评论</a>。问：强制得住，卸得掉吗？</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「为什么巨型 AGENTS.md 必然腐烂」「黄金原则和每周五清 slop 差在哪」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列，而不是从头重读。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Over the past five months, our team has been running an experiment: building and shipping an internal beta of a software product with 0 lines of manually-written code. The product has internal daily users and external alpha testers. It ships, deploys, breaks, and gets fixed. What’s different is that every line of code—application logic, tests, CI configuration, documentation, observability, and internal tooling—has been written by Codex. We estimate that we built this in about 1/10th the time it would have taken to write the code by hand. Humans steer. Agents execute. February 11, 2026 Engineering Harness engineering: leveraging Codex in an agent-first world By Ryan Lopopolo, Member of the Technical Staff Listen to article 17:57 Share</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>过去五个月，我们团队在做一项实验：用 0 行人工手写代码，构建并发布一款软件产品的内部 beta。</p>
+<p>该产品已有内部日活用户与外部 alpha 测试者。它会发版、部署、出故障、再被修好。不同之处在于：每一行代码——应用逻辑、测试、CI 配置、文档、可观测性与内部工具——都由 Codex 写成。我们估计，完成这件事大约只需人工手写代码所需时间的 1/10。</p>
+<p class="lead"><strong>人来掌舵。</strong>智能体来执行。</p>
+<p class="meta-line">2026 年 2 月 11 日</p>
+<p>工程</p>
+<p>Harness 工程：在智能体优先的世界里用好 Codex</p>
+<p class="meta-line">作者 Ryan Lopopolo，技术员工</p>
+<p>收听文章</p>
+<p class="meta-line">17:57</p>
+<p>分享</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是开场：OpenAI 团队用 Codex 写完全部代码（含测试、CI、文档），零行人手写，约用十分之一时间做出有内部日活的产品。主张是「人掌舵、智能体执行」。
+这很重要，因为它把工程师的工作从写代码改成设计环境与反馈环。
+类比：你不再亲自砌每一块砖，而是画图纸、设质检，让施工队按规范盖楼。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>We intentionally chose this constraint so we would build what was necessary to increase engineering velocity by orders of magnitude. We had weeks to ship what ended up being a million lines of code. To do that, we needed to understand what changes when a software engineering team’s primary job is no longer to write code, but to design environments, specify intent, and build feedback loops that allow Codex agents to do reliable work. This post is about what we learned by building a brand new product with a team of agents— what broke, what compounded, and how to maximize our one truly scarce resource: human time and attention. We started with an empty git repository The first commit to an empty repository landed in late August 2025. The initial scaffold—repository structure, CI configuration, formatting rules, package manager setup, and application framework— was generated by Codex CLI using GPT‑5, guided by a small set of existing templates. Even the initial AGENTS.md file that directs agents how to work in the repository was itself written by Codex.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们有意选择这一约束，以便构建那些能把工程速度再提高几个数量级所必需的东西。我们只有数周时间，却要交付最终约百万行代码的产物。要做到这一点，就必须弄清：当软件工程团队的主业不再是写代码，而是设计环境、明确意图、并搭建能让 Codex 智能体可靠工作的反馈环时，什么会改变。</p>
+<p>本文讲述我们用一队智能体从零做出新产品时学到的东西——什么坏了、什么会复利，以及如何最大化我们真正稀缺的资源：人的时间与注意力。</p>
+<p>我们从空的 git 仓库开始</p>
+<p>空仓库的第一次提交发生在 2025 年 8 月下旬。</p>
+<p>最初的脚手架——仓库结构、CI 配置、格式化规则、包管理器设置与应用框架——由 Codex CLI 使用 GPT‑5 生成，并以一小套既有模板作引导。甚至指导智能体如何在本仓库工作的最初那份 AGENTS.md，本身也是 Codex 写的。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说明实验动机：几周内要出百万行代码，所以必须搞清「人不写代码、只设计环境与反馈环」时什么会变。仓库从空仓起步，连 AGENTS.md 都是 Codex 写的。
+这很重要，因为它把 harness 工程定义成「为智能体造可工作的场地」。
+类比：先搭好厨房、菜谱和质检，再让厨师进场，而不是先炒菜再补灶台。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>There was no pre-existing human-written code to anchor the system. From the beginning, the repository was shaped by the agent. Five months later, the repository contains on the order of a million lines of code across application logic, infrastructure, tooling, documentation, and internal developer utilities. Over that period, roughly 1,500 pull requests have been opened and merged with a small team of just three engineers driving Codex. This translates to an average throughput of 3.5 PRs per engineer per day, and surprisingly the throughput has increased as the team has grown to now seven engineers. Importantly, this wasn’t output for output’s sake: the product has been used by hundreds of users internally, including daily internal power users. Throughout the development process, humans never directly contributed any code. This became a core philosophy for the team: no manually-written code. Redefining the role of the engineer The lack of hands-on human coding introduced a different kind of engineering work, focused on systems, scaffolding, and leverage.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>一开始没有任何人工手写代码可作锚点。从一开始，仓库就是由智能体塑形的。</p>
+<p>五个月后，仓库大约有百万行代码，覆盖应用逻辑、基础设施、工具、文档与内部开发者实用程序。此间约有 1,500 个拉取请求被打开并合并，由仅三名工程师驱动 Codex。这相当于人均每天 3.5 个 PR；令人意外的是，团队扩到七人后吞吐还上升了。重要的是，这不是为产出而产出：产品已被数百名内部用户使用，其中包括每日使用的内部重度用户。</p>
+<p>整个开发过程中，人从未直接贡献任何代码。这成为团队的核心哲学：没有人工手写代码。</p>
+<p>重新定义工程师的角色</p>
+<p>人手不直接写代码，带来了另一种工程工作：聚焦系统、脚手架与杠杆。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给出规模：约百万行、1500 个 PR、三人人均每天 3.5 个 PR，扩到七人吞吐还升；产品有内部日活。核心哲学是「人手不写代码」，工程师改做系统与脚手架。
+这很重要，因为它证明吞吐来自 harness，而不是人更快打字。
+类比：工厂加人不是让每个人都上手拧螺丝，而是让更多人盯产线与质检。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Early progress was slower than we expected, not because Codex was incapable, but because the environment was underspecified. The agent lacked the tools, abstractions, and internal structure required to make progress toward high-level goals. The primary job of our engineering team became enabling the agents to do useful work. In practice, this meant working depth-first: breaking down larger goals into smaller building blocks (design, code, review, test, etc), prompting the agent to construct those blocks, and using them to unlock more complex tasks. When something failed, the fix was almost never “try harder.” Because the only way to make progress was to get Codex to do the work, human engineers always stepped into the task and asked: “what capability is missing, and how do we make it both legible and enforceable for the agent?” Humans interact with the system almost entirely through prompts: an engineer describes a task, runs the agent, and allows it to open a pull request. To drive a PR to completion, we instruct Codex to review its own changes locally, request additional specific agent reviews both locally and in the cloud, respond to any human or agent given feedback, and iterate in a loop until all agent reviewers are satisfied (effectively this is a ). Codex uses our standard development tools directly (gh, local scripts, and repository-embedded skills) to Ralph Wiggum Loop</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>早期进展比预期慢，不是因为 Codex 不能做，而是因为环境规范不足。智能体缺少通向高层目标所需的工具、抽象与内部结构。工程团队的主业变成：让智能体能做有用的事。</p>
+<p>实践上，这意味着深度优先：把大目标拆成更小的积木（设计、编码、评审、测试等），提示智能体去造这些积木，再用它们解锁更复杂的任务。失败时，修复几乎从不是「再努力一点」。因为唯一的前进方式是让 Codex 把活干完，人类工程师总会走进任务并问：「缺的是什么能力，我们怎样让它对智能体既可读又强制？」</p>
+<p>人几乎完全通过提示与系统交互：工程师描述任务、运行智能体，并允许它打开拉取请求。为把 PR 推到完成，我们指示 Codex 在本地自审变更，再请求额外的、具体的智能体评审（本地与云端），回应人或智能体给出的反馈，并循环迭代直到所有智能体评审者满意（实质上这是 Ralph Wiggum Loop）。Codex 直接使用我们的标准开发工具（gh、本地脚本，以及仓库内嵌的 skills）来</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页讲早期慢在环境欠规范，不在模型不行。工程师改问「缺什么能力、如何让智能体读得懂且强制执行」。人用提示驱动 PR，并用 Ralph Wiggum Loop 让 Codex 自审、互评、改到通过。
+这很重要，因为它把失败从「再催一遍」改成「补工具与约束」。
+类比：新员工做不好，不是吼他加油，而是补工卡权限、清单和门禁。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>gather context without humans copying and pasting into the CLI. Humans may review pull requests, but aren’t required to. Over time, we’ve pushed almost all review effort towards being handled agentto-agent. Increasing application legibility As code throughput increased, our bottleneck became human QA capacity. Because the fixed constraint has been human time and attention, we’ve worked to add more capabilities to the agent by making things like the application UI, logs, and app metrics themselves directly legible to Codex. For example, we made the app bootable per git worktree, so Codex could launch and drive one instance per change. We also wired the Chrome DevTools Protocol into the agent runtime and created skills for working with DOM snapshots, screenshots, and navigation. This enabled Codex to reproduce bugs, validate fixes, and reason about UI behavior directly.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>收集上下文，而无需人把内容复制粘贴进 CLI。</p>
+<p>人可以评审拉取请求，但不是必须。随着时间推移，我们几乎把全部评审工作推向智能体对智能体。</p>
+<p>提升应用的可读性</p>
+<p>代码吞吐上去之后，瓶颈变成了人的 QA 容量。因为固定约束一直是人的时间与注意力，我们通过让应用 UI、日志与应用指标本身对 Codex 直接可读，来给智能体加更多能力。</p>
+<p>例如，我们让应用可按 git worktree 启动，这样 Codex 就能为每次变更拉起并驱动一个实例。我们还把 Chrome DevTools Protocol 接入智能体运行时，并创建用于处理 DOM 快照、截图与导航的 skills。这使 Codex 能复现缺陷、验证修复，并直接对 UI 行为做推理。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说吞吐上来后瓶颈是人的 QA，于是让 UI、日志、指标对 Codex 可读：按 worktree 启动应用，接入 Chrome DevTools Protocol，用 skills 看 DOM、截图、导航。
+这很重要，因为它把「人眼看界面」变成「智能体自己开浏览器验收」。
+类比：质检员不用隔着玻璃喊，而是拿到能自己点按钮、看仪表的工位。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>We did the same for observability tooling. Logs, metrics, and traces are exposed to Codex via a local observability stack that’s ephemeral for any given worktree. Codex works on a fully isolated version of that app— including its logs and metrics, which get torn down once that task is complete. Agents can query logs with LogQL and metrics with PromQL. With this context available, prompts like “ensure service startup completes in under 800ms” or “no span in these four</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们对可观测性工具做了同样的事。日志、指标与追踪通过本地可观测性栈暴露给 Codex，且对任意给定 worktree 都是短暂的。Codex 在该应用的完全隔离版本上工作——包括其日志与指标，任务完成后一并拆除。智能体可用 LogQL 查日志、用 PromQL 查指标。有了这些上下文，诸如「确保服务启动在 800ms 内完成」或「这四条</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把可观测性也做成智能体可读：每个 worktree 有短暂、隔离的日志与指标，任务结束即拆；可用 LogQL、PromQL 查询，于是「启动 &lt;800ms」这类 SLO 提示变得可执行。
+这很重要，因为它把验收从口头感觉改成可查询的数字。
+类比：不是问「感觉快不快」，而是给智能体一台只属于这次改动的仪表盘。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>critical user journeys exceeds two seconds” become tractable.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>关键用户旅程中没有任何 span 超过两秒」这类提示变得可处理。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页只有一句收尾：让「四条关键用户旅程里没有任何 span 超过两秒」这种提示变得可处理。
+这很重要，因为它说明 SLO 必须写成智能体能查、能判的句子。
+类比：验收单上不写「体验要好」，而写「这四条路径每段不超过两秒」。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>（本页为版式空白，无正文。）</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是排版空白，没有新论点。
+翻过即可。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>We regularly see single Codex runs work on a single task for upwards of six hours (often while the humans are sleeping). We made repository knowledge the system of record Context management is one of the biggest challenges in making agents effective at large and complex tasks. One of the earliest lessons we learned was simple: give Codex a map, not a 1,000-page instruction manual. We tried the “one big ” approach. It failed in predictable ways: Context is a scarce resource. A giant instruction file crowds out the task, the code, and the relevant docs—so the agent either misses key constraints or starts optimizing for the wrong ones. Too much guidance becomes nonguidance. When everything is “important,” nothing is. Agents end up pattern-matching locally instead of navigating intentionally. It rots instantly. A monolithic manual turns into a graveyard of stale rules. AGENTS.md</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们经常看到单次 Codex 运行在单个任务上工作超过六小时（常常是人在睡觉的时候）。</p>
+<p>我们把仓库知识做成系统的记录源</p>
+<p>上下文管理是让智能体在大型复杂任务上有效的最大挑战之一。我们最早学到的教训很简单：给 Codex 一张地图，而不是一千页说明书。</p>
+<p>我们试过「一份巨大的 AGENTS.md」做法。它以可预见的方式失败了：</p>
+<p class="lead"><strong>上下文是稀缺资源。</strong>巨型指令文件挤掉任务、代码与相关文档——于是智能体要么漏掉关键约束，要么开始为错误的约束做优化。</p>
+<p>指导太多就等于没有指导。当一切都「重要」，就没有什么是重要的。智能体最终做局部模式匹配，而不是有意识地导航。</p>
+<p class="lead"><strong>它立刻腐烂。</strong>一份单体手册会变成过时规则的坟场。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说单次 Codex 能跑六个多小时；并强调别写一千页 AGENTS.md：上下文稀缺、指导太多等于没有、手册立刻过时。要给地图，不要给百科。
+这很重要，因为它把 harness 的知识设计从「全塞进提示」改成「可导航的目录」。
+类比：给新人一张楼层图，而不是把整本员工手册贴在工位上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Agents can’t tell what’s still true, humans stop maintaining it, and the file quietly becomes an attractive nuisance. It’s hard to verify. A single blob doesn’t lend itself to mechanical checks (coverage, freshness, ownership, crosslinks), so drift is inevitable. So instead of treating AGENTS.md as the encyclopedia, we treat it as the table of contents. The repository’s knowledge base lives in a structured docs/ directory treated as the system of record. A short AGENTS.md (roughly 100 lines) is injected into context and serves primarily as a map, with pointers to deeper sources of truth elsewhere. AGENTS.md ARCHITECTURE.md docs/ ├── design-docs/ │ ├── index.md │ ├── core-beliefs.md</p>
+<div class="toc-line">│ └── ...</div>
+<p>├── exec-plans/ │ ├── active/ │ ├── completed/ │ └── tech-debt-tracker.md ├── generated/ │ └── db-schema.md ├── product-specs/ │ ├── index.md │ ├── new-user-onboarding.md</p>
+<div class="toc-line">│ └── ...</div>
+<p>Plain Text</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>智能体分不清什么仍为真，人也不再维护它，文件悄悄变成诱人的祸害。</p>
+<p class="lead"><strong>它难以核验。</strong>单一大块不利于机械检查（覆盖率、新鲜度、所有权、交叉链接），漂移不可避免。</p>
+<p>因此我们不再把 AGENTS.md 当百科全书，而把它当目录。</p>
+<p>仓库的知识库活在结构化的 docs/ 目录里，被当作系统的记录源。一份短的 AGENTS.md（大约 100 行）注入上下文，主要充当地图，指向别处更深的事实来源。</p>
+<p>AGENTS.md</p>
+<p>ARCHITECTURE.md</p>
+<p>docs/</p>
+<p>├── design-docs/</p>
+<p>│ ├── index.md</p>
+<p>│ ├── core-beliefs.md</p>
+<div class="toc-line">│ └── ...</div>
+<p>├── exec-plans/</p>
+<p>│ ├── active/</p>
+<p>│ ├── completed/</p>
+<p>│ └── tech-debt-tracker.md</p>
+<p>├── generated/</p>
+<p>│ └── db-schema.md</p>
+<p>├── product-specs/</p>
+<p>│ ├── index.md</p>
+<p>│ ├── new-user-onboarding.md</p>
+<div class="toc-line">│ └── ...</div>
+<p>纯文本</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给出替代方案：AGENTS.md 只做约 100 行目录，真正的记录源是结构化 docs/（设计文档、执行计划、生成 schema、产品规格）。单体手册难核验、会腐烂。
+这很重要，因为它把「提示词」降级为索引，把仓库当唯一真相。
+类比：首页是目录，章节各自成文，而不是把全书印在一张海报上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>In-repository knowledge store layout. Design documentation is catalogued and indexed, including verification status and a set of core beliefs that define agent-first operating principles. provides a top-level map of domains and package layering. A quality document grades each product domain and architectural layer, tracking gaps over time. Plans are treated as first-class artifacts. Ephemeral lightweight plans are used for small changes, while complex work is captured in with progress and decision logs that are checked into the repository. Active plans, completed plans, and known technical debt are all versioned and co-located, allowing agents to operate without relying on external context. This enables progressive disclosure: agents start with a small, stable entry point and are taught where to look next, rather than being overwhelmed up front. We enforce this mechanically. Dedicated linters and CI jobs validate that the knowledge ├── references/ │ ├── design-system-reference-llms.txt │ ├── nixpacks-llms.txt │ ├── uv-llms.txt</p>
+<div class="toc-line">│ └── ...</div>
+<p>├── DESIGN.md ├── FRONTEND.md ├── PLANS.md ├── PRODUCT_SENSE.md ├ QUALITY SCORE md Architecture documentation execution plans</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>仓库内知识库布局。</p>
+<p>设计文档被编目并建立索引，包括核验状态，以及一组定义智能体优先运作原则的核心信念。</p>
+<p>ARCHITECTURE.md 提供域与包分层的顶层地图。一份质量文档为每个产品域与架构层打分，跟踪缺口随时间的变化。</p>
+<p>计划被当作一等产物。小型变更用短暂的轻量计划；复杂工作记入带进度与决策日志的执行计划并检入仓库。进行中计划、已完成计划与已知技术债全部版本化并放在一起，使智能体无需依赖外部上下文即可运作。</p>
+<p>这使得渐进披露成为可能：智能体从一个小而稳定的入口出发，被教会下一步看哪里，而不是一上来就被淹没。</p>
+<p>我们用机械手段强制这一点。专用 linter 与 CI 任务核验知识</p>
+<p>├── references/</p>
+<p>│ ├── design-system-reference-llms.txt</p>
+<p>│ ├── nixpacks-llms.txt</p>
+<p>│ ├── uv-llms.txt</p>
+<div class="toc-line">│ └── ...</div>
+<p>├── DESIGN.md</p>
+<p>├── FRONTEND.md</p>
+<p>├── PLANS.md</p>
+<p>├── PRODUCT_SENSE.md</p>
+<p>QUALITY SCORE.md</p>
+<p>架构文档</p>
+<p>执行计划</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把设计文档、架构地图、质量评分、执行计划与技术债都做成仓库内一等产物，靠 linter 与 CI 强制结构正确，从而实现渐进披露。
+这很重要，因为它让智能体按需深入，而不是一次吞下全部规范。
+类比：先看目录和成绩单，再点开某一章；过期章节会被检查揪出来。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>base is up to date, cross-linked, and structured correctly. A recurring “docgardening” agent scans for stale or obsolete documentation that does not reflect the real code behavior and opens fix-up pull requests. Agent legibility is the goal As the codebase evolved, Codex’s framework for design decisions needed to evolve, too. Because the repository is entirely agentgenerated, it’s optimized first for Codex’s legibility. In the same way teams aim to improve navigability of their code for new engineering hires, our human engineers’ goal was making it possible for an agent to reason about the full business domain directly from the repository itself. From the agent’s point of view, anything it can’t access in-context while running effectively doesn’t exist. Knowledge that lives in Google Docs, chat threads, or people’s heads are not accessible to the system. Repository-local, versioned artifacts (e.g., code, markdown, schemas, executable plans) are all it can see.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>库是最新的、交叉链接的、结构正确的。一个周期性的「文档园艺」智能体扫描那些不能反映真实代码行为的陈旧或过时文档，并打开修复用的拉取请求。</p>
+<p>目标是智能体可读性</p>
+<p>随着代码库演化，Codex 做设计决策的框架也必须演化。因为仓库完全由智能体生成，它首先为 Codex 的可读性而优化。就像团队会为新入职工程师改善代码可导航性一样，人类工程师的目标是：让智能体能直接从仓库本身推理完整业务域。</p>
+<p>从智能体的视角看，运行时上下文里访问不到的东西，实际上等于不存在。活在 Google Docs、聊天线程或人脑子里的知识，系统都拿不到。仓库本地、已版本化的产物（例如代码、markdown、schema、可执行计划）才是它能看见的全部。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页点题：目标是智能体可读性。文档园艺智能体会扫过期文档并开 PR。Google Docs、聊天、人脑子里的东西对 Codex 等于不存在。
+这很重要，因为它把「团队共识」改写成「检入仓库才算数」。
+类比：没写进仓库的决定，对新同事和智能体都像从没开过那次会。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>We learned that we needed to push more and more context into the repo over time. That Slack discussion that aligned the team on an</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们学到，必须随着时间把越来越多的上下文推进仓库。那场让团队对齐某种</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页只有半句：必须把越来越多上下文推进仓库，包括那场对齐架构模式的 Slack 讨论。
+这很重要，因为它把口头对齐视为尚未完成的 harness 工作。
+类比：会上说完不算，写进仓库才算办完手续。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-14" data-page="14">
+  <div class="page-label">第 14 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-014.jpg" alt="PDF page 14" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>architectural pattern? If it isn’t discoverable to the agent, it’s illegible in the same way it would be unknown to a new hire joining three months later. Giving Codex more context means organizing and exposing the right information so the agent can reason over it, rather than overwhelming it with ad-hoc instructions. In the same way you would onboard a new teammate on product principles, engineering norms, and team culture (emoji preferences included), giving the agent this information leads to better-aligned output. This framing clarified many tradeoffs. We favored dependencies and abstractions that could be fully internalized and reasoned about in-repo. Technologies often described as “boring” tend to be easier for agents to model due to composability, api stability, and representation in the training set. In some cases, it was cheaper to have the agent reimplement subsets of functionality than to work around opaque upstream behavior from public libraries. For example, rather than pulling in a generic p-limit -style package, we implemented our own map-withconcurrency helper: it’s tightly integrated with our OpenTelemetry instrumentation, has 100% test coverage, and behaves exactly the way our runtime expects. Pulling more of the system into a form the agent can inspect, validate, and modify directly increases leverage—not just for</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>架构模式的 Slack 讨论？若智能体发现不了，它就和新同事三个月后加入时一样不可读。</p>
+<p>给 Codex 更多上下文，意味着组织并暴露正确信息，让智能体能对其推理，而不是用临时指令把它淹没。就像你会用产品原则、工程规范与团队文化（包括表情符号偏好）来入职新同事，把这些信息给智能体，输出也会更对齐。</p>
+<p>这一框架澄清了许多权衡。我们偏向那些能在仓库内被完全内化并推理的依赖与抽象。常被称作「无聊」的技术，往往因可组合性、API 稳定以及在训练集中的表征，而更易被智能体建模。有时，让智能体重实现一部分功能，比绕过公共库不透明的上游行为更便宜。例如，我们没有拉一个通用的 p-limit 风格包，而是实现了自己的 map-with-concurrency 辅助：它与我们的 OpenTelemetry 埋点紧密集成，有 100% 测试覆盖，并且行为完全符合运行时预期。</p>
+<p>把更多系统拉进智能体能直接检查、核验与修改的形态，会提高杠杆——不仅对</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说要把原则、规范甚至表情偏好写进仓库；并偏向「无聊」技术。有时自己重写一小块（如 map-with-concurrency）比啃不透明依赖更便宜。
+这很重要，因为它把技术选型标准改成「智能体能否在仓内推理」。
+类比：选人人会用的标准件，必要时自制一只完全透明的扳手，也不用黑盒进口货。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-15" data-page="15">
+  <div class="page-label">第 15 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-015.jpg" alt="PDF page 15" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Codex, but for other agents (e.g. ) that are working on the codebase as well. Enforcing architecture and taste Documentation alone doesn’t keep a fully agent-generated codebase coherent. By enforcing invariants, not micromanaging implementations, we let agents ship fast without undermining the foundation. For example, we require Codex to , but are not prescriptive on how that happens (the model seems to like Zod, but we didn’t specify that specific library). Agents are most effective in environments with , so we built the application around a rigid architectural model. Each business domain is divided into a fixed set of layers, with strictly validated dependency directions and a limited set of permissible edges. These constraints are enforced mechanically via custom linters (Codex-generated, of course!) and structural tests. The diagram below shows the rule: within each business domain (e.g. App Settings), code can only depend “forward” through a fixed set of layers (Types → Config → Repo → Service → Runtime → UI). Cross-cutting concerns (auth, connectors, telemetry, feature Aardvark parse data shapes at the boundary strict boundaries and predictable structure</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>Codex，也对其他在同一代码库上工作的智能体（例如 Aardvark）成立。</p>
+<p>强制架构与品味</p>
+<p>单靠文档无法让完全由智能体生成的代码库保持连贯。通过强制不变量、而不是微观管理实现，我们让智能体快速交付，同时不掏空地基。例如，我们要求 Codex 在边界解析数据形状，但不规定怎么做（模型似乎喜欢 Zod，但我们并未指定这个库）。</p>
+<p>智能体在边界严格、结构可预期的环境里最有效，因此我们把应用建在刚性架构模型上。每个业务域分成固定层，依赖方向被严格核验，只允许有限的边。这些约束由定制 linter（当然也是 Codex 生成的！）与结构测试机械执行。</p>
+<p>下图给出规则：在每个业务域内（例如 App Settings），代码只能沿固定层「向前」依赖（Types → Config → Repo → Service → Runtime → UI）。横切关注点（认证、连接器、遥测、功能</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页讲强制架构：要边界解析数据形状，但不点名 Zod；每域固定分层（Types→…→UI），只许向前依赖，用 Codex 生成的 linter 卡住。
+这很重要，因为它说明智能体速度来自早早焊死的结构，而不是事后补救。
+类比：先定楼层与管线走向，装修风格可以各选，但不许把厨房水管接到隔壁卧室。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-16" data-page="16">
+  <div class="page-label">第 16 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-016.jpg" alt="PDF page 16" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>flags) enter through a single explicit interface: Providers. Anything else is disallowed and enforced mechanically. This is the kind of architecture you usually postpone until you have hundreds of engineers. With coding agents, it’s an early prerequisite: the constraints are what allows speed without decay or architectural drift. In practice, we enforce these rules with custom linters and structural tests, plus a small set of “taste invariants.” For example, we statically enforce structured logging, naming conventions for schemas and types,</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>开关）通过单一显式接口进入：Providers。其他一律禁止，并机械执行。</p>
+<p>这是你通常会推迟到有数百名工程师才做的那种架构。有了编码智能体，它成了早期前置条件：约束才是让速度不腐烂、架构不漂移的东西。</p>
+<p>实践上，我们用定制 linter、结构测试，外加一小套「品味不变量」来强制这些规则。例如，我们静态强制结构化日志、schema 与类型的命名约定、</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页补完规则：横切能力只能经 Providers 进入；这种「大厂才做」的架构，对智能体反而是早点。还用 linter 强制结构化日志与命名等品味不变量。
+这很重要，因为它把品味从人口头偏好变成到处生效的静态规则。
+类比：平台组先把门禁装好，各小队在门内怎么摆桌子可以自己定。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-17" data-page="17">
+  <div class="page-label">第 17 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-017.jpg" alt="PDF page 17" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>file size limits, and platform-specific reliability requirements with custom lints. Because the lints are custom, we write the error messages to inject remediation instructions into agent context. In a human-first workflow, these rules might feel pedantic or constraining. With agents, they become multipliers: once encoded, they apply everywhere at once. At the same time, we’re explicit about where constraints matter and where they do not. This resembles leading a large engineering platform organization: enforce boundaries centrally, allow autonomy locally. You care deeply about boundaries, correctness, and reproducibility. Within those boundaries, you allow teams—or agents—significant freedom in how solutions are expressed. The resulting code does not always match human stylistic preferences, and that’s okay. As long as the output is correct, maintainable, and legible to future agent runs, it meets the bar. Human taste is fed back into the system continuously. Review comments, refactoring pull requests, and user-facing bugs are captured as documentation updates or encoded directly into tooling. When documentation falls short, we promote the rule into code</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>文件大小限制，以及平台特定的可靠性要求，都用定制 lint。因为 lint 是定制的，我们把错误信息写成会把修复说明注入智能体上下文的形式。</p>
+<p>在以人为先的工作流里，这些规则可能显得迂腐或束缚。对智能体，它们变成乘数：一旦编码，就处处同时生效。</p>
+<p>同时，我们明确约束在何处重要、在何处不重要。这像领导一个大型工程平台组织：中心强制边界，局部允许自治。你深深在意边界、正确性与可复现性。在这些边界内，你允许团队——或智能体——在如何表达解法上有显著自由。</p>
+<p>由此得到的代码并不总符合人的文体偏好，这没关系。只要输出正确、可维护、对未来的智能体运行可读，就达到了标准。</p>
+<p>人的品味被持续回灌进系统。评审意见、重构拉取请求与面向用户的缺陷，被捕捉为文档更新或直接编码进工具。当文档不够用，我们把规则提升为代码。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说定制 lint 的报错要带修复说明；边界要严、实现可松。代码不必好看，但要对下一轮智能体可读。人的品味经评审与缺陷回写成文档或代码。
+这很重要，因为它把「审美」变成可执行的反馈环。
+类比：老师不只打分，还把评语印进下次考试的答题卡说明里。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-18" data-page="18">
+  <div class="page-label">第 18 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-018.jpg" alt="PDF page 18" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Throughput changes the merge philosophy As Codex’s throughput increased, many conventional engineering norms became counterproductive. The repository operates with minimal blocking merge gates. Pull requests are shortlived. Test flakes are often addressed with follow-up runs rather than blocking progress indefinitely. In a system where agent throughput far exceeds human attention, corrections are cheap, and waiting is expensive. This would be irresponsible in a lowthroughput environment. Here, it’s often the right tradeoff. What “agent-generated” actually means When we say the codebase is generated by Codex agents, we mean everything in the codebase. Agents produce: Product code and tests CI configuration and release tooling</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>吞吐改变了合并哲学</p>
+<p>随着 Codex 吞吐上升，许多传统工程规范变得适得其反。</p>
+<p>仓库以最少的阻塞合并门运行。拉取请求寿命很短。测试片状失败常常用后续运行处理，而不是无限期挡住进度。在智能体吞吐远超人注意力的系统里，纠正便宜，等待昂贵。</p>
+<p>这在低吞吐环境里会不负责任。在这里，它常常是正确的权衡。</p>
+<p>「智能体生成」实际意味着什么</p>
+<p>当我们说代码库由 Codex 智能体生成，我们指的是代码库里的一切。</p>
+<p>智能体产出：</p>
+<p>产品代码与测试</p>
+<p>CI 配置与发布工具</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页说高吞吐下合并门要少、PR 要短、片状失败可后续补；纠正便宜、等待昂贵。并开始列举「智能体生成」覆盖产品、测试、CI、发布工具。
+这很重要，因为它改写了低吞吐时代「必须挡住再合」的伦理。
+类比：产线每分钟出一百件时，与其整线停机，不如先过、再快速返工。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-19" data-page="19">
+  <div class="page-label">第 19 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-019.jpg" alt="PDF page 19" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Internal developer tools Documentation and design history Evaluation harnesses Review comments and responses Scripts that manage the repository itself Production dashboard definition files Humans always remain in the loop, but work at a different layer of abstraction than we used to. We prioritize work, translate user feedback into acceptance criteria, and validate outcomes. When the agent struggles, we treat it as a signal: identify what is missing —tools, guardrails, documentation—and feed it back into the repository, always by having Codex itself write the fix. Agents use our standard development tools directly. They pull review feedback, respond inline, push updates, and often squash and merge their own pull requests. Increasing levels of autonomy As more of the development loop was encoded directly into the system—testing, validation, review, feedback handling, and recovery—the repository recently crossed a meaningful threshold where Codex can endto-end drive a new feature. Given a single prompt, the agent can now:</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>内部开发者工具</p>
+<p>文档与设计历史</p>
+<p>评估用的智能体运行框架（evaluation harnesses）</p>
+<p>评审意见与回复</p>
+<p>管理仓库本身的脚本</p>
+<p>生产仪表盘定义文件</p>
+<p>人始终在环内，但工作在与过去不同的抽象层。我们排优先级、把用户反馈译成验收标准、核验结果。智能体卡住时，我们把它当信号：找出缺什么——工具、护栏、文档——并回灌进仓库，而且总是让 Codex 自己写修复。</p>
+<p>智能体直接使用我们的标准开发工具。它们拉取评审反馈、行内回复、推送更新，并常常自己 squash 并合并拉取请求。</p>
+<p>自主程度不断提高</p>
+<p>随着开发循环越来越多被直接编码进系统——测试、核验、评审、反馈处理与恢复——仓库最近跨过了一个有意义的门槛：Codex 可以端到端驱动一个新功能。</p>
+<p>给定单条提示，智能体现在可以：</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页列全智能体产出物（含 evaluation harnesses、仪表盘定义），并强调人只排优先级、写验收、看结果；卡住就补工具再让 Codex 写修复。单提示已能端到端开新功能。
+这很重要，因为它把人定位在「意图与验收」，而不是「补丁作者」。
+类比：导演给分镜和过片标准，摄影、剪辑、送审都由剧组自己闭环。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-20" data-page="20">
+  <div class="page-label">第 20 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-020.jpg" alt="PDF page 20" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Validate the current state of the codebase Reproduce a reported bug Record a video demonstrating the failure Implement a fix Validate the fix by driving the application Record a second video demonstrating the resolution Open a pull request Respond to agent and human feedback Detect and remediate build failures Escalate to a human only when judgment is required Merge the change This behavior depends heavily on the specific structure and tooling of this repository and should not be assumed to generalize without similar investment—at least, not yet. Entropy and garbage collection Full agent autonomy also introduces novel problems. Codex replicates patterns that already exist in the repository—even uneven or suboptimal ones. Over time, this inevitably leads to drift.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>核验代码库当前状态</p>
+<p>复现所报告的缺陷</p>
+<p>录一段演示失败的视频</p>
+<p>实现修复</p>
+<p>通过驱动应用来核验修复</p>
+<p>再录一段演示已解决的视频</p>
+<p>打开拉取请求</p>
+<p>回应智能体与人的反馈</p>
+<p>检测并补救构建失败</p>
+<p>仅在需要判断时升级给人</p>
+<p>合并变更</p>
+<p>这种行为严重依赖本仓库的具体结构与工具，不应假定在没有类似投入时可以推广——至少现在还不能。</p>
+<p>熵与垃圾回收</p>
+<p>完全的智能体自主也带来新问题。Codex 会复制仓库里已有的模式——哪怕它们不均匀或次优。时间一长，漂移不可避免。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页列出端到端闭环：复现、录像、修复、再录像、开 PR、修构建、必要时升级、再合并。同时警告：智能体会复制仓里已有的坏模式，熵会累积。
+这很重要，因为它说明自主不是终点，还要有垃圾回收。
+类比：复印机很勤快，原稿上的污点也会被一张张印出去。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-21" data-page="21">
+  <div class="page-label">第 21 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-021.jpg" alt="PDF page 21" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Initially, humans addressed this manually. Our team used to spend every Friday (20% of the week) cleaning up “AI slop.” Unsurprisingly, that didn’t scale. Instead, we started encoding what we call “golden principles” directly into the repository and built a recurring cleanup process. These principles are opinionated, mechanical rules that keep the codebase legible and consistent for future agent runs. For example: (1) we prefer shared utility packages over handrolled helpers to keep invariants centralized, and (2) we don’t probe data “YOLO-style”— we validate boundaries or rely on typed SDKs so the agent can’t accidentally build on guessed shapes. On a regular cadence, we have a set of background Codex tasks that scan for deviations, update quality grades, and open targeted refactoring pull requests. Most of these can be reviewed in under a minute and automerged. This functions like garbage collection. Technical debt is like a high-interest loan: it’s almost always better to pay it down continuously in small increments than to let it compound and tackle it in painful bursts. Human taste is captured once, then enforced continuously on every line of code. This also lets us catch and resolve bad patterns on a daily basis, rather than letting them spread in the code base for days or weeks.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p class="lead"><strong>起初人手工处理。</strong>我们团队曾经每周五（一周的 20%）清理「AI slop」。不出所料，这无法扩展。</p>
+<p>于是我们开始把所谓「黄金原则」直接编码进仓库，并建立周期性清理流程。这些原则是有立场的机械规则，让代码库对未来的智能体运行保持可读与一致。例如：（1）我们偏好共享工具包而非手搓辅助，以把不变量集中；（2）我们不「YOLO 式」探数据——我们核验边界或依赖带类型的 SDK，以免智能体意外建立在猜出来的形状上。按固定节奏，一组后台 Codex 任务扫描偏差、更新质量评分，并打开针对性的重构拉取请求。其中多数可在一分钟内评审并自动合并。</p>
+<p class="lead"><strong>这像垃圾回收。</strong>技术债像高利贷：几乎总是更好连续小额偿还，而不是让它复利后再痛苦地一次性处理。人的品味被捕捉一次，然后在每一行代码上持续强制。这也让我们能按日抓住并化解坏模式，而不是让它们在代码库里扩散数日或数周。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页讲不再每周五人工清「AI slop」，而是把黄金原则写进仓库，后台 Codex 扫偏差、打分、开小重构 PR，多数一分钟内合。技术债要像垃圾回收一样连着还。
+这很重要，因为它把品味从周末大扫除变成日更的机械执行。
+类比：与其月底通宵洗碗，不如每用完一只碗就放进洗碗机。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-22" data-page="22">
+  <div class="page-label">第 22 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-022.jpg" alt="PDF page 22" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>What we’re still learning This strategy has so far worked well up through internal launch and adoption at OpenAI. Building a real product for real users helped anchor our investments in reality and guide us towards long-term maintainability. What we don’t yet know is how architectural coherence evolves over years in a fully agentgenerated system. We’re still learning where human judgment adds the most leverage and how to encode that judgment so it compounds. We also don’t know how this system will evolve as models continue to become more capable over time. What’s become clear: building software still demands discipline, but the discipline shows up more in the scaffolding rather than the code. The tooling, abstractions, and feedback loops that keep the codebase coherent are increasingly important. Our most difficult challenges now center on designing environments, feedback loops, and control systems that help agents accomplish our goal: build and maintain complex, reliable software at scale. As agents like Codex take on larger portions of the software lifecycle, these questions will matter even more. We hope that sharing some</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>我们仍在学习的</p>
+<p>到目前为止，这一策略在 OpenAI 内部上线与采用之前都运作良好。为真实用户做真实产品，帮助我们把投入锚定在现实，并导向长期可维护性。</p>
+<p>我们还不知道的是：在完全由智能体生成的系统里，架构连贯性如何随年份演化。我们仍在学习人的判断在何处杠杆最大，以及如何编码这种判断使之复利。我们也不知道，随着模型持续变强，这一系统将如何演化。</p>
+<p>已经清楚的是：构建软件仍需要纪律，但纪律更多体现在脚手架而非代码上。让代码库保持连贯的工具、抽象与反馈环，正变得越来越重要。</p>
+<p>我们最困难的挑战，现在集中于设计环境、反馈环与控制系统，以帮助智能体完成目标：大规模构建并维护复杂、可靠的软件。</p>
+<p>随着 Codex 这类智能体承担软件生命周期中更大的部分，这些问题会更重要。我们希望分享一些</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束：策略撑过了内部上线，但多年后架构会否仍连贯、人的判断如何编码成复利，都未知。纪律从写代码挪到脚手架、反馈环与控制系统。
+这很重要，因为它把 harness 工程写成长期主业，而不是一次性提示技巧。
+类比：船越来越会自己开，船长要研究的是航线、仪表和紧急制动，不是更快摇桨。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-23" data-page="23">
+  <div class="page-label">第 23 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-023.jpg" alt="PDF page 23" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>early lessons helps you reason about where to invest your effort so . Codex 2026 Author Ryan Lopopolo</p>
+<h1>Acknowledgements</h1>
+<p>Special thanks to Victor Zhu and Zach Brock who contributed to the post, as well as to the entire team that built this new product. Keep reading View all you can just build things Continuous voice interaction with GPT Live Engineering Aug 3, 2026 How GPT-5.6 fuses frontier intelligence with frontier efficiency Engineering Jul 29, 2026 Core dump epidemiology: fixing an 18-year-old bug Engineering Jun 30, 2026</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>早期教训，帮助你思考该把力气投向何处，以便你就是能把东西做出来。</p>
+<p>Codex</p>
+<p class="meta-line">2026</p>
+<p class="meta-line">作者</p>
+<p>Ryan Lopopolo</p>
+<h1>致谢</h1>
+<p>特别感谢对本文有贡献的 Victor Zhu 与 Zach Brock，以及构建这一新产品的整个团队。</p>
+<p>继续阅读</p>
+<p>查看全部</p>
+<p>你就是能把东西做出来</p>
+<p>与 GPT Live 的连续语音交互</p>
+<p>工程</p>
+<p class="meta-line">2026 年 8 月 3 日</p>
+<p>GPT-5.6 如何把前沿智能与前沿效率融合</p>
+<p>工程</p>
+<p class="meta-line">2026 年 7 月 29 日</p>
+<p>核心转储流行病学：修复一个 18 年的缺陷</p>
+<p>工程</p>
+<p class="meta-line">2026 年 6 月 30 日</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是收尾与推荐阅读：把早期教训分享出去，好让人把力气投在对的地方，「就是能把东西做出来」。作者 Ryan Lopopolo，致谢 Victor Zhu、Zach Brock 与产品团队。
+正文到此结束，相关博文可忽略。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-24" data-page="24">
+  <div class="page-label">第 24 / 24 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-024.jpg" alt="PDF page 24" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>Research Research Index Research Overview Economic Research Latest Advancements GPT-5.6 GPT-5.5 GPT-5.4 Safety Safety Approach Deployment Safety Security &amp; Privacy Trust &amp; Transparency Products ChatGPT ChatGPT Business ChatGPT Enterprise ChatGPT for Education Codex Release Notes API Platform Overview API Log In Docs Business Overview Solutions Resources Customer Stories Partner Network Contact Sales Developers Apps SDK Open Models Docs Resources Developer Forum Company About Us Our Charter Careers News Support Help Center More Stories Academy Supply Co. Livestreams Podcast RSS Terms &amp; Policies Terms of Use Privacy Policy Other Policies OpenAI © 2015–2026 Your privacy choices English United States</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>研究</p>
+<p>研究索引</p>
+<p>研究概览</p>
+<p>经济研究</p>
+<p>最新</p>
+<p>进展</p>
+<p>GPT-5.6</p>
+<p>GPT-5.5</p>
+<p>GPT-5.4</p>
+<p>安全</p>
+<p>安全方法</p>
+<p>部署安全</p>
+<p>安全与隐私</p>
+<p>信任与透明</p>
+<p>产品</p>
+<p>ChatGPT</p>
+<p>ChatGPT Business</p>
+<p>ChatGPT Enterprise</p>
+<p>面向教育的 ChatGPT</p>
+<p>Codex</p>
+<p>发行说明</p>
+<p>API 平台</p>
+<p>概览</p>
+<p>API 登录</p>
+<p>文档</p>
+<p>商务</p>
+<p>概览</p>
+<p>解决方案</p>
+<p>资源</p>
+<p>客户故事</p>
+<p>合作伙伴网络</p>
+<p>联系销售</p>
+<p>开发者</p>
+<p>Apps SDK</p>
+<p>开放模型</p>
+<p>文档</p>
+<p>资源</p>
+<p>开发者论坛</p>
+<p>公司</p>
+<p>关于我们</p>
+<p>我们的章程</p>
+<p>职业</p>
+<p>新闻</p>
+<p>支持</p>
+<p>帮助中心</p>
+<p>更多</p>
+<p>故事</p>
+<p>学院</p>
+<p>Supply Co.</p>
+<p>直播</p>
+<p>播客</p>
+<p>RSS</p>
+<p>条款与政策</p>
+<p>使用条款</p>
+<p>隐私政策</p>
+<p>其他政策</p>
+<p>OpenAI © 2015–2026</p>
+<p>你的隐私选择</p>
+<p>英语 美国</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是 OpenAI 站点页脚导航，没有新的正文论点。
+可跳过。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>仓库对智能体可读了，卸载与依赖还没有语义</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完知识库布局、分层规则与黄金原则之后展开。</p>
+
+<h2>它把 harness 写成控制系统，而不是提示词技巧</h2>
+<p>这篇最有用的地方，是把「智能体优先」从模型能力叙事拽回工程：人不再以手写补丁为产出，而以<strong>环境、意图与反馈环</strong>为产出。<code>AGENTS.md</code> 缩成目录、<code>docs/</code> 当记录源、CDP / LogQL 让验收可执行、分层用 linter 焊死——这些都是在增加 Codex 的<strong>可读性与可强制性</strong>。对正在长出来的 agent harness，这比再写一段更长的系统提示更接近真实现场。</p>
+<p>高吞吐合并哲学也值得单独记下：纠正便宜、等待昂贵。它只在「后续修复同样由智能体便宜完成」时成立；一旦修复仍要人盯，最少阻塞门会把熵直接送进主干。</p>
+
+<h2>和 Cordiverse 的接口，也是缺口</h2>
+<p>Cordiverse 引用 <strong>[8]</strong>，看重的是工业界已经承认：软件生命周期越来越大的部分由智能体承担，脚手架本身必须成为一等设计对象。前驱在于——工具、文档、评审、回收都被写进仓库，由 Codex 自己改 harness。</p>
+<p>窄在于——生命周期几乎停在「写进去、强制住、用后台任务清掉坏模式」。黄金原则可以开重构 PR，文档园艺可以修过期链接，但没有「这条能力过期了、与另一条冲突了、权限与副作用该一并撤掉」的语义。worktree 级隔离拆掉的是一次任务的日志栈，不是组件从运行时卸载时的可逆效应。Providers 是分层门禁，不是反应式余效应：依赖变了，谁该停、谁该等，仍靠人把规则再编码进 lint。</p>
+<p>那正是 Cordiverse 用可逆效应与反应式余效应要管的事：造得出、强制得住，还要卸得干净、依赖跟得上。</p>
+
+<h2>作者已点名、但仍开放</h2>
+<ul>
+  <li><strong>不可外推</strong>（第 20 页）：端到端闭环绑死在这座仓库的结构与工具上。没有类似投入，不应假定换一个仓也能「单提示合入」。</li>
+  <li><strong>跨年连贯性</strong>（第 22 页）：完全由智能体生成的系统，架构如何在年份尺度上演化，作者明确说还不知道。</li>
+  <li><strong>判断如何复利</strong>：人的品味被回写成文档或 lint，但「何处必须由人判断」仍是开放的控制问题，不是已证明的元理论。</li>
+</ul>
+
+<h2>读 harness 时额外要盯的</h2>
+<ul>
+  <li>「无聊技术」与自研小工具（如 map-with-concurrency）提高了仓内可推理性，也增加了私有表面积：卸载或替换时，没有依赖声明可自动通知调用方。</li>
+  <li>智能体对智能体评审把人从必经之路拿掉，同时把失败模式变成「评审者共享同一套仓内偏见」。垃圾回收能扫风格偏差，扫不掉集体跑偏的产品判断。</li>
+  <li>第 8、13、24 页信息量低；不要把页脚导航读成正文论据。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把 harness 工程写成可观察的现场：地图式知识、强制不变量、可读的应用与指标、高吞吐下的回收。<strong>对未来智能体仍缺的</strong>是：这些规则与工具进入长跑运行时之后，如何安全升级、如何卸载与回收副作用、如何表达依赖。本文把仓库变成了 Codex 读得懂的世界；Cordiverse 要问的是，这个世界里的组件如何组合与拆卸。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-10">第 10 页</a>的记录源，和 <a href="#page-21">第 21 页</a>黄金原则——强制得住之后，卸得掉吗？</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'harness-engineering-paper-cols-v1';
+const total = 24;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

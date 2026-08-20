@@ -1,7 +1,0 @@
-5.2.  Component Loader
-The core library equips component developers with imperative primitives for dynamic compo -
-sition, such as ctx.effect, ctx.use, and ctx.set. A separate concern arises for application 
-orchestrators, who assemble pre-existing components into a running system and adjust the 
-composition over its lifetime. The component loader addresses this concern by introducing a declarative configuration layer: the orchestrator specifies the desired composition as a persistent 
-data structure, and the loader translates changes to this specification into the corresponding 
-imperative fiber operations.

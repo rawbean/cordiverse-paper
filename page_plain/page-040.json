@@ -1,4 +1,0 @@
-{
- "page": 40,
- "plain": "Table 1 一览：Insert/Retire/Remove 管编排；Begin/Iter/Finish 管激活；Divert/Raise 管激活早退；Leave/Unload 管停用。引理54提炼五条读写纪律：别人的表你改不了；提交视图只在 Begin 出现、Unload 消失；只有 Unload 才应用累加器；安装区间的开关就是 Begin/Unload；父指针与提供声明出生后不变，退役标志只升不降。这是后面保持性、精确恢复等证明的「说明书」。"
-}

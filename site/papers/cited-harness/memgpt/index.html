@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-view="guide">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MemGPT：走向作为操作系统的大语言模型 — 四栏对照</title>
+<style>
+
+:root {
+  --ink: #1c1c1c;
+  --muted: #666;
+  --rule: #ddd8ce;
+  --bg: #e8e4dc;
+  --panel: #faf8f4;
+  --accent: #0b4f6c;
+  --def-bg: #f3eee4;
+  --plain-bg: #f7f3ea;
+  --plain-accent: #8a5a2b;
+  --bar-h: 48px;
+  --tool-h: 44px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; width: 100%; }
+body {
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+header.bar {
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: .85rem; flex-wrap: wrap;
+  padding: .55rem 1.1rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+}
+header.bar .brand {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .75rem;
+  min-width: 0;
+  flex: 1;
+}
+header.bar .home {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  flex-shrink: 0;
+}
+header.bar .mark {
+  display: block;
+  width: 1.7rem;
+  height: 1.7rem;
+}
+header.bar .logo {
+  font-weight: 650;
+  color: var(--accent);
+  font-size: .95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+header.bar .paper-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .12rem;
+  min-width: 0;
+  flex: 1 1 12rem;
+  max-width: 34rem;
+  padding: .05rem 0 .05rem .85rem;
+  border-left: 1px solid var(--rule);
+}
+header.bar .paper-title {
+  margin: 0;
+  min-width: 0;
+  color: var(--ink);
+  font-size: .86rem;
+  font-weight: 650;
+  line-height: 1.25;
+  font-family: "Iowan Old Style", Palatino, "Songti SC", "Source Han Serif SC", serif;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+header.bar .paper-authors {
+  margin: 0;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 400;
+  line-height: 1.25;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+header.bar .view-tabs { margin-left: auto; flex-shrink: 0; }
+@media (max-width: 720px) {
+  header.bar .brand { flex-wrap: wrap; }
+  header.bar .paper-meta {
+    flex-basis: 100%;
+    max-width: none;
+    margin-top: .2rem;
+    padding-left: 0;
+    border-left: none;
+  }
+}
+.col-toggles {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  align-items: center;
+}
+.col-toggles .tog-label {
+  font-size: .72rem;
+  color: var(--muted);
+  margin-right: .15rem;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  letter-spacing: .04em;
+}
+.col-toggles label.tog {
+  display: inline-flex;
+  align-items: center;
+  gap: .28rem;
+  font-size: .8rem;
+  padding: .22rem .55rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.col-toggles label.tog:hover { border-color: var(--accent); }
+.col-toggles label.tog.on {
+  background: #e8f2f6;
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 600;
+}
+.col-toggles label.tog input { accent-color: var(--accent); margin: 0; }
+.col-toggles label.tog:has(input:disabled) { opacity: .55; cursor: not-allowed; }
+.paper-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .45rem .75rem;
+  padding: .4rem .75rem;
+  background: rgba(250,248,244,.96);
+  border-bottom: 1px solid var(--rule);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  position: sticky;
+  top: var(--bar-h);
+  z-index: 19;
+}
+.paper-toolbar .controls {
+  margin-left: auto;
+  display: flex;
+  gap: .4rem;
+  align-items: center;
+}
+.paper-toolbar .controls button,
+.paper-toolbar .controls select {
+  font: inherit; font-size: .85rem;
+  padding: .25rem .55rem;
+  border: 1px solid var(--rule);
+  background: #fff;
+  border-radius: 4px;
+  cursor: pointer;
+  color: inherit;
+}
+.paper-toolbar .controls button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.labels {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  width: 100%;
+  margin: .45rem 0 0;
+  padding: 0 .65rem;
+  font-size: .7rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.labels span[data-col].off { display: none; }
+.page-block {
+  width: 100%;
+  margin: .5rem 0 1rem;
+  padding: 0 .65rem;
+  scroll-margin-top: calc(var(--bar-h) + var(--tool-h) + 8px);
+}
+.page-label {
+  font-size: .8rem;
+  margin: 0 0 .3rem;
+  color: var(--muted);
+  font-weight: 600;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+}
+.grid4 {
+  display: grid;
+  grid-template-columns: var(--cols, 1fr 1fr 1fr 1fr);
+  gap: .45rem;
+  align-items: stretch;
+  width: 100%;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 78vh;
+  min-width: 0;
+}
+.panel[data-col].off { display: none; }
+.panel.pdf {
+  background: #2a2a2a;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: .35rem;
+}
+.panel.pdf img {
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: 0 2px 10px rgba(0,0,0,.35);
+}
+.panel.ocr, .panel.zh, .panel.plain {
+  padding: .8rem .9rem 1rem;
+  line-height: 1.62;
+  overflow-wrap: anywhere;
+  font-size: .86rem;
+}
+.panel.ocr { font-size: .8rem; }
+.panel.plain {
+  background: var(--plain-bg);
+  border-color: #e0d3bf;
+}
+.panel.plain > .plain-tag {
+  display: inline-block;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .68rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin-bottom: .55rem;
+}
+.panel.ocr h1, .panel.zh h1 {
+  font-size: 1.12rem;
+  margin: .15rem 0 .6rem;
+  color: var(--accent);
+  line-height: 1.3;
+  font-weight: 700;
+}
+.panel.ocr h2, .panel.zh h2 {
+  font-size: 1rem;
+  margin: .9rem 0 .4rem;
+  font-weight: 650;
+}
+.panel.ocr h3, .panel.zh h3 {
+  font-size: .94rem;
+  margin: .75rem 0 .3rem;
+  font-weight: 600;
+}
+.panel p { margin: 0 0 .65rem; text-align: justify; hyphens: auto; }
+.panel.plain p { text-align: left; font-size: .9rem; line-height: 1.7; color: #2a241c; }
+.panel p.paper-title {
+  font-size: 1.15rem; font-weight: 700; text-align: left;
+  color: var(--accent); margin-bottom: .45rem; line-height: 1.35;
+}
+.panel p.meta-line { margin: 0 0 .15rem; color: var(--muted); font-size: .84rem; text-align: left; }
+.panel ul { margin: .1rem 0 .75rem; padding-left: 1.25rem; }
+.panel li { margin: 0 0 .4rem; }
+.panel .def {
+  background: var(--def-bg);
+  border-left: 3px solid var(--accent);
+  padding: .5rem .65rem;
+  margin: .6rem 0;
+  border-radius: 0 4px 4px 0;
+}
+.panel .def-title {
+  font-weight: 700;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .84rem;
+  margin-bottom: .2rem;
+}
+.panel .def p { margin: 0; }
+.panel .proof-label { font-weight: 700; font-style: italic; margin: .6rem 0 .25rem; }
+.panel pre.math {
+  font-family: "Latin Modern Math", "Cambria Math", "Times New Roman", serif;
+  font-size: .78rem;
+  white-space: pre-wrap;
+  background: #f0ebe3;
+  padding: .45rem .55rem;
+  margin: .45rem 0 .7rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+.toc-line {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: .35rem;
+  align-items: end;
+  margin: .15rem 0;
+  font-size: .82rem;
+}
+.toc-dots { border-bottom: 1px dotted #aaa; margin-bottom: .35em; min-width: 1rem; }
+.toc-page { color: var(--muted); font-variant-numeric: tabular-nums; }
+footer.note {
+  width: 100%; margin: 0 0 1rem; padding: 0 .75rem;
+  color: var(--muted); font-size: .76rem;
+}
+footer.site {
+  width: 100%;
+  margin: 0;
+  padding: 1rem 1.1rem 1.2rem;
+  border-top: 1px solid var(--rule);
+  background: rgba(250,248,244,.72);
+  color: var(--muted);
+  font-size: .78rem;
+  text-align: center;
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  line-height: 1.6;
+}
+footer.site .copy {
+  margin: 0 0 .35rem;
+  color: #444;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+footer.site .copy a {
+  color: inherit;
+  font-weight: 500;
+  text-underline-offset: .15em;
+}
+footer.site .legal {
+  margin: 0 auto;
+  max-width: 42rem;
+}
+footer.site .legal a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+footer.site .suggest {
+  margin: .45rem auto 0;
+  max-width: 42rem;
+}
+footer.site .suggest a {
+  color: inherit;
+  text-underline-offset: .15em;
+}
+
+/* seamless lookup popup */
+#dict-pop {
+  position: fixed;
+  z-index: 50;
+  max-width: min(360px, calc(100vw - 24px));
+  background: #fffdf8;
+  border: 1px solid #d7cfc2;
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.14);
+  padding: .7rem .8rem .75rem;
+  display: none;
+  font-family: "IBM Plex Sans", "PingFang SC", "Songti SC", sans-serif;
+  line-height: 1.45;
+}
+#dict-pop.show { display: block; }
+#dict-pop .dw {
+  font-size: .95rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 .15rem;
+}
+#dict-pop .dp {
+  font-size: .78rem;
+  color: #888;
+  margin: 0 0 .4rem;
+}
+#dict-pop .dt {
+  font-size: .84rem;
+  white-space: pre-wrap;
+  color: #2a241c;
+  margin: 0;
+}
+#dict-pop .dm {
+  font-size: .78rem;
+  color: #999;
+  margin: .35rem 0 0;
+}
+#dict-pop .hint {
+  font-size: .68rem;
+  color: #b0a89c;
+  margin-top: .45rem;
+}
+@media (max-width: 900px) {
+  .panel { max-height: none; }
+  .panel.pdf { max-height: 55vh; }
+}
+
+/* pre-reading guide */
+.guide {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.15rem .65rem 1.4rem;
+  background: linear-gradient(180deg, #f4efe6 0%, #efe8db 100%);
+  border-bottom: 1px solid var(--rule);
+  scroll-margin-top: 72px;
+  box-sizing: border-box;
+}
+.guide-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+.guide .eyebrow {
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .72rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--plain-accent);
+  font-weight: 650;
+  margin: 0 0 .35rem;
+}
+.guide h1 {
+  font-size: 1.55rem;
+  line-height: 1.3;
+  margin: 0 0 .55rem;
+  color: var(--accent);
+}
+.guide .lead {
+  font-size: 1.02rem;
+  line-height: 1.75;
+  margin: 0 0 1.1rem;
+  color: #2a241c;
+}
+.guide h2 {
+  font-size: 1.05rem;
+  margin: 1.15rem 0 .45rem;
+  color: var(--accent);
+}
+.guide p, .guide li {
+  font-size: .95rem;
+  line-height: 1.7;
+  margin: 0 0 .55rem;
+}
+.guide ul { margin: .1rem 0 .7rem; padding-left: 1.3rem; }
+.guide .claim {
+  background: #fffdf8;
+  border-left: 4px solid var(--accent);
+  padding: .75rem .9rem;
+  margin: 0 0 1rem;
+  border-radius: 0 8px 8px 0;
+}
+.guide .claim strong { color: var(--accent); }
+.guide .grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin: .4rem 0 1rem;
+}
+.guide .card {
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  padding: .7rem .85rem;
+}
+.guide .card h3 {
+  margin: 0 0 .35rem;
+  font-size: .95rem;
+  color: var(--accent);
+}
+.guide .card p { margin: 0; font-size: .9rem; }
+.guide .map {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .88rem;
+  background: #fffdf8;
+  border: 1px solid #e0d6c6;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: .3rem 0 1rem;
+}
+.guide .map th, .guide .map td {
+  text-align: left;
+  padding: .5rem .7rem;
+  border-bottom: 1px solid #eee6d8;
+  vertical-align: top;
+}
+.guide .map th {
+  background: #e8f2f6;
+  color: var(--accent);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  font-size: .78rem;
+  font-weight: 650;
+}
+.guide .map tr:last-child td { border-bottom: none; }
+.guide .map a { color: var(--accent); text-decoration: none; }
+.guide .map a:hover { text-decoration: underline; }
+.guide .paths {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: .65rem;
+  margin: .3rem 0 1rem;
+}
+.guide.commentary {
+  background: linear-gradient(180deg, #eef3f6 0%, #e7eef3 100%);
+  border-top: 1px solid var(--rule);
+}
+.guide.commentary .eyebrow { color: var(--accent); }
+.guide .note-box {
+  font-size: .86rem;
+  color: var(--muted);
+  margin: 0 0 1rem;
+}
+.guide .cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .55rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+.guide .cta button {
+  font: inherit;
+  font-size: .95rem;
+  padding: .45rem .95rem;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+}
+.guide .cta button:hover { filter: brightness(1.08); }
+.guide .cta .hint { color: var(--muted); font-size: .82rem; }
+@media (max-width: 800px) {
+  .guide .grid2, .guide .paths { grid-template-columns: 1fr; }
+}
+
+/* reading views: 导读 / 正文 / 评论 */
+.view-tabs {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+.view-tabs a {
+  font-size: .85rem;
+  padding: .26rem .95rem;
+  text-decoration: none;
+  color: var(--muted);
+  font-family: "IBM Plex Sans", "PingFang SC", sans-serif;
+  border-right: 1px solid var(--rule);
+  background: #fff;
+}
+.view-tabs a:last-child { border-right: none; }
+.view-tabs a:hover { color: var(--accent); }
+.view-tabs a[aria-selected="true"] {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+html[data-view="guide"] #commentary,
+html[data-view="guide"] .paper-toolbar,
+html[data-view="guide"] .labels,
+html[data-view="guide"] .page-block,
+html[data-view="guide"] footer.note { display: none !important; }
+html[data-view="paper"] #guide,
+html[data-view="paper"] #commentary { display: none !important; }
+html[data-view="comment"] #guide,
+html[data-view="comment"] .paper-toolbar,
+html[data-view="comment"] .labels,
+html[data-view="comment"] .page-block,
+html[data-view="comment"] footer.note { display: none !important; }
+
+</style>
+<script>
+(function () {
+  var h = location.hash.slice(1);
+  var v = "guide";
+  if (h === "commentary") v = "comment";
+  else if (/^page-\d+$/.test(h)) v = "paper";
+  document.documentElement.dataset.view = v;
+})();
+</script>
+<script src="dict/paper-dict.js"></script>
+<script>
+  var _hmt = _hmt || [];
+  (function() {
+    var hm = document.createElement("script");
+    hm.src = "https://hm.baidu.com/hm.js?868def992b6aa420677094b2f0cd5486";
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(hm, s);
+  })();
+</script>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">
+    <a class="home" href="../../../index.html">
+      <img class="mark" src="../../../assets/SurySoft-mark.svg" width="28" height="28" alt="生睿软件">
+      <span class="logo">论文对照阅读</span>
+    </a>
+    <div class="paper-meta">
+      <p class="paper-title" title="MemGPT：走向作为操作系统的大语言模型">MemGPT：走向作为操作系统的大语言模型</p>
+      <p class="paper-authors" title="C. Packer, V. Fang, S. G. Patil, et al.">C. Packer, V. Fang, S. G. Patil, et al.</p>
+    </div>
+  </div>
+  <nav class="view-tabs" role="tablist" aria-label="阅读分区">
+    <a id="tab-guide" href="#guide" role="tab" aria-selected="true" data-view="guide">导读</a>
+    <a id="tab-paper" href="#page-1" role="tab" aria-selected="false" data-view="paper">正文</a>
+    <a id="tab-comment" href="#commentary" role="tab" aria-selected="false" data-view="comment">评论</a>
+  </nav>
+</header>
+<article class="guide" id="guide" data-page="0">
+  <div class="guide-inner">
+<p class="eyebrow">正式阅读前 · 先结论，再定点深挖</p>
+<h1>全文导读</h1>
+<p class="lead">这篇容易被收成「又一个更长窗口」。下面先给出<strong>主张、机制、证据与精读路径</strong>。读完这一页，再带着一个具体问题进入正文。</p>
+
+<div class="claim">
+  <p><strong>一句话主张。</strong> 把 LLM 的上下文窗口当成物理内存，用操作系统式的分层存储与函数调用，让模型自己换页：该进主上下文的检索进来，该出去的驱逐到档案 / 回忆库，从而在固定窗口上做出<strong>无限上下文的错觉</strong>。</p>
+</div>
+
+<h2>和 AI 工程、智能体 / Cordiverse 的关系</h2>
+<p>MemGPT 是记忆 / 上下文侧的 <strong>harness</strong>：不训新权重，只改「模型能看见什么、何时去翻库」。对 AI 工程的用处可以收成一句：长对话和长文档不必先把窗口做到百万标记，先把主存、磁盘和缺页中断设计清楚。</p>
+<p>它和 RAG 的差别是：检索何时发生、检索几页、是否写回工作上下文，由模型用函数自导向决定。和 Cordiverse 的关系见<a href="#commentary">读后评论</a>：换页是动态组合的一种，但驱逐不等于带逆变换的卸载，库与库之间也没有声明式依赖。此处不占导读。</p>
+
+<h2>问题从哪来</h2>
+<p>固定窗口装不下长会话与长文档；硬扩展上下文二次昂贵，且长窗口模型还「lost in the middle」。作者借虚拟内存：应用以为内存无限，其实 OS 在主存与磁盘之间换页。</p>
+
+<h2>机制</h2>
+<p>主上下文 = 系统指令 + 工作上下文 + FIFO 队列；外部 = 回忆存储（消息库）+ 档案存储（任意文本 / 向量库）。队列到约 70% 发内存压力告警，满了驱逐并做递归摘要。函数链用 <code>request heartbeat=true</code> 在交还用户前连续多步检索（图 3，<a href="#page-3">第 3 页</a>）。</p>
+
+<h2>作者实际贡献了什么</h2>
+<ul>
+  <li><strong>OS 类比落地</strong>：虚拟上下文管理 + 事件控制流 + 自导向函数。</li>
+  <li><strong>对话</strong>：DMR 上 GPT-4 从 32.1% 到 92.5%（表 2）；开场任务可超过人手写开场（表 3）。</li>
+  <li><strong>文档</strong>：分页档案搜索，准确率不随塞进窗口的文档数塌缩（图 5）；嵌套 KV 上几乎只有 MemGPT+GPT-4 能多跳（图 7）。</li>
+  <li><strong>开放数据</strong>：增强 MSC、嵌套 KV、2000 万维基嵌入。</li>
+</ul>
+
+<h2>章节地图</h2>
+<table class="map">
+  <thead>
+    <tr><th>章节</th><th>页</th><th>这一章回答什么</th><th>怎么读</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>摘要 · 引言</td>
+      <td><a href="#page-1">1</a>–<a href="#page-2">2</a></td>
+      <td>为何不硬扩窗口；虚拟内存类比；图 1–2。</td>
+      <td>必读。先建立主张。</td>
+    </tr>
+    <tr>
+      <td>§2 机制</td>
+      <td><a href="#page-2">2</a>–<a href="#page-4">4</a></td>
+      <td>图 3；主 / 外存；队列驱逐；函数链与事件。</td>
+      <td>关心机制必读。</td>
+    </tr>
+    <tr>
+      <td>§3.1 对话</td>
+      <td><a href="#page-4">4</a>–<a href="#page-6">6</a></td>
+      <td>一致性 vs 参与度；表 2–3；MSC / DMR。</td>
+      <td>对证据精读表 2。</td>
+    </tr>
+    <tr>
+      <td>§3.2 文档</td>
+      <td><a href="#page-6">6</a>–<a href="#page-8">8</a></td>
+      <td>图 5–8；多文档 QA 与嵌套 KV。</td>
+      <td>盯「检索器封顶」和「会不会继续查」。</td>
+    </tr>
+    <tr>
+      <td>相关工作 · 结论</td>
+      <td><a href="#page-8">8</a></td>
+      <td>长窗口 / RAG / 智能体；主张收束。</td>
+      <td>定位用；看作者承认还想改什么。</td>
+    </tr>
+    <tr>
+      <td>参考文献 · 附录</td>
+      <td><a href="#page-9">9</a>–<a href="#page-13">13</a></td>
+      <td>书目；提示词与评判（英文保留）。</td>
+      <td>复现或核对评分时再读附录。</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>建议的精读路径</h2>
+<div class="paths">
+  <div class="card">
+    <h3>只想抓住思想</h3>
+    <p>本导读 → 图 1–3（<a href="#page-1">第 1–3 页</a>）→ 结论（<a href="#page-8">第 8 页</a>）。</p>
+  </div>
+  <div class="card">
+    <h3>核对数字</h3>
+    <p>表 2 → 图 5 → 图 7。盯基线是「有损摘要 / 一次 top-K」，不是同一检索预算。</p>
+  </div>
+  <div class="card">
+    <h3>关心智能体 / harness</h3>
+    <p>§2.2–2.4 驱逐与 heartbeat → 附录里「答案一定在档案里」的提示 → <a href="#commentary">读后评论</a>：换得出，卸得干净吗。</p>
+  </div>
+</div>
+
+<h2>读正文时的一条纪律</h2>
+<p>每一轮精读前，先写下<strong>这一轮只想搞清的一句话</strong>（例如：「工作上下文和 FIFO 谁能被模型写」「嵌套 KV 为何 GPT-4 Turbo 反而更差」）。读完能用白话复述，这一轮就算过关；复述不出，再回到该页三列。</p>
+<p>英文「文本抽取」列支持划词查词（离线词库）。正文工具栏可开关列：先只开「白话解读」扫地图，再打开译文或 PDF 对读。</p>
+
+<div class="cta">
+  <button type="button" id="start-reading">开始正式阅读 · 第 1 页</button>
+  <button type="button" id="to-comment-from-guide" style="background:#fff;color:var(--accent);border:1px solid var(--accent);">先看读后评论</button>
+  <span class="hint">用顶栏三个标签切换导读、正文与评论。正文工具栏可开关列、翻页跳章节。</span>
+</div>
+
+  </div>
+</article>
+<div class="paper-toolbar" id="paper-toolbar">
+  <div class="col-toggles" role="group" aria-label="列显示">
+    <span class="tog-label">显示列</span>
+    <label class="tog on"><input type="checkbox" data-col-toggle="pdf" checked> PDF</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="ocr" checked> 文本抽取</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="zh" checked> 中文译文</label>
+    <label class="tog on"><input type="checkbox" data-col-toggle="plain" checked> 白话解读</label>
+  </div>
+  <div class="controls">
+    <button type="button" id="prev">上一页</button>
+    <select id="jump" aria-label="跳转页码"></select>
+    <button type="button" id="next">下一页</button>
+  </div>
+</div>
+<div class="labels" id="col-labels">
+  <span data-col="pdf">原始 PDF</span>
+  <span data-col="ocr">文本抽取 · 划词即译</span>
+  <span data-col="zh">中文译文</span>
+  <span data-col="plain">白话解读</span>
+</div>
+<section class="page-block" id="page-1" data-page="1">
+  <div class="page-label">第 1 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-001.jpg" alt="PDF page 1" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems Charles Packer 1 Sarah Wooders 1 Kevin Lin 1 Vivian Fang 1 Shishir G. Patil 1 Ion Stoica 1 Joseph E. Gonzalez 1</p>
+<h1>Abstract</h1>
+<p>Large language models (LLMs) have revolutionized AI, but are constrained by limited context windows, hindering their utility in tasks like extended conversations and document analysis. To enable using context beyond limited context windows, we propose virtual context management, a technique drawing inspiration from hierarchical memory systems in traditional operating systems which provide the illusion of an extended virtual memory via paging between physical memory and disk. Using this technique, we introduce MemGPT (MemoryGPT), a system that intelligently manages different storage tiers in order to effectively provide extended context within the LLM’s limited context window. We evaluate our OS-inspired design in two domains where the limited context windows of modern LLMs severely handicaps their performance: document analysis, where MemGPT is able to analyze large documents that far exceed the underlying LLM’s context window, and multi-session chat, where MemGPT can create conversational agents that remember, reflect, and evolve dynamically through long-term interactions with their users. We release MemGPT code and data for our experiments at https://research.memgpt.ai.</p>
+<h1>1. Introduction</h1>
+<p>In recent years, large language models (LLMs) and their underlying transformer architecture (Vaswani et al., 2017; Devlin et al., 2018; Brown et al., 2020; Ouyang et al., 2022) have become the cornerstone of conversational AI and have led to a wide array of consumer and enterprise applications. Despite these advances, the limited fixed-length context windows used by LLMs significantly hinders their applicability to long conversations or reasoning about long documents. For example, the most widely used open-source 1University of California, Berkeley. Correspondence to: Charles Packer &lt;cpacker@berkeley.edu&gt;. LLMs can only support a few dozen back-and-forth messages or reason about a short document before exceeding their maximum input length (Touvron et al., 2023). Directly extending the context length of transformers incurs a quadratic increase in computational time and memory cost due to the transformer architecture’s self-attention mechanism, making the design of new long-context architectures a pressing research challenge (Dai et al., 2019; Kitaev et al., 2020; Beltagy et al., 2020). While developing longer models is an active area of research (Dong et al., 2023), even if we could overcome the computational challenges of context scaling, recent research shows that longcontext models struggle to utilize additional context effectively (Liu et al., 2023a). As consequence, given the considerable resources needed to train state-of-the-art LLMs and diminishing returns of context scaling, there is a critical need for alternative techniques to support long context. In this paper, we study how to provide the illusion of an infinite context while continuing to use fixed-context models. Our approach borrows from the idea of virtual memory paging that was developed to enable applications to work on datasets that far exceed the available memory by paging data between main memory and disk. We leverage the recent progress in function calling abilities of LLM agents (Schick et al., 2023; Liu et al., 2023b) to design MemGPT, an OS-inspired LLM system for virtual context management. Using function calls, LLM agents can read and write to external data sources, modify their own context, and choose when to return responses to the user. These capabilities allow LLMs to effective “page” in and out information between context windows (analogous to “main memory” in operating systems) and external storage, similar to hierarchical memory in traditional OSes. In addition, function calls can be leveraged to manage control flow between context management, response generation, and user interactions. This allows for an agent to choose to iteratively modify what is in its context for a single task, thereby more effectively utilizing its limited context. In MemGPT, we treat context windows as a constrained memory resource, and design a memory hiearchy for LLMs analogous to memory tiers used in traditional OSes (Patterson et al., 1988). Applications in traditional OSes interact arXiv:2310.08560v2 [cs.AI] 12 Feb 2024</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>Charles Packer 1 Sarah Wooders 1 Kevin Lin 1</p>
+<p>Vivian Fang 1 Shishir G. Patil 1 Ion Stoica 1 Joseph E. Gonzalez 1</p>
+<h1>摘要</h1>
+<p>大语言模型（LLM）已经革新了人工智能，但其效用受限于有限的上下文窗口，在长对话与文档分析等任务中受到阻碍。为在有限上下文窗口之外使用上下文，我们提出虚拟上下文管理：一种受传统操作系统分层存储启发的技术——操作系统通过在物理内存与磁盘之间换页，提供扩展虚拟内存的错觉。利用该技术，我们引入 MemGPT（MemoryGPT）：一个智能管理不同存储层级的系统，从而在 LLM 有限的上下文窗口内有效提供扩展上下文。我们在两个现代 LLM 有限上下文严重制约性能的领域评估这一受操作系统启发的设计：文档分析——MemGPT 能够分析远超底层 LLM 上下文窗口的大文档；以及多会话聊天——MemGPT 可以创建在与用户的长期交互中记忆、反思并动态演化的对话智能体。我们在 https://research.memgpt.ai 发布 MemGPT 代码与实验数据。</p>
+<h1>1. 引言</h1>
+<p>近年来，大语言模型（LLM）及其底层的 transformer 架构（Vaswani et al., 2017; Devlin et al., 2018; Brown et al., 2020; Ouyang et al., 2022）已成为对话式 AI 的基石，并带来广泛的消费与企业应用。尽管有这些进展，LLM 所使用的有限固定长度上下文窗口显著阻碍了它们对长对话或长文档推理的适用性。例如，使用最广泛的开源 LLM 在超出最大输入长度之前，往往只能支持几十轮来回消息，或对短文档进行推理（Touvron et al., 2023）。</p>
+<p>直接扩展 transformer 的上下文长度，会因自注意力机制而带来计算时间与内存成本的二次增长，使设计新的长上下文架构成为紧迫的研究挑战（Dai et al., 2019; Kitaev et al., 2020; Beltagy et al., 2020）。尽管开发更长模型是活跃研究方向（Dong et al., 2023），即便能够克服上下文扩展的计算挑战，近期研究也表明长上下文模型难以有效利用额外上下文（Liu et al., 2023a）。因此，鉴于训练最先进 LLM 所需的可观资源以及上下文扩展的收益递减，迫切需要支持长上下文的替代技术。</p>
+<p>在本文中，我们研究如何在继续使用固定上下文模型的同时，提供无限上下文的错觉。我们的方法借鉴虚拟内存换页的思想：该思想被发展出来，使应用能够处理远超可用内存的数据集，方法是在主存与磁盘之间换页。我们利用 LLM 智能体函数调用能力的近期进展（Schick et al., 2023; Liu et al., 2023b）来设计 MemGPT，一个受操作系统启发、用于虚拟上下文管理的 LLM 系统。通过函数调用，LLM 智能体可以读写外部数据源、修改自身上下文，并选择何时向用户返回响应。</p>
+<p>这些能力使 LLM 能够在上下文窗口（类比操作系统中的「主存」）与外部存储之间有效地「换入」「换出」信息，类似于传统操作系统中的分层存储。此外，函数调用可用于管理上下文管理、响应生成与用户交互之间的控制流。这允许智能体为单一任务迭代修改其上下文中的内容，从而更有效地利用有限上下文。</p>
+<p>在 MemGPT 中，我们将上下文窗口视为受约束的内存资源，并为 LLM 设计类似于传统操作系统所用存储层级的内存层次（Patterson et al., 1988）。传统操作系统中的应用与</p>
+<p>arXiv:2310.08560v2 [cs.AI] 12 Feb 2024</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页给出全文主张：不要硬把上下文窗口拉无限长，而要像操作系统对内存换页那样，让模型自己管理「主上下文」和外部存储。MemGPT 用函数调用决定读什么、写什么、何时答用户。
+这很重要，因为它把长对话和长文档从「模型记性不够」改成「存储层级设计」问题。
+类比：电脑内存只有 16GB，但靠虚拟内存能打开远大于内存的文件——文件在磁盘上，用到的那一页才进内存。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-2" data-page="2">
+  <div class="page-label">第 2 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-002.jpg" alt="PDF page 2" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems working_context.append(“Birthday is February 7”) Oh wow, happy birthday! 🎂 fun my bf james baked me a birthday cake How was your day today? February 7 working_context.append(“Boyfriend named James”) System Alert: Memory Pressure Figure 1. MemGPT (left) writes data to persistent memory after it receives a system alert about limited context space. with virtual memory, which provides an illusion of there being more memory resources than are actually available in physical (i.e., main) memory by the OS paging overflow data to disk and retrieving data (via a page fault) back into memory when accessed by applications. To provide a similar illusion of longer context length (analogous to virtual memory), we allow the LLM to manage what is placed in its own context (analogous to physical memory) via an ‘LLM OS’, which we call MemGPT. MemGPT enables the LLM to retrieve relevant historical data missing from what is placed in-context, and also evict less relevant data from context and into external storage systems. Figure 3 illustrates the components of MemGPT. The combined use of a memory-hierarchy, OS functions and event-based control flow allow MemGPT to handle unbounded context using LLMs that have finite context windows. To demonstrate the utility of our new OSinspired LLM system, we evaluate MemGPT on two domains where the performance of existing LLMs is severely limited by finite context: document analysis, where the length of standard text files can quickly exceed the input capacity of modern LLMs, and conversational agents, where LLMs bound by limited conversation windows lack context awareness, persona consistency, and long-term memory during extended conversations. In both settings, MemGPT is able to overcome the limitations of finite context to outperform existing LLM-based approaches.</p>
+<h1>2. MemGPT (MemoryGPT)</h1>
+<p>MemGPT’s OS-inspired multi-level memory architecture delineates between two primary memory types: main context (analogous to main memory/physical memory/RAM) and external context (analogous to disk memory/disk storage). Main context consists of the LLM prompt tokens— anything in main context is considered in-context and can be accessed by the LLM processor during inference. External context refers to any information that is held outside of the LLMs fixed context window. This out-of-context data yeah we went to six ﬂags! Did you do anything else to celebrate your birthday? 😊 February 7 Showing 3 of 3 results (page 1/1): [01/24/2024] “lol yeah six ﬂags”, [01/14/2024] “i love six ﬂags been like 100 times”, [10/12/2023] “james and I actually ﬁrst met at six ﬂags” Did you go with James? It’s so cute how both met there! recall_storage.search(“six flags”) Figure 2. MemGPT (left) can search out-of-context data to bring relevant information into the current context window. must always be explicitly moved into main context in order for it to be passed to the LLM processor during inference. MemGPT provides function calls that the LLM processor to manage its own memory without any user intervention.</p>
+<h2>2.1. Main context (prompt tokens)</h2>
+<p>The prompt tokens in MemGPT are split into three contiguous sections: the system instructions, working context, and FIFO Queue. The system instructions are readonly (static) and contain information on the MemGPT control flow, the intended usage of the different memory levels, and instructions on how to use the MemGPT functions (e.g. how to retrieve out-of-context data). Working context is a fixed-size read/write block of unstructured text, writeable only via MemGPT function calls. In conversational settings, working context is intended to be used to store key facts, preferences, and other important information about the user and the persona the agent is adopting, allowing the agent to converse fluently with the user. The FIFO queue stores a rolling history of messages, including messages between the agent and user, as well as system messages (e.g. memory warnings) and function call inputs and outputs. The first index in the FIFO queue stores a system message containing a recursive summary of messages that have been evicted from the queue.</p>
+<h2>2.2. Queue Manager</h2>
+<p>The queue manager manages messages in recall storage and the FIFO queue. When a new message is received by the system, the queue manager appends the incoming messages to the FIFO queue, concatenates the prompt tokens and triggers the LLM inference to generate LLM output (the completion tokens). The queue manager writes both the incoming message and the generated LLM output to recall storage (the MemGPT message database). When messages in recall storage are retrieved via a MemGPT function call, the queue manager appends them to the back of</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>图 1：MemGPT（左）在收到关于上下文空间有限的系统告警后，将数据写入持久内存。</p>
+<p>虚拟内存交互，后者通过操作系统将溢出数据换到磁盘、并在应用访问时经缺页中断取回，提供比物理（即主）内存实际可用更多内存资源的错觉。为提供类似的更长上下文长度错觉（类比虚拟内存），我们允许 LLM 通过一个「LLM OS」（我们称之为 MemGPT）管理放入自身上下文（类比物理内存）的内容。MemGPT 使 LLM 能够检索上下文中缺失的相关历史数据，也将不太相关的数据从上下文驱逐到外部存储系统。图 3 展示了 MemGPT 的组件。</p>
+<p>内存层次、操作系统函数与基于事件的控制流的结合，使 MemGPT 能够用上下文窗口有限的 LLM 处理无界上下文。为展示这一受操作系统启发的 LLM 系统的效用，我们在两个现有 LLM 性能受有限上下文严重限制的领域评估 MemGPT：文档分析——标准文本文件的长度可迅速超过现代 LLM 的输入容量；以及对话智能体——受有限对话窗口约束的 LLM 在扩展对话中缺乏上下文意识、人设一致性与长期记忆。在这两种设定下，MemGPT 都能克服有限上下文的限制，优于现有基于 LLM 的方法。</p>
+<h1>2. MemGPT（MemoryGPT）</h1>
+<p>MemGPT 受操作系统启发的多级内存架构区分两种主要内存类型：主上下文（类比主存 / 物理内存 / RAM）与外部上下文（类比磁盘存储）。主上下文由 LLM 提示标记组成——主上下文中的任何内容都被视为在上下文中，可在推理时被 LLM 处理器访问。外部上下文指持有在 LLM 固定上下文窗口之外的任何信息。这些上下文外数据必须始终被显式移入主上下文，才能在推理时传给 LLM 处理器。</p>
+<p>MemGPT 提供函数调用，使 LLM 处理器能在无用户干预的情况下管理自身内存。</p>
+<p class="meta-line">2.1 主上下文（提示标记）</p>
+<p>MemGPT 中的提示标记被分成三个连续部分：系统指令、工作上下文与 FIFO 队列。系统指令只读（静态），包含关于 MemGPT 控制流、不同内存层级预期用途、以及如何使用 MemGPT 函数（例如如何检索上下文外数据）的信息。工作上下文是固定大小的读写无结构文本块，仅可通过 MemGPT 函数调用写入。在对话设定中，工作上下文旨在存储关于用户以及智能体所采用人设的关键事实、偏好与其他重要信息，使智能体能够与用户流畅交谈。FIFO 队列存储滚动的消息历史，包括智能体与用户之间的消息，以及系统消息（例如内存告警）和函数调用的输入与输出。FIFO 队列的第一个索引存储一条系统消息，其中包含已被驱逐出队列的消息的递归摘要。</p>
+<p class="meta-line">2.2 队列管理器</p>
+<p>队列管理器管理回忆存储与 FIFO 队列中的消息。当系统收到新消息时，队列管理器将传入消息追加到 FIFO 队列，拼接提示标记并触发 LLM 推理以生成 LLM 输出（补全标记）。队列管理器将传入消息与生成的 LLM 输出都写入回忆存储（MemGPT 消息数据库）。当回忆存储中的消息经 MemGPT 函数调用被检索时，队列管理器将它们追加到队列末尾，以重新插入 LLM 的上下文窗口。</p>
+<p>图 2：MemGPT（左）可以搜索上下文外数据，将相关信息带入当前上下文窗口。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把操作系统类比落到零件：主上下文像内存（系统指令 + 工作上下文 + FIFO 队列），外部上下文像磁盘；队列管理器负责追加、驱逐和「内存压力」告警。
+这很重要，因为它解释模型不是「多记一点」，而是自己决定哪段进窗口、哪段进库。
+类比：办公桌只放正在写的那一页，旧稿进抽屉；抽屉满了先提醒你摘要点，再整叠归档。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-3" data-page="3">
+  <div class="page-label">第 3 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-003.jpg" alt="PDF page 3" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems System Instructions Working Context Output Buﬀer Read-Only (static) MemGPT System Prompt Read-Write Write via Functions Read-Write Write via Queue Manager LLM Finite Context Window (e.g. 8k tokens) FIFO Queue Recall Storage Read via Functions Write via Queue Manager Read via Functions Write via Functions Prompt Tokens Completion Tokens Function Executor Queue Manager Archival Storage Figure 3. In MemGPT, a fixed-context LLM processor is augmented with a hierarchical memory system and functions that let it manage its own memory. The LLM’s prompt tokens (inputs), or main context, consist of the system instructions, working context, and a FIFO queue. The LLM completion tokens (outputs) are interpreted as function calls by the function executor. MemGPT uses functions to move data between main context and external context (the archival and recall storage databases). The LLM can request immediate follow-up LLM inference to chain function calls together by generating a special keyword argument (request heartbeat=true) in its output; function chaining is what allows MemGPT to perform multi-step retrieval to answer user queries. the queue to reinsert them into the LLM’s context window. The queue manager is also responsible for controlling context overflow via a queue eviction policy. When the prompt tokens exceed the ‘warning token count‘ of the underlying LLM’s context window (e.g. 70% of the context window), the queue manager inserts a system message into the queue warning the LLM of an impending queue eviction (a ‘memory pressure‘ warning) to allow the LLM to use MemGPT functions to store important information contained in the FIFO queue to working context or archival storage (a read/write database storing arbitrary length text objects). When the prompt tokens exceed the ‘flush token count’ (e.g. 100% of the context window), the queue manager flushes the queue to free up space in the context window: the queue manager evicts a specific count of messages (e.g. 50% of the context window), generates a new recursive summary using the existing recursive summary and evicted messages. Once the queue is flushed, the evicted messages are no longer in-context and immediately viewable to the LLM, however they are stored indefinitely in recall storage and readable via MemGPT function calls.</p>
+<h2>2.3. Function executor (handling of completion tokens)</h2>
+<p>MemGPT orchestrates data movement between main context and external context via function calls that are generated by the LLM processor. Memory edits and retrieval are entirely self-directed: MemGPT autonomously updates and searches through its own memory based on the current context. For instance, it can decide when to move items between contexts (e.g. when the conversation history is becoming too long, as show in Figure 1) and modify its main context to better reflect its evolving understanding of its current objectives and responsibilities (as shown in Figure 3). We implement self-directed editing and retrieval by providing explicit instructions within the system instructions that guide the LLM on how to interact with the MemGPT memory systems. These instructions comprise two main components: (1) a detailed description of the memory hierarchy and their respective utilities, and (2) a function schema (complete with their natural language descriptions) that the system can call to access or modify its memory. During each inference cycle, LLM processor takes main context (concatenated into a single string) as input, and generates an output string. This output string is parsed by MemGPT to ensure correctness, and if the parser validates the function arguments the function is executed. The results, including any runtime errors that occur (e.g. trying to add to main context when it is already at maximum capacity), are then fed back to the processor by MemGPT. This feedback loop enables the system to learn from its actions and adjust its behavior accordingly. Awareness of context limits is a key aspect in making the self-editing mechanism work effectively, to this end MemGPT prompts the processor with warnings regarding token limitations to guide its memory management decisions. Additionally, our memory retrieval mechanisms are designed to be cognizant of these token constraints and implement pagination to prevent retrieval calls from overflowing the context window.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>图 3：在 MemGPT 中，固定上下文的 LLM 处理器被增强以分层存储系统以及让它管理自身内存的函数。LLM 的提示标记（输入）即主上下文，由系统指令、工作上下文与 FIFO 队列组成。LLM 的补全标记（输出）由函数执行器解释为函数调用。MemGPT 用函数在主上下文与外部上下文（档案存储与回忆存储数据库）之间移动数据。LLM 可在输出中生成特殊关键字参数（request heartbeat=true）来请求立即后续的 LLM 推理，以把函数调用串起来；函数链正是使 MemGPT 能多步检索以回答用户查询的机制。</p>
+<p>队列管理器也负责通过队列驱逐策略控制上下文溢出。当提示标记超过底层 LLM 上下文窗口的「告警标记数」（例如窗口的 70%）时，队列管理器向队列插入一条系统消息，警告即将发生的队列驱逐（「内存压力」告警），以使 LLM 能用 MemGPT 函数将 FIFO 队列中的重要信息存入工作上下文或档案存储（一个存储任意长度文本对象的读写数据库）。当提示标记超过「刷新标记数」（例如窗口的 100%）时，队列管理器刷新队列以释放上下文窗口空间：驱逐特定数量的消息（例如窗口的 50%），并用现有递归摘要与被驱逐消息生成新的递归摘要。一旦队列被刷新，被驱逐的消息不再在上下文中、不能立即被 LLM 看见，但它们被无限期存储在回忆存储中，并可通过 MemGPT 函数调用读取。</p>
+<p class="meta-line">2.3 函数执行器（补全标记的处理）</p>
+<p>MemGPT 通过由 LLM 处理器生成的函数调用，编排主上下文与外部上下文之间的数据移动。内存编辑与检索完全是自导向的：MemGPT 基于当前上下文自主更新并搜索自身内存。例如，它可以决定何时在上下文之间移动条目（例如当对话历史变得过长时，如图 1 所示），并修改其主上下文以更好反映对当前目标与职责的演化理解（如图 3 所示）。我们通过在系统指令中提供明确指导 LLM 如何与 MemGPT 内存系统交互的说明，实现自导向编辑与检索。这些指令包含两个主要部分：（1）对内存层次及其各自效用的详细描述；（2）系统可调用以访问或修改其内存的函数模式（附带自然语言描述）。</p>
+<p>在每个推理周期中，LLM 处理器以主上下文（拼接为单一字符串）为输入，并生成输出字符串。该输出字符串由 MemGPT 解析以确保正确性；若解析器验证了函数参数，则执行函数。结果——包括发生的任何运行时错误（例如在主上下文已达最大容量时试图向其添加内容）——随后由 MemGPT 反馈给处理器。这一反馈环使系统能从其行动中学习并相应调整行为。对上下文限制的觉察是使自编辑机制有效工作的关键方面；为此 MemGPT 用关于标记限制的告警提示处理器，以指导其内存管理决策。此外，我们的内存检索机制被设计为感知这些标记约束，并实现分页以防止检索调用溢出上下文窗口。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是机制核心：图 3 画出主上下文、档案库、回忆库和函数链；内存压力到 70% 先警告，满了再驱逐一半并做递归摘要；模型自己发函数，错了把报错喂回去。
+这很重要，因为它说明「无限上下文」其实是多步检索 + 自管理，不是真把窗口撑破。
+类比：操作系统缺页中断——程序以为内存无限，其实内核在悄悄换页；这里换页的决策交给模型自己下。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-4" data-page="4">
+  <div class="page-label">第 4 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-004.jpg" alt="PDF page 4" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems Table 1. Comparing context lengths of commonly used models and LLM APIs (data collected 1/2024). *Approximate message count assuming a preprompt of 1k tokens, and an average message size of ∼50 tokens (∼250 characters). ‘Open’ means the model is open-source or open-weights (vs only available behind an API). Context Window Model / API name Open? Tokens ∗Messages Llama (1) ✓ 2k Llama 2 ✓ 4k GPT-3.5 Turbo (release) ✗ 4k Mistral 7B ✓ 8k GPT-4 (release) ✗ 8k GPT-3.5 Turbo ✗ 16k GPT-4 ✗ 32k ∼600 Claude 2 ✗ 100k ∼2000 GPT-4 Turbo ✗ 128k ∼2600 Yi-34B-200k ✓ 200k ∼4000</p>
+<h2>2.4. Control flow and function chaining</h2>
+<p>In MemGPT, events trigger LLM inference: events are generalized inputs to MemGPT and can consist of user messages (in chat applications), system messages (e.g. main context capacity warnings), user interactions (e.g. an alert that a user just logged in, or an alert that they finished uploading a document), and timed events that are run on a regular schedule (allowing MemGPT to run ‘unprompted’ without user intervention). MemGPT processes events with a parser to convert them into plain text messages that can be appended to main context and eventually be fed as input into the LLM processor. Many practical tasks require calling multiple functions in sequence, for example, navigating through multiple pages of results from a single query or collating data from different documents in main context from separate queries. Function chaining allows MemGPT to execute multiple function calls sequentially before returning control to the user. In MemGPT, functions can be called with a special flag that requests control be immediately returned to the processor after the requested function completes execution. If this flag is present, MemGPT will add the function output to main context and (as opposed to pausing processor execution). If this flag is not present (a yield), MemGPT will not run the LLM processor until the next external event trigger (e.g. a user message or scheduled interrupt).</p>
+<h1>3. Experiments</h1>
+<p>We assess MemGPT in two long-context domains: conversational agents and document analysis. For conversational agents, we expand the existing Multi-Session Chat dataset (Xu et al., 2021) and introduce two new dialogue tasks that evaluate an agent’s ability to retain knowledge working_context.replace( “Boyfriend named James”, “Ex-boyfriend named James” ) Sorry to hear that - hope you’re OK 💔 actually james and i broke up How’s James doing? Any special plans today? February 14 Figure 4. An example conversation snippet where MemGPT (left) updates stored information. Here the information is stored in working context memory (located within the prompt tokens). across long conversations. For document analysis, we benchmark MemGPT on existing tasks from (Liu et al., 2023a) for question answering and key-value retrieval over lengthy documents. We also propose a new nested keyvalue retrieval task requiring collating information across multiple data sources, which tests the ability of an agent to collate information from multiple data sources (multihop retrieval). We publicly release our augmented MSC dataset, nested KV retrieval dataset, and a dataset of embeddings for 20M Wikipedia articles to facilitate future research. Our code for the benchmarks is available at https://research.memgpt.ai. Implementation details. When discussing OpenAI models, unless otherwise specified ‘GPT-4 Turbo’ refers to the specific gpt-4-1106-preview model endpoint (context window of 128, 000), ‘GPT-4‘ refers to gpt-4-0613 (context window of 8, 192), and ‘GPT-3.5 Turbo‘ refers to gpt-3.5-turbo-1106 (context window of 16, 385). In experiments, we run MemGPT with all baseline models (GPT-4, GPT-4 Turbo, and GPT 3.5) to show how the underlying model performance affects MemGPT’s.</p>
+<h2>3.1. MemGPT for conversational agents</h2>
+<p>Conversational agents like virtual companions and personalized assistants aim to engage users in natural, long-term interactions, potentially spanning weeks, months, or even years. This creates challenges for models with fixed-length contexts, which can only reference a limited history of the conversation. An ‘infinite context’ agent should seamlessly handle continuous exchanges without boundary or reset. When conversing with a user, such an agent must satisfy two key criteria: (1) Consistency - The agent should maintain conversational coherence. New facts, preferences, and events mentioned should align with prior statements from both the user and agent. (2) Engagement - The agent should draw on long-term knowledge about the user to personalize</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>表 1：常用模型与 LLM API 的上下文长度比较（数据收集于 2024 年 1 月）。*近似消息数假设预提示 1k 标记、平均消息约 50 标记（约 250 字符）。「开放」表示模型开源或开放权重（相对仅 API 可用）。</p>
+<p>上下文窗口 / 模型或 API 名称 / 开放？ / 标记 / *消息</p>
+<p>Llama (1) ✓ 2k</p>
+<p>Llama 2 ✓ 4k</p>
+<p>GPT-3.5 Turbo（发布） ✗ 4k</p>
+<p>Mistral 7B ✓ 8k</p>
+<p>GPT-4（发布） ✗ 8k</p>
+<p>GPT-3.5 Turbo ✗ 16k</p>
+<p>GPT-4 ✗ 32k 约 600</p>
+<p>Claude 2 ✗ 100k 约 2000</p>
+<p>GPT-4 Turbo ✗ 128k 约 2600</p>
+<p>Yi-34B-200k ✓ 200k 约 4000</p>
+<p class="meta-line">2.4 控制流与函数链</p>
+<p>在 MemGPT 中，事件触发 LLM 推理：事件是对 MemGPT 的广义输入，可包括用户消息（在聊天应用中）、系统消息（例如主上下文容量告警）、用户交互（例如用户刚登录的告警，或用户完成上传文档的告警），以及按常规日程运行的定时事件（允许 MemGPT 在无用户干预的情况下「主动」运行）。MemGPT 用解析器将事件转为纯文本消息，可追加到主上下文并最终作为输入送入 LLM 处理器。</p>
+<p>许多实际任务需要按序调用多个函数，例如浏览单次查询的多页结果，或从不同文档的分离查询中在主上下文整理数据。函数链允许 MemGPT 在将控制返回给用户之前顺序执行多个函数调用。在 MemGPT 中，函数可带一个特殊标志被调用，该标志请求在所请求函数执行完成后立即将控制返回给处理器。若该标志存在，MemGPT 将把函数输出加入主上下文并继续（而不是暂停处理器执行）。若该标志不存在（一次让出），MemGPT 将不运行 LLM 处理器，直到下一次外部事件触发（例如用户消息或计划中断）。</p>
+<h1>3. 实验</h1>
+<p>我们在两个长上下文领域评估 MemGPT：对话智能体与文档分析。对于对话智能体，我们扩展现有的 Multi-Session Chat 数据集（Xu et al., 2021），并引入两项新的对话任务，评估智能体在长对话中保持知识的能力。</p>
+<p>图 4：一段对话片段示例，其中 MemGPT（左）更新已存储信息。此处信息存储在工作上下文内存中（位于提示标记之内）。</p>
+<p>对于文档分析，我们在来自（Liu et al., 2023a）的现有任务上对问答与长文档上的键值检索对 MemGPT 做基准测试。我们还提出一项新的嵌套键值检索任务，要求跨多个数据源整理信息，以测试智能体从多个数据源整理信息的能力（多跳检索）。我们公开发布增强的 MSC 数据集、嵌套 KV 检索数据集，以及 2000 万篇维基百科文章的嵌入数据集，以促进未来研究。基准代码见 https://research.memgpt.ai。</p>
+<p class="lead"><strong>实现细节。</strong>讨论 OpenAI 模型时，除非另行说明，「GPT-4 Turbo」指特定的 gpt-4-1106-preview 模型端点（上下文窗口 128,000），「GPT-4」指 gpt-4-0613（上下文窗口 8,192），「GPT-3.5 Turbo」指 gpt-3.5-turbo-1106（上下文窗口 16,385）。实验中，我们用所有基线模型（GPT-4、GPT-4 Turbo 与 GPT-3.5）运行 MemGPT，以展示底层模型性能如何影响 MemGPT。</p>
+<p class="meta-line">3.1 面向对话智能体的 MemGPT</p>
+<p>像虚拟伴侣与个性化助手这样的对话智能体，旨在让用户参与自然、长期的交互，可能跨越数周、数月甚至数年。这给具有固定长度上下文的模型带来挑战，它们只能引用有限的对话历史。一个「无限上下文」智能体应无边界或重置地无缝处理连续交流。</p>
+<p>与用户交谈时，这样的智能体必须满足两个关键标准：（1）一致性——智能体应保持对话连贯。提及的新事实、偏好与事件应与用户和智能体先前的陈述对齐。（2）参与度——智能体应利用关于用户的长期知识来个性化</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用表 1 提醒：即便 128k 窗口也装不下真正的长对话；然后介绍函数链（heartbeat）和评测计划——多会话聊天、文档问答、嵌套键值。
+这很重要，因为它把「无限上下文」拆成可测的一致性与参与度，而不是体感记性好。
+类比：不是把书包做得更大，而是考你能不能从储物柜里把半年前的纸条准确翻出来，还能据此打招呼。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-5" data-page="5">
+  <div class="page-label">第 5 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-005.jpg" alt="PDF page 5" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems Table 2. Deep memory retrieval (DMR) performance. In this task, the agent is asked a specific question about a topic discussed in a prior conversation (sessions 1–5). The agent’s response is scored against the gold answer. MemGPT significantly outperforms the fixed-context baselines. Model Accuracy ⇑ ROUGE-L (R) ⇑ GPT-3.5 Turbo 38.7% 0.394 + MemGPT 66.9% 0.629 GPT-4 32.1% 0.296 + MemGPT 92.5% 0.814 GPT-4 Turbo 35.3% 0.359 + MemGPT 93.4% 0.827 responses. Referencing prior conversations makes dialogue more natural and engaging. We therefore assess our proposed system, MemGPT, on these two criteria: (1) Does MemGPT leverage its memory to improve conversation consistency? Can it remember relevant facts, preferences, and events from past interactions to maintain coherence? (2) Does MemGPT produce more engaging dialogue by taking advantage of memory? Does it spontaneously incorporate long-range user information to personalize messages? By evaluating on consistency and engagement, we can determine how well MemGPT handles the challenges of long-term conversational interaction compared to fixed-context baselines. Its ability to satisfy these criteria will demonstrate whether unbounded context provides meaningful benefits for conversational agents. Dataset. We evaluate MemGPT and our fixed-context baselines on the Multi-Session Chat (MSC) dataset introduced by Xu et al. (2021), which contains multi-session chat logs generated by human labelers, each of whom was asked to play a consistent persona for the duration of all sessions. Each multi-session chat in MSC has five total sessions, and each session consists of a roughly a dozen messages. As part of our consistency experiments, we created a new session (session 6) that contains a single questionanswer response pair between the same two personas.</p>
+<h3>3.1.1. DEEP MEMORY RETRIEVAL TASK</h3>
+<p>(CONSISTENCY). We introduce a new ‘deep memory retrieval’ (DMR) task based on the MSC dataset designed to test the consistency of a conversational agent. In DMR, the conversational agent is asked a question by the user that explicitly refers back to a prior conversation and has a very narrow expected answer range. We generated the DMR question-answer (QA) pairs using a separate LLM that was instructed to write a question from one user to another that could only be answered correctly using knowledge gained from the past Table 3. Conversation opener performance. The agent’s conversation opener is evaluated using similarity scores to the gold persona labels (SIM-1/3) and to the human-created opener (SIMH). MemGPT is able to exceed the performance of the humancreated conversation opener with a variety of underlying models. Method ⇑SIM-1 SIM-3 SIM-H Human 0.800 0.800 1.000 GPT-3.5 Turbo 0.830 0.812 0.817 GPT-4 0.868 0.843 0.773 GPT-4 Turbo 0.857 0.828 0.767 sessions (see Appendix for further details). We evaluate the quality of the generated response against the ‘gold response’ using ROUGE-L scores (Lin, 2004) and an ‘LLM judge’, which is instructed to evaluate whether or not the generated response is consistent with the gold response (GPT-4 has been shown to have high agreement with human evaluators (Zheng et al., 2023)). In practice, we notice that the generated responses (from both MemGPT and the baselines) were generally more verbose than the gold responses. We use the ROUGE-L recall (R) metric to account for the verbosity of the generated agent replies compared to the relatively short gold answer labels. MemGPT utilizes memory to maintain coherence: Table 2 shows the performance of MemGPT vs the fixedmemory baselines. We compare MemGPT using different underlying LLMs, and compare against using the base LLM without MemGPT as a baseline. The baselines are able to see a lossy summarization of the past five conversations to mimic an extended recursive summarization procedure, while MemGPT instead has access to the full conversation history but must access it via paginated search queries to recall memory (in order to bring them into main context). In this task, we see that MemGPT clearly improves the performance of the underlying base LLM: there is a clear drop in both accuracy and ROUGE scores when going from MemGPT to the corresponding LLM baselines.</p>
+<p>3.1.2. CONVERSATION OPENER TASK (ENGAGEMENT). In the ‘conversation opener’ task we evaluate an agent’s ability to craft engaging messages to the user that draw from knowledge accumulated in prior conversations. To evaluate the ‘engagingness’ of a conversation opener using the MSC dataset, we compare the generated opener to the gold personas: an engaging conversation opener should draw from one (or several) of the data points contained in the persona, which in MSC effectively summarize the knowledge accumulated throughout all prior sessions. We also compare to the human-generated gold opener, i.e., the</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>表 2：深度记忆检索（DMR）性能。在此任务中，智能体被问及先前对话（会话 1–5）中讨论过的特定主题。智能体的回答对照金标准答案评分。MemGPT 显著优于固定上下文基线。</p>
+<p>模型 / 准确率↑ / ROUGE-L (R)↑</p>
+<p>GPT-3.5 Turbo 38.7% 0.394</p>
+<p>+ MemGPT 66.9% 0.629</p>
+<p>GPT-4 32.1% 0.296</p>
+<p>+ MemGPT 92.5% 0.814</p>
+<p>GPT-4 Turbo 35.3% 0.359</p>
+<p>+ MemGPT 93.4% 0.827</p>
+<p class="lead"><strong>响应。</strong>引用先前对话使对话更自然、更有参与感。</p>
+<p>因此，我们在这两项标准上评估所提出的系统 MemGPT：（1）MemGPT 是否利用其内存改善对话一致性？它能否记住来自过去交互的相关事实、偏好与事件以保持连贯？（2）MemGPT 是否通过利用内存产生更有参与感的对话？它是否自发纳入长程用户信息以个性化消息？通过在一致性与参与度上评估，我们可以确定 MemGPT 相较固定上下文基线，对长期对话交互挑战的处理有多好。其满足这些标准的能力将证明无界上下文是否为对话智能体提供有意义的收益。</p>
+<p class="lead"><strong>数据集。</strong>我们在 Xu et al.（2021）引入的 Multi-Session Chat（MSC）数据集上评估 MemGPT 与固定上下文基线；该数据集包含由人类标注者生成的多会话聊天日志，每位标注者被要求在所有会话期间扮演一致的人设。MSC 中每个多会话聊天共有五个会话，每个会话大约十几条消息。作为一致性实验的一部分，我们创建了一个新会话（会话 6），其中包含同一两人设之间的单对问答。</p>
+<p class="meta-line">3.1.1 深度记忆检索任务（一致性）</p>
+<p>我们基于 MSC 数据集引入一项新的「深度记忆检索」（DMR）任务，旨在测试对话智能体的一致性。在 DMR 中，对话智能体被用户问及一个显式回指先前对话、且期望答案范围非常窄的问题。我们用一个单独的 LLM 生成 DMR 问答对，该 LLM 被指示写一个从一个用户到另一用户的问题，只有使用从过去会话获得的知识才能正确回答（进一步细节见附录）。</p>
+<p>我们用 ROUGE-L 分数（Lin, 2004）以及一个「LLM 评判」来评估生成回答相对「金标准回答」的质量；该评判被指示评估生成回答是否与金标准回答一致（已显示 GPT-4 与人类评估者有高一致性（Zheng et al., 2023））。实践中，我们注意到生成的回答（来自 MemGPT 与基线）通常比金标准回答更冗长。我们使用 ROUGE-L 召回（R）指标，以考虑生成的智能体回复相对较短金标准答案标签的冗长性。</p>
+<p>MemGPT 利用内存保持连贯：表 2 显示 MemGPT 相对固定内存基线的性能。我们比较使用不同底层 LLM 的 MemGPT，并与不使用 MemGPT 的基座 LLM 作为基线比较。基线能够看到过去五次对话的有损摘要，以模拟扩展的递归摘要程序；而 MemGPT 则能访问完整对话历史，但必须通过分页搜索查询访问回忆内存（以便将它们带入主上下文）。在此任务中，我们看到 MemGPT 明显改善了底层基座 LLM 的性能：从 MemGPT 到相应 LLM 基线，准确率与 ROUGE 分数都有明显下降。</p>
+<p class="meta-line">3.1.2 对话开场任务（参与度）</p>
+<p>在「对话开场」任务中，我们评估智能体利用先前对话中积累的知识，为用户撰写有参与感消息的能力。为利用 MSC 数据集评估对话开场的「参与感」，我们将生成的开场与金标准人设比较：有参与感的对话开场应从人设中包含的一个（或若干）数据点取材，而在 MSC 中这些人设有效地总结了所有先前会话中积累的知识。我们也与人类生成的金标准开场比较，即</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页是对话实验的证据：深度记忆检索里，加上 MemGPT 后 GPT-4 从约三成准涨到九成以上；基线只能看有损摘要，MemGPT 必须自己分页去搜完整历史。
+这很重要，因为它说明「摘要接着聊」会丢细节，而「自己去翻档案」才能对上窄问题。
+类比：只带会议纪要进下一场会，对不上「上次那家店叫什么」；把全部聊天记录放进柜子、允许你一页页搜，才能答出来。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-6" data-page="6">
+  <div class="page-label">第 6 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-006.jpg" alt="PDF page 6" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems Documents Retrieved 0.1 0.2 0.3 0.4 0.5 0.6 0.7 Accuracy GPT-4 GPT-3.5 Turbo GPT-4 Turbo MemGPT (GPT-4, GPT-4 Turbo) MemGPT (GPT-3.5) Figure 5. Document QA task performance. MemGPT’s performance is unaffected by increased context length. Methods such as truncation can extend the effective context lengths of fixed length models such as GPT-4, but such compression methods will lead to performance degradation as the necessary compression grows. Running MemGPT with GPT-4 and GPT-4 Turbo have equivalent results on this task. first response in the following session. We report the CSIM scores of MemGPT’s openers in Table 3. We test several variations of MemGPT using different base LLMs. MemGPT utilizes memory to increase engagement: As seen in Table 3, MemGPT is able to craft engaging openers that perform similarly to and occasionally exceed the hand-written human openers. We observe that MemGPT tends to craft openers that are both more verbose and cover more aspects of the persona information than the human baseline. Additionally, we can see the storing information in working context is key to generating engaging openers.</p>
+<h2>3.2. MemGPT for document analysis</h2>
+<p>Document analysis also faces challenges due to the limited context windows of today’s transformer models. As shown in Table 1, both open and closed source models suffer from constrained context length (up to 128k tokens for OpenAI’s models). However many documents easily surpass these lengths; for example, legal or financial documents such as Annual Reports (SEC Form 10-K) can easily pass the million token mark. Moreover, many real document analysis tasks require drawing connections across multiple such lengthy documents. Anticipating these scenarios, it becomes difficult to envision blindly scaling up context as a solution to the fixed-context problem. Recent research (Liu et al., 2023a) also raises doubts about the utility of simply scaling contexts, since they find uneven attention distributions in large context models (the model is more capable of recalling information at the beginning or end of its context window, vs tokens in the middle). To enable reasoning across documents, more flexible memory architectures like Who won the ﬁrst Nobel Prize in physics? Wilhelm Conrad Rontgen archival_storage.search(“nobel physics”) Showing 10 of 124 results (page 2/13): “The Nobel Prize in Physics is a yearly award given… “The 1901 Nobel in physics was awarded to Wilhelm … … archival_storage.search(“nobel physics”, page=2) Showing 10 of 124 results (page 1/13): “The Nobel Prizes, beginning in 1901, and the … “This award is administered by the Nobel Foundation… … System Alert: Archive Storage Upload Complete Figure 6. An example of MemGPT (left) solving the document QA task. A database of Wikipedia documents is uploaded to archival storage. MemGPT queries archival storage via function calling, which pulls paginated search results into main context. MemGPT are needed.</p>
+<p>3.2.1. MULTI-DOCUMENT QUESTION-ANSWERING. To evaluate MemGPT’s ability to analyze documents, we benchmark MemGPT against fixed-context baselines on the retriever-reader document QA task from Liu et al. (2023a). In this task, a question is selected from the NaturalQuestions-Open dataset, and a retriever selects relevant Wikipedia documents for the question. A reader model (the LLM) is then fed these documents as input, and is asked to use the provided documents to answer the question. Similar to Liu et al. (2023a), we evaluate reader accuracy as the number of retrieved documents K increases. In our evaluation setup, both the fixed-context baselines and MemGPT use the same retriever, which selects the top K documents according using similarity search (cosine distance) on OpenAI’s text-embedding-ada-002 embeddings. We use MemGPT’s default storage settings which uses PostgreSQL for archival memory storage with vector search enabled via the pgvector extention. We precompute embeddings and load them into the database, which uses an HNSW index to enable approximate, subsecond query times. In MemGPT, the entire embedding document set is loaded into archival storage, and the retriever naturally emerges via the archival storage search functionality (which performs vector search based on cosine similarity). In the fixed-context baselines, the top-K documents are fetched using the retriever independently from the LLM inference, similar to the original retrieverreader setup in Liu et al. (2023a). We use a dump of Wikipedia from late 2018, following past work on NaturalQuestions-Open (Izacard &amp; Grave, 2020;</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>表 3：对话开场性能。智能体的对话开场用与金标准人设标签的相似度（SIM-1/3）以及与人类撰写开场的相似度（SIM-H）评估。MemGPT 能够以多种底层模型超过人类撰写的对话开场的性能。</p>
+<p>方法 / SIM-1↑ / SIM-3 / SIM-H</p>
+<p>Human 0.800 0.800 1.000</p>
+<p>GPT-3.5 Turbo 0.830 0.812 0.817</p>
+<p>GPT-4 0.868 0.843 0.773</p>
+<p>GPT-4 Turbo 0.857 0.828 0.767</p>
+<p>随后会话中的第一条回复。我们在表 3 中报告 MemGPT 开场的 CSIM 分数。我们测试使用不同基座 LLM 的若干 MemGPT 变体。</p>
+<p>MemGPT 利用内存提高参与度：如表 3 所示，MemGPT 能够撰写与手写人类开场相似、偶尔超过的有参与感开场。我们观察到 MemGPT 倾向于撰写既更冗长、又覆盖更多人设信息方面的开场。此外，可以看到将信息存储在工作上下文中，对生成有参与感的开场至关重要。</p>
+<p class="meta-line">3.2 面向文档分析的 MemGPT</p>
+<p>文档分析也因今日 transformer 模型有限的上下文窗口而面临挑战。如表 1 所示，开源与闭源模型都受约束上下文长度之苦（OpenAI 模型最高 128k 标记）。然而许多文档轻易超过这些长度；例如，法律或财务文档如年度报告（SEC Form 10-K）可轻易超过百万标记。而且，许多真实文档分析任务需要在多份如此之长的文档之间建立联系。预见到这些情景，很难把盲目扩大上下文设想为固定上下文问题的解决方案。近期研究（Liu et al., 2023a）也对简单扩大上下文的效用提出怀疑，因为他们发现大上下文模型中注意力分布不均（模型更有能力回忆上下文窗口开头或结尾的信息，而非中间的标记）。为使跨文档推理成为可能，需要像 MemGPT 这样更灵活的内存架构。</p>
+<p class="meta-line">3.2.1 多文档问答</p>
+<p>为评估 MemGPT 分析文档的能力，我们在来自 Liu et al.（2023a）的检索器–阅读器文档 QA 任务上，将 MemGPT 与固定上下文基线对比。在此任务中，从 NaturalQuestions-Open 数据集选出一个问题，检索器为该问题选择相关维基百科文档。阅读器模型（LLM）随后以这些文档为输入，并被要求使用所提供的文档回答问题。与 Liu et al.（2023a）类似，我们在检索文档数 K 增加时评估阅读器准确率。</p>
+<p>在我们的评估设置中，固定上下文基线与 MemGPT 使用同一检索器，该检索器根据 OpenAI 的 text-embedding-ada-002 嵌入上的相似度搜索（余弦距离）选择 top-K 文档。我们使用 MemGPT 的默认存储设置，用 PostgreSQL 做档案内存存储，并通过 pgvector 扩展启用向量搜索。我们预计算嵌入并将其载入数据库，该数据库使用 HNSW 索引以实现近似、亚秒级查询时间。在 MemGPT 中，整个嵌入文档集被载入档案存储，检索器经由档案存储搜索功能自然出现（基于余弦相似度执行向量搜索）。在固定上下文基线中，top-K 文档独立于 LLM 推理、用检索器获取，类似于 Liu et al.（2023a）中原来的检索器–阅读器设置。</p>
+<p>我们使用 2018 年末的维基百科转储，沿袭 NaturalQuestions-Open 上的既往工作（Izacard &amp; Grave, 2020;</p>
+<p>图 5：文档 QA 任务性能。MemGPT 的性能不受增加的上下文长度影响。截断等方法可以扩展 GPT-4 等固定长度模型的有效上下文长度，但随着必要压缩增大，此类压缩方法将导致性能下降。在此任务上用 GPT-4 与 GPT-4 Turbo 运行 MemGPT 结果相当。</p>
+<p>图 6：MemGPT（左）求解文档 QA 任务的示例。维基百科文档数据库被上传到档案存储。MemGPT 经函数调用查询档案存储，将分页搜索结果拉入主上下文。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页从开场任务转到文档：MemGPT 靠工作上下文里存的人设来打招呼；文档侧则把维基放进 PostgreSQL + pgvector，让模型自己分页搜，而不是一次把 top-K 塞进窗口。
+这很重要，因为它把「Lost in the middle」从模型病，部分转成存储与检索策略问题。
+类比：不要把整座图书馆搬上书桌；给一张目录和翻页按钮，让你按问题去抽书。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-7" data-page="7">
+  <div class="page-label">第 7 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-007.jpg" alt="PDF page 7" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems Nesting Level 0.0 0.2 0.4 0.6 0.8 1.0 Accuracy GPT-3.5 GPT-4 GPT-4 Turbo MemGPT (GPT-3.5) MemGPT (GPT-4 Turbo) MemGPT (GPT-4) Figure 7. Nested KV retrieval task performance. MemGPT is the only approach that is able to consistently complete the nested KV task beyond 2 nesting levels. While GPT-4 Turbo performs better as a baseline, MemGPT with GPT-4 Turbo performs worse than MemGPT with GPT-4. Izacard et al., 2021), and sampled a subset of 50 questions for evaluation. Both the sampled questions and embedded Wikipedia passages are publicaly released. We evaluate the performance of both MemGPT and baselines with an LLM-judge, to ensure that the the answer is properly derived from the retrieved documents and to avoid non-exact string matches being considered incorrect. We show the results for the document QA task in Figure 5. The fixed-context baselines performance is capped roughly at the performance of the retriever, as they use the information that is presented in their context window (e.g. if the embedding search retriever fails to surface the gold article using the provided question, the fixed-context baselines are guaranteed to never see the gold article). By contrast, MemGPT is effectively able to make multiple calls to the retriever by querying archival storage, allowing it to scale to larger effective context lengths. MemGPT actively retrieves documents from its archival storage (and can iteratively page through results), so the total number of documents available to MemGPT is no longer limited by the number of documents that fit within the LLM processor’s context window. The document QA task is challenging for all methods due to the limitations of embedding-based similarity search. We observe that the golden document for chosen question (as annotated by NaturalQuestions-Open) often appears outside of the first dozen retrieved results, if not even further. The retriever performance translates directly to the fixed-context baseline results: GPT-4’s accuracy is relatively low with few retrieved documents, and continues to improve as additional documents are added to the context window, as it correctly limits itself to answering questions based on information in retrieved documents. While MemGPT is theoretically not limited by sub-optimal reFind the value for key 831…ea5 f37…617</p>
+<div class="toc-line">archival_storage.search(“831...ea5”)</div>
+<div class="toc-line">archival_storage.search(“5b8...4c3”)</div>
+<p>Showing 1 of 1 results (page 1/1): “Key: 831…ea5, Value: 5b8…4c3” System Alert: Archive Storage Upload Complete Showing 1 of 1 results (page 1/1): “Key: 5b8…4c3, Value: f37…617”</p>
+<div class="toc-line">archival_storage.search(“f37...617”)</div>
+<p>Showing 2 of 2 results (page 1/1): “Key: 5b8…4c3, Value: f37…617”, “Key: 831…ea5, Value: 5b8…4c3” Figure 8. An example of MemGPT (left) solving the nested KV task (UUIDs shortened for readability). In this particular example, the key-value pair has two nesting levels: 831..ea5 →</p>
+<div class="toc-line">5b8..4c3 →f37...617. The MemGPT agent returns the final answer when a query for the final value (f37...617) only</div>
+<p>returns one result, indicating that it is not also a key. triever performance (even if the embedding-based ranking is noisy, as long as the full retriever ranking contains the gold document it can still be found with enough retriever calls via pagination), we observe that MemGPT will often stop paging through retriever results before exhausting the retriever database. To evaluate the fixed-context baselines against MemGPT past their default context lengths, we truncate the document segments returned by the retriever to fix the same number of documents into the available context. As expected, document truncation reduces accuracy as documents shrink as the chance of the relevant snippet (in the gold document) being omitted grows, as shown in Figure 5. MemGPT has significantly degraded performance using GPT-3.5, due to its limited function calling capabilities, and performs best using GPT-4.</p>
+<p>3.2.2. NESTED KEY-VALUE RETRIEVAL (KV). We introduce a new task based on the synthetic Key-Value retrieval proposed in prior work (Liu et al., 2023a). The goal of this task is to demonstrate how MemGPT can collate information from multiple data sources. In the original KV task, the authors generated a synthetic dataset of keyvalue pairs, where each key and value is a 128-bit UUID (universally unique identifier). The agent is then given a key, and asked to return the associated value for the key. We create a version of the KV task, nested KV retrieval,</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>Izacard et al., 2021），并采样 50 个问题的子集用于评估。采样的问题与嵌入的维基段落均公开发布。我们用 LLM 评判评估 MemGPT 与基线的性能，以确保答案确实来自检索到的文档，并避免非精确字符串匹配被视为不正确。</p>
+<p>我们在图 5 中展示文档 QA 任务的结果。固定上下文基线的性能大致被检索器性能封顶，因为它们使用呈现在其上下文窗口中的信息（例如，若嵌入搜索检索器未能用所给问题浮现金标准文章，固定上下文基线保证永远看不到金标准文章）。相比之下，MemGPT 能够通过对档案存储查询对检索器进行多次调用，从而扩展到更大的有效上下文长度。MemGPT 主动从档案存储检索文档（并可迭代分页浏览结果），因此 MemGPT 可用的文档总数不再受限于能装进 LLM 处理器上下文窗口的文档数。</p>
+<p>文档 QA 任务对所有方法都具有挑战性，原因在于基于嵌入的相似度搜索的局限。我们观察到，所选问题的金标准文档（由 NaturalQuestions-Open 标注）常常出现在前十几条检索结果之外，甚至更远。检索器性能直接转化为固定上下文基线结果：GPT-4 在检索文档较少时准确率相对较低，并随着更多文档被加入上下文窗口而持续改善，因为它正确地将自己限制为基于检索文档中的信息回答问题。尽管</p>
+<p>图 7：嵌套 KV 检索任务性能。MemGPT 是唯一能在超过 2 层嵌套后一致完成嵌套 KV 任务的方法。虽然 GPT-4 Turbo 作为基线更好，但带 GPT-4 Turbo 的 MemGPT 表现不如带 GPT-4 的 MemGPT。</p>
+<p>MemGPT 理论上不受次优检索器性能限制（即便基于嵌入的排序有噪声，只要完整检索器排序包含金标准文档，仍可通过足够多次经分页的检索器调用找到它），我们观察到 MemGPT 常常在穷尽检索器数据库之前就停止分页浏览检索结果。</p>
+<p>为将固定上下文基线与 MemGPT 在超出其默认上下文长度后进行对比，我们截断检索器返回的文档片段，以在可用上下文中装入相同数量的文档。如预期，文档截断会降低准确率，因为随着文档缩小，相关片段（在金标准文档中）被省略的机会增大，如图 5 所示。MemGPT 使用 GPT-3.5 时性能显著下降，因其有限的函数调用能力，并用 GPT-4 时表现最好。</p>
+<p class="meta-line">3.2.2 嵌套键值检索（KV）</p>
+<p>我们引入一项基于先前工作（Liu et al., 2023a）提出的合成键值检索的新任务。该任务的目标是展示 MemGPT 如何从多个数据源整理信息。在原来的 KV 任务中，作者生成一个键值对的合成数据集，每个键和值都是 128 位 UUID（通用唯一标识符）。智能体随后被给定一个键，并被要求返回该键关联的值。</p>
+<p>我们创建 KV 任务的一个版本，即嵌套 KV 检索，</p>
+<div class="toc-line">图 8：MemGPT（左）求解嵌套 KV 任务的示例（UUID 为可读性缩短）。在此特定例子中，键值对有两层嵌套：831..ea5 → 5b8..4c3 → f37...617。当对最终值（f37...617）的查询只返回一条结果、表明它不再也是一个键时，MemGPT 智能体返回最终答案。</div></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页把文档 QA 的上限讲清楚：固定窗口被检索器一次 top-K 封顶；MemGPT 可以翻页，但常会提前停。嵌套 KV 则考多跳：值本身还是下一个键。
+这很重要，因为它区分「窗口装得下」和「会不会继续查」。
+类比：寻宝图上 X 指向另一张图；只会看手边那一页的人走两步就停，会按图再查的人才能拿到最后的盒子。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-8" data-page="8">
+  <div class="page-label">第 8 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-008.jpg" alt="PDF page 8" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems where values themselves may be keys, thus requiring the agent to perform a multi-hop lookup. In our setup, we fix the total number of UUIDs pairs to 140, corresponding to roughly 8k tokens (the context length of our GPT-4 baseline). We vary the total number of nesting levels from 0 (the initial key-value pair’s value is not a key) to 4 (ie 4 total KV lookups are required to find the final value), and sample 30 different ordering configurations including both the initial key position and nesting key positions. While GPT-3.5 and GPT-4 have good performance on the original KV tasks, both struggle in the nested KV task. GPT-3.5 is unable to complete the nested variant of the task and has an immediate dropoff in performance, hitting 0 percent accuracy at 1 nesting level (we observe that its primary failure mode is to simply returns the original value). GPT4 and GPT-4 Turbo are better than GPT-3.5, but also suffer from a similar dropoff, and hit 0 percent accuracy by 3 nesting levels. MemGPT with GPT-4 on the other hand is unaffected with the number of nesting levels and is able to perform the nested lookup by accessing the key-value pairs stored in main context repeatedly via function queries. MemGPT with GPT-4 Turbo and GPT-3.5 also have better performance than the corresponding baseline models, but still begin to drop off in performance at 2 nesting levels as a result of failing to perform enough lookups. MemGPT performance on the nested KV task demonstrates its ability to combine multiple queries to perform multi-hop lookups.</p>
+<h1>4. Related Work</h1>
+<p class="lead"><strong>Long-context LLMs.</strong> Several lines of work have improved the context length of LLMs. For instance, more efficient transformer architectures via sparsifying the attention (Child et al., 2019; Beltagy et al., 2020), low-rank approximations (Wang et al., 2020), and neural memory (Lee et al., 2019). Another line of work aims to extend context windows beyond the length they were original trained for, their training size, such as Press et al. (2021); Chen et al. (2023). MemGPT builds upon these improvements in context length as they improve the size of the main memory in MemGPT. Our main contribution is a hierarchical tiered memory that uses a long-context LLM as the implementation of main memory. Retrieval-Augmented Models. The design of the external memory of MemGPT builds upon much prior work augmenting LLMs with relevant inputs from external retrievers (Ram et al., 2023; Borgeaud et al., 2022; Karpukhin et al., 2020; Lewis et al., 2020; Guu et al., 2020; Lin et al., 2023). In particular, Jiang et al. (2023) propose FLARE, a method that allows the LLM to actively decide when and what to retrieve during the course of generation. Trivedi et al. (2022) interleave retrieval with Chain-of-Thoughts reasoning to improve multi-step question answering. LLMs as agents. Recent work has explored augmenting LLMs with additional capabilities to act as agents in interactive environments. Park et al. (2023) propose adding memory to LLMs and using the LLM as a planner, and observe emergent social behaviors in a multiagent sandbox environment (inspired by The Sims video game) where agents can perform basic activities such as doing chores/hobbies, going to work, and conversing with other agents. Nakano et al. (2021) train models to search the web before answering questions, and use similar pagination concepts to MemGPT to control the underlying context size in their web-browsing environment. Yao et al. (2022) showed that interleaving chain-of-thought reasoning (Wei et al., 2022) can further improve the planning ability of interactive LLM-based agents; similarly in MemGPT, LLM is able to ‘plan out loud’ when executing functions. Liu et al. (2023b) introduced a suite of LLM-asan-agent benchmarks to evaluate LLMs in interactive environments, including video games, thinking puzzles, and web shopping. In contrast, our work focuses on tackling the problem of equipping agents with long-term memory of user inputs.</p>
+<h1>5. Conclusion</h1>
+<p>In this paper, we introduced MemGPT, a novel LLM system inspired by operating systems to manage the limited context windows of large language models. By designing a memory hierarchy and control flow analogous to traditional OSes, MemGPT provides the illusion of larger context resources for LLMs. This OS-inspired approach was evaluated in two domains where existing LLM performance is constrained by finite context lengths: document analysis and conversational agents. For document analysis, MemGPT could process lengthy texts well beyond the context limits of current LLMs by effectively paging relevant context in and out of memory. For conversational agents, MemGPT enabled maintaining long-term memory, consistency, and evolvability over extended dialogues. Overall, MemGPT demonstrates that operating system techniques like hierarchical memory management and interrupts can unlock the potential of LLMs even when constrained by fixed context lengths. This work opens numerous avenues for future exploration, including applying MemGPT to other domains with massive or unbounded contexts, integrating different memory tier technologies like databases or caches, and further improving control flow and memory management policies. By bridging concepts from OS architecture into AI systems, MemGPT represents a promising new direction for maximizing the capabilities of LLMs within their fundamental limits.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<p>其中值本身可能是键，从而要求智能体执行多跳查找。在我们的设置中，我们将 UUID 对的总数固定为 140，大约对应 8k 标记（我们 GPT-4 基线的上下文长度）。我们将嵌套层总数从 0（初始键值对的值不是键）变化到 4（即需要 4 次 KV 查找才能找到最终值），并采样 30 种不同的排序配置，包括初始键位置与嵌套键位置。</p>
+<p>尽管 GPT-3.5 与 GPT-4 在原来的 KV 任务上有良好性能，两者在嵌套 KV 任务上都陷入困境。GPT-3.5 无法完成该任务的嵌套变体，性能立即下降，在 1 层嵌套时准确率降至 0（我们观察到其主要失败模式是简单返回原始值）。GPT-4 与 GPT-4 Turbo 好于 GPT-3.5，但也遭受类似下降，并在 3 层嵌套时准确率降至 0。另一方面，带 GPT-4 的 MemGPT 不受嵌套层数影响，能够通过函数查询反复访问存储在主上下文中的键值对来执行嵌套查找。带 GPT-4 Turbo 与 GPT-3.5 的 MemGPT 也比相应基线模型有更好性能，但在 2 层嵌套时仍开始下降，原因是未能执行足够多次查找。MemGPT 在嵌套 KV 任务上的性能展示了它组合多次查询以执行多跳查找的能力。</p>
+<h1>4. 相关工作</h1>
+<p>长上下文 LLM。若干工作线改善了 LLM 的上下文长度。例如，通过稀疏化注意力实现更高效的 transformer 架构（Child et al., 2019; Beltagy et al., 2020）、低秩近似（Wang et al., 2020）以及神经记忆（Lee et al., 2019）。另一条工作线旨在将上下文窗口扩展到它们最初被训练的长度之外，例如 Press et al.（2021）；Chen et al.（2023）。MemGPT 建立在这些上下文长度改进之上，因为它们提高了 MemGPT 中主存的大小。我们的主要贡献是使用长上下文 LLM 作为主存实现的分层分级内存。</p>
+<p class="lead"><strong>检索增强模型。</strong>MemGPT 外部内存的设计建立在用外部检索器的相关输入增强 LLM 的大量先前工作之上（Ram et al., 2023; Borgeaud et al., 2022; Karpukhin et al., 2020; Lewis et al., 2020; Guu et al., 2020; Lin et al., 2023）。特别是，Jiang et al.（2023）提出 FLARE，一种允许 LLM 在生成过程中主动决定何时以及检索什么的方法。Trivedi et al.（2022）将检索与思维链推理交错，以改善多步问答。</p>
+<p>作为智能体的 LLM。近期工作探索用额外能力增强 LLM，使其在交互环境中充当智能体。Park et al.（2023）提出为 LLM 添加记忆并将 LLM 用作规划器，并在多智能体沙箱环境中观察到涌现的社会行为（受《模拟人生》电子游戏启发），智能体可执行诸如做家务 / 爱好、上班以及与其他智能体交谈等基本活动。Nakano et al.（2021）训练模型在回答问题前搜索网络，并在其网络浏览环境中使用与 MemGPT 类似的分页概念来控制底层上下文大小。Yao et al.（2022）表明，将思维链推理（Wei et al., 2022）交错可以进一步改善交互式基于 LLM 的智能体的规划能力；类似地，在 MemGPT 中，LLM 能够在执行函数时「大声规划」。Liu et al.（2023b）引入一套将 LLM 作为智能体的基准，以在交互环境中评估 LLM，包括电子游戏、思考谜题与网络购物。相比之下，我们的工作聚焦于为智能体配备用户输入的长期记忆这一问题。</p>
+<h1>5. 结论</h1>
+<p>在本文中，我们引入了 MemGPT，一种受操作系统启发以管理大语言模型有限上下文窗口的新颖 LLM 系统。通过设计类似于传统操作系统的内存层次与控制流，MemGPT 为 LLM 提供更大上下文资源的错觉。这一受操作系统启发的方法在两个现有 LLM 性能受有限上下文长度约束的领域得到评估：文档分析与对话智能体。对于文档分析，MemGPT 能够通过有效地将相关上下文换入换出内存，处理远超当前 LLM 上下文限制的长文本。对于对话智能体，MemGPT 使在扩展对话中保持长期记忆、一致性与可演化性成为可能。总体而言，MemGPT 表明，像分层内存管理与中断这样的操作系统技术，即便在受固定上下文长度约束时，也能释放 LLM 的潜力。</p>
+<p>这项工作为未来探索开辟了众多途径，包括将 MemGPT 应用于具有海量或无界上下文的其他领域，整合数据库或缓存等不同内存层级技术，以及进一步改进控制流与内存管理策略。通过将操作系统架构中的概念桥接到 AI 系统，MemGPT 代表在其根本限制内最大化 LLM 能力的一个有前景的新方向。</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页用嵌套 KV 收束实验：基线两三跳就归零，带 GPT-4 的 MemGPT 能一路查下去；相关工作把它和长窗口、RAG、ReAct / WebGPT 分开——主贡献是分层内存，不是把窗口做大。
+这很重要，因为它把「OS 类比」收成可复述的结论：错觉来自换页与中断，不是真无限。
+类比：结论像说明书首页——本产品不是更大的抽屉，而是会自己归档、会响铃提醒的文件柜。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-9" data-page="9">
+  <div class="page-label">第 9 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-009.jpg" alt="PDF page 9" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems</p>
+<h1>References</h1>
+<p>Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer. arXiv preprint arXiv:2004.05150, 2020. Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann, Trevor Cai, Eliza Rutherford, Katie Millican, George Bm Van Den Driessche, Jean-Baptiste Lespiau, Bogdan Damoc, Aidan Clark, et al. Improving language models by retrieving from trillions of tokens. In International conference on machine learning, pp. 2206–2240. PMLR, 2022. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 33: 1877–1901, 2020. Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595, 2023. Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers. arXiv preprint arXiv:1904.10509, 2019. Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc V Le, and Ruslan Salakhutdinov. Transformer-xl: Attentive language models beyond a fixed-length context. arXiv preprint arXiv:1901.02860, 2019. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. Bert: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805, 2018. Zican Dong, Tianyi Tang, Lunyi Li, and Wayne Xin Zhao. A survey on long text modeling with transformers. arXiv preprint arXiv:2302.14502, 2023. Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Mingwei Chang. Retrieval augmented language model pre-training. In International conference on machine learning, pp. 3929–3938. PMLR, 2020. Gautier Izacard and Edouard Grave. Leveraging passage retrieval with generative models for open domain question answering. arXiv preprint arXiv:2007.01282, 2020. Gautier Izacard, Mathilde Caron, Lucas Hosseini, Sebastian Riedel, Piotr Bojanowski, Armand Joulin, and Edouard Grave. Unsupervised dense information retrieval with contrastive learning. arXiv preprint arXiv:2112.09118, 2021. Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang, Jamie Callan, and Graham Neubig. Active retrieval augmented generation. arXiv preprint arXiv:2305.06983, 2023. Vladimir Karpukhin, Barlas O˘guz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen-tau Yih. Dense passage retrieval for open-domain question answering. arXiv preprint arXiv:2004.04906, 2020. Nikita Kitaev, Łukasz Kaiser, and Anselm Levskaya. Reformer: The efficient transformer. arXiv preprint arXiv:2001.04451, 2020. Juho Lee, Yoonho Lee, Jungtaek Kim, Adam Kosiorek, Seungjin Choi, and Yee Whye Teh. Set transformer: A framework for attention-based permutation-invariant neural networks. In International conference on machine learning, pp. 3744–3753. PMLR, 2019. Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich K¨uttler, Mike Lewis, Wen-tau Yih, Tim Rockt¨aschel, et al. Retrieval-augmented generation for knowledgeintensive nlp tasks. Advances in Neural Information Processing Systems, 33:9459–9474, 2020. Chin-Yew Lin. Rouge: A package for automatic evaluation of summaries. In Text summarization branches out, pp. 74–81, 2004. Xi Victoria Lin, Xilun Chen, Mingda Chen, Weijia Shi, Maria Lomeli, Rich James, Pedro Rodriguez, Jacob Kahn, Gergely Szilvasy, Mike Lewis, Luke Zettlemoyer, and Scott Yih. Ra-dit: Retrieval-augmented dual instruction tuning, 2023. Nelson F Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, and Percy Liang. Lost in the middle: How language models use long contexts. arXiv preprint arXiv:2307.03172, 2023a. Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, et al. AgentBench: Evaluating llms as agents. arXiv preprint arXiv:2308.03688, 2023b. Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu Jain, Vineet Kosaraju, William Saunders, et al. WebGPT: Browser-assisted question-answering with human feedback. arXiv preprint arXiv:2112.09332, 2021. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to follow instructions with human</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<h1>参考文献</h1>
+<p>Iz Beltagy, Matthew E Peters, and Arman Cohan. Longformer: The long-document transformer. arXiv preprint arXiv:2004.05150, 2020. Sebastian Borgeaud, Arthur Mensch, Jordan Hoffmann, Trevor Cai, Eliza Rutherford, Katie Millican, George Bm Van Den Driessche, Jean-Baptiste Lespiau, Bogdan Damoc, Aidan Clark, et al. Improving language models by retrieving from trillions of tokens. In International conference on machine learning, pp. 2206–2240. PMLR, 2022. Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared D Kaplan, Prafulla Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell, et al. Language models are few-shot learners. Advances in neural information processing systems, 33: 1877–1901, 2020. Shouyuan Chen, Sherman Wong, Liangjian Chen, and Yuandong Tian. Extending context window of large language models via positional interpolation. arXiv preprint arXiv:2306.15595, 2023. Rewon Child, Scott Gray, Alec Radford, and Ilya Sutskever. Generating long sequences with sparse transformers. arXiv preprint arXiv:1904.10509, 2019. Zihang Dai, Zhilin Yang, Yiming Yang, Jaime Carbonell, Quoc V Le, and Ruslan Salakhutdinov. Transformer-xl: Attentive language models beyond a fixed-length context. arXiv preprint arXiv:1901.02860, 2019. Jacob Devlin, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. Bert: Pre-training of deep bidirectional transformers for language understanding. arXiv preprint arXiv:1810.04805, 2018. Zican Dong, Tianyi Tang, Lunyi Li, and Wayne Xin Zhao. A survey on long text modeling with transformers. arXiv preprint arXiv:2302.14502, 2023. Kelvin Guu, Kenton Lee, Zora Tung, Panupong Pasupat, and Mingwei Chang. Retrieval augmented language model pre-training. In International conference on machine learning, pp. 3929–3938. PMLR, 2020. Gautier Izacard and Edouard Grave. Leveraging passage retrieval with generative models for open domain question answering. arXiv preprint arXiv:2007.01282, 2020. Gautier Izacard, Mathilde Caron, Lucas Hosseini, Sebastian Riedel, Piotr Bojanowski, Armand Joulin, and Edouard Grave. Unsupervised dense information retrieval with contrastive learning. arXiv preprint arXiv:2112.09118, 2021. Zhengbao Jiang, Frank F Xu, Luyu Gao, Zhiqing Sun, Qian Liu, Jane Dwivedi-Yu, Yiming Yang, Jamie Callan, and Graham Neubig. Active retrieval augmented generation. arXiv preprint arXiv:2305.06983, 2023. Vladimir Karpukhin, Barlas Oğuz, Sewon Min, Patrick Lewis, Ledell Wu, Sergey Edunov, Danqi Chen, and Wen-tau Yih. Dense passage retrieval for open-domain question answering. arXiv preprint arXiv:2004.04906, 2020. Nikita Kitaev, Łukasz Kaiser, and Anselm Levskaya. Reformer: The efficient transformer. arXiv preprint arXiv:2001.04451, 2020. Juho Lee, Yoonho Lee, Jungtaek Kim, Adam Kosiorek, Seungjin Choi, and Yee Whye Teh. Set transformer: A framework for attention-based permutation-invariant neural networks. In International conference on machine learning, pp. 3744–3753. PMLR, 2019. Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal, Heinrich Küttler, Mike Lewis, Wen-tau Yih, Tim Rocktäschel, et al. Retrieval-augmented generation for knowledgeintensive nlp tasks. Advances in Neural Information Processing Systems, 33:9459–9474, 2020. Chin-Yew Lin. Rouge: A package for automatic evaluation of summaries. In Text summarization branches out, pp. 74–81, 2004. Xi Victoria Lin, Xilun Chen, Mingda Chen, Weijia Shi, Maria Lomeli, Rich James, Pedro Rodriguez, Jacob Kahn, Gergely Szilvasy, Mike Lewis, Luke Zettlemoyer, and Scott Yih. Ra-dit: Retrieval-augmented dual instruction tuning, 2023. Nelson F Liu, Kevin Lin, John Hewitt, Ashwin Paranjape, Michele Bevilacqua, Fabio Petroni, and Percy Liang. Lost in the middle: How language models use long contexts. arXiv preprint arXiv:2307.03172, 2023a. Xiao Liu, Hao Yu, Hanchen Zhang, Yifan Xu, Xuanyu Lei, Hanyu Lai, Yu Gu, Hangliang Ding, Kaiwen Men, Kejuan Yang, et al. AgentBench: Evaluating llms as agents. arXiv preprint arXiv:2308.03688, 2023b. Reiichiro Nakano, Jacob Hilton, Suchir Balaji, Jeff Wu, Long Ouyang, Christina Kim, Christopher Hesse, Shantanu Jain, Vineet Kosaraju, William Saunders, et al. WebGPT: Browser-assisted question-answering with human feedback. arXiv preprint arXiv:2112.09332, 2021. Long Ouyang, Jeffrey Wu, Xu Jiang, Diogo Almeida, Carroll Wainwright, Pamela Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, et al. Training language models to follow instructions with human</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页开始参考文献，条目保持英文，便于按作者回查长窗口、RAG 与 AgentBench 等出处。
+类比：论文末尾的书架标签，书名不翻译，免得检索对不上。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-10" data-page="10">
+  <div class="page-label">第 10 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-010.jpg" alt="PDF page 10" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems feedback. Advances in Neural Information Processing Systems, 35:27730–27744, 2022. Joon Sung Park, Joseph C O’Brien, Carrie J Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. Generative agents: Interactive simulacra of human behavior. arXiv preprint arXiv:2304.03442, 2023. David A Patterson, Garth Gibson, and Randy H Katz. A case for redundant arrays of inexpensive disks (raid). In Proceedings of the 1988 ACM SIGMOD international conference on Management of data, pp. 109–116, 1988. Ofir Press, Noah A Smith, and Mike Lewis. Train short, test long: Attention with linear biases enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021. Ori Ram, Yoav Levine, Itay Dalmedigos, Dor Muhlgay, Amnon Shashua, Kevin Leyton-Brown, and Yoav Shoham. In-context retrieval-augmented language models. arXiv preprint arXiv:2302.00083, 2023. Timo Schick, Jane Dwivedi-Yu, Roberto Dess`ı, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. arXiv preprint arXiv:2302.04761, 2023. Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023. H. Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal. Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions. ArXiv, abs/2212.10509, 2022. URL https://api.semanticscholar.org/ CorpusID:254877499. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems, 30, 2017. Sinong Wang, Belinda Z Li, Madian Khabsa, Han Fang, and Hao Ma. Linformer: Self-attention with linear complexity. arXiv preprint arXiv:2006.04768, 2020. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. Advances in Neural Information Processing Systems, 35:24824–24837, 2022. Jing Xu, Arthur Szlam, and Jason Weston. Beyond goldfish memory: Long-term open-domain conversation. arXiv preprint arXiv:2107.07567, 2021. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. arXiv preprint arXiv:2210.03629, 2022. Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al. Judging llm-as-ajudge with mt-bench and chatbot arena. arXiv preprint arXiv:2306.05685, 2023.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<h1>参考文献</h1>
+<p>feedback. Advances in Neural Information Processing Systems, 35:27730–27744, 2022. Joon Sung Park, Joseph C O’Brien, Carrie J Cai, Meredith Ringel Morris, Percy Liang, and Michael S Bernstein. Generative agents: Interactive simulacra of human behavior. arXiv preprint arXiv:2304.03442, 2023. David A Patterson, Garth Gibson, and Randy H Katz. A case for redundant arrays of inexpensive disks (raid). In Proceedings of the 1988 ACM SIGMOD international conference on Management of data, pp. 109–116, 1988. Ofir Press, Noah A Smith, and Mike Lewis. Train short, test long: Attention with linear biases enables input length extrapolation. arXiv preprint arXiv:2108.12409, 2021. Ori Ram, Yoav Levine, Itay Dalmedigos, Dor Muhlgay, Amnon Shashua, Kevin Leyton-Brown, and Yoav Shoham. In-context retrieval-augmented language models. arXiv preprint arXiv:2302.00083, 2023. Timo Schick, Jane Dwivedi-Yu, Roberto Dessì, Roberta Raileanu, Maria Lomeli, Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom. Toolformer: Language models can teach themselves to use tools. arXiv preprint arXiv:2302.04761, 2023. Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Nikolay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, et al. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288, 2023. H. Trivedi, Niranjan Balasubramanian, Tushar Khot, and Ashish Sabharwal. Interleaving retrieval with chain-of-thought reasoning for knowledge-intensive multi-step questions. ArXiv, abs/2212.10509, 2022. URL https://api.semanticscholar.org/CorpusID:254877499. Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Łukasz Kaiser, and Illia Polosukhin. Attention is all you need. Advances in neural information processing systems, 30, 2017. Sinong Wang, Belinda Z Li, Madian Khabsa, Han Fang, and Hao Ma. Linformer: Self-attention with linear complexity. arXiv preprint arXiv:2006.04768, 2020. Jason Wei, Xuezhi Wang, Dale Schuurmans, Maarten Bosma, Fei Xia, Ed Chi, Quoc V Le, Denny Zhou, et al. Chain-of-thought prompting elicits reasoning in large language models. Advances in Neural Information Processing Systems, 35:24824–24837, 2022. Jing Xu, Arthur Szlam, and Jason Weston. Beyond goldfish memory: Long-term open-domain conversation. arXiv preprint arXiv:2107.07567, 2021. Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan, and Yuan Cao. React: Synergizing reasoning and acting in language models. arXiv preprint arXiv:2210.03629, 2022. Lianmin Zheng, Wei-Lin Chiang, Ying Sheng, Siyuan Zhuang, Zhanghao Wu, Yonghao Zhuang, Zi Lin, Zhuohan Li, Dacheng Li, Eric Xing, et al. Judging llm-as-ajudge with mt-bench and chatbot arena. arXiv preprint arXiv:2306.05685, 2023.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续参考文献，含 Toolformer、ReAct、Generative Agents 与 MSC 数据集，保持英文。
+类比：书架后几层，需要对上智能体文献时再抽。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-11" data-page="11">
+  <div class="page-label">第 11 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-011.jpg" alt="PDF page 11" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems</p>
+<h1>6. Appendix</h1>
+<h2>6.1. Prompts and instructions</h2>
+<p>The MemGPT prompts have been edited for brevity. For full implementation details (including exact prompts) visit https://research.memgpt.ai.</p>
+<h3>6.1.1. MEMGPT INSTRUCTIONS (DMR)</h3>
+<p>Example instructions used in the MemGPT persona for chat/dialogue-related tasks. The following is information about myself. My task is to completely immerse myself in this role (I should never say that I am an AI, and should reply as if I am playing this role). If the user asks me a question, I should reply with a best guess using the information in core memory and conversation search. The baselines received the following instructions via a system prompt (preprompt): Your task is to answer a question from the user about your prior conversations. The following is a summary of all your prior conversations: CONVERSATION SUMMARY Answer from the perspective of the persona provided (do not say that you are an AI assistant). If you do not have enough information to answer the question, reply ’NO ANSWER’. Either reply with the answer, or reply ’NO ANSWER’, do not say anything else.</p>
+<h3>6.1.2. LLM JUDGE (DMR / OPENER)</h3>
+<p>In order to both check the correctness of the answer for the DMR task, we used an LLM judge. The LLM judge was provided the answers generated by both baseline approaches and MemGPT, and asked to make a judgement with the following prompt: Your task is to label an answer to a question as ’CORRECT’ or ’WRONG’. You will be given the following data: (1) a question (posed by one user to another user), (2) a ’gold’ (ground truth) answer, (3) a generated answer which you will score as CORRECT/WRONG. The point of the question is to ask about something one user should know about the other user based on their prior conversations. The gold answer will usually be a concise and short answer that includes the referenced topic, for example: Question: Do you remember what I got the last time I went to Hawaii? Gold answer: A shell necklace The generated answer might be much longer, but you should be generous with your grading - as long as it touches on the same topic as the gold answer, it should be counted as CORRECT. For example, the following answers would be considered CORRECT: Generated answer (CORRECT): Oh yeah, that was so fun! I got so much stuff there, including that shell necklace. Generated answer (CORRECT): I got a ton</p>
+<div class="toc-line">of stuff...</div>
+<p>that surfboard, the mug, the necklace, those coasters too.. Generated answer (CORRECT): That cute necklace The following answers would be considered WRONG: Generated answer (WRONG): Oh yeah, that was so fun! I got so much stuff there, including that mug. Generated answer (WRONG): I got a ton</p>
+<div class="toc-line">of stuff...</div>
+<p>that surfboard, the mug, those coasters too.. Generated answer (WRONG): I’m sorry, I don’t remember what you’re talking about. Now it’s time for the real question: Question: QUESTION Gold answer: GOLD ANSWER Generated answer: GENERATED ANSWER First, provide a short (one sentence) explanation of your reasoning, then finish with CORRECT or WRONG. Do NOT include both CORRECT and WRONG in your response, or it will break the evaluation script.</p>
+<h3>6.1.3. SELF-INSTRUCT DMR DATASET GENERATION</h3>
+<p>The DMR question/answer pairs were generated using the following prompt and the original MSC dataset: Your task is to write a ”memory challenge” question for a simulated dialogue between two users. You get as input: - personas for each user (gives you their basic facts) - a record of an old chat the two users had with each other Your task is to write a question from user A to user B that test’s user B’s memory. The question should be crafted in a way that user B must have actually participated in the prior conversation to answer properly, not just have read the persona summary. Do NOT under any circumstances create a</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型</p>
+<h1>6. 附录</h1>
+<p>6.1 提示与指令 MemGPT 提示已为简洁而编辑。完整实现细节（包括精确提示）见 https://research.memgpt.ai。 6.1.1 MEMGPT 指令（DMR） 用于聊天 / 对话相关任务的 MemGPT 人设中的示例指令。 The following is information about myself. My task is to completely immerse myself in this role (I should never say that I am an AI, and should reply as if I am playing this role). If the user asks me a question, I should reply with a best guess using the information in core memory and conversation search. 基线通过系统提示（预提示）收到如下指令： Your task is to answer a question from the user about your prior conversations. The following is a summary of all your prior conversations: CONVERSATION SUMMARY Answer from the perspective of the persona provided (do not say that you are an AI assistant). If you do not have enough information to answer the question, reply ’NO ANSWER’. Either reply with the answer, or reply ’NO ANSWER’, do not say anything else. 6.1.2 LLM 评判（DMR / 开场） 为检查 DMR 任务答案的正确性，我们使用 LLM 评判。该评判被提供基线方法与 MemGPT 生成的答案，并被要求用如下提示作出判断： Your task is to label an answer to a question as ’CORRECT’ or ’WRONG’. You will be given the following data: (1) a question (posed by one user to another user), (2) a ’gold’ (ground truth) answer, (3) a generated answer which you will score as CORRECT/WRONG. The point of the question is to ask about something one user should know about the other user based on their prior conversations. The gold answer will usually be a concise and short answer that includes the referenced topic, for example: Question: Do you remember what I got the last time I went to Hawaii? Gold answer: A shell necklace The generated answer might be much longer, but you should be generous with your grading - as long as it touches on the same topic as the gold answer, it should be counted as CORRECT. For example, the following answers would be considered CORRECT: Generated answer (CORRECT): Oh yeah, that was so fun! I got so much stuff there, including that shell necklace. Generated answer (CORRECT): I got a ton</p>
+<div class="toc-line">of stuff...</div>
+<p>that surfboard, the mug, the necklace, those coasters too.. Generated answer (CORRECT): That cute necklace The following answers would be considered WRONG: Generated answer (WRONG): Oh yeah, that was so fun! I got so much stuff there, including that mug. Generated answer (WRONG): I got a ton</p>
+<div class="toc-line">of stuff...</div>
+<p>that surfboard, the mug, those coasters too.. Generated answer (WRONG): I’m sorry, I don’t remember what you’re talking about. Now it’s time for the real question: Question: QUESTION Gold answer: GOLD ANSWER Generated answer: GENERATED ANSWER First, provide a short (one sentence) explanation of your reasoning, then finish with CORRECT or WRONG. Do NOT include both CORRECT and WRONG in your response, or it will break the evaluation script. 6.1.3 自指令 DMR 数据集生成 DMR 问答对用如下提示与原始 MSC 数据集生成：Your task is to write a “memory challenge” question for a simulated dialogue between two users. You get as input: - personas for each user (gives you their basic facts) - a record of an old chat the two users had with each other Your task is to write a question from user A to user B that test’s user B’s memory. The question should be crafted in a way that user B must have actually participated in the prior conversation to answer properly, not just have read the persona summary. Do NOT under any circumstances create a</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页进入附录，提示词保持英文：MemGPT 人设、基线摘要提示、LLM 评判如何判对错，以及怎么造「必须翻旧聊天才能答」的记忆题。
+这很重要，因为它让你看见表 2 的分数是怎么判出来的——判官被要求宽松，只要点到同一话题就算对。
+类比：考试评分细则比成绩单更关键；宽松判分会让「说得长」显得更会记。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-12" data-page="12">
+  <div class="page-label">第 12 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-012.jpg" alt="PDF page 12" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems question that can be answered using the persona information (that’s considered cheating). Instead, write a question that can only be answered by looking at the old chat log (and is not contained in the persona information). For example, given the following chat log and persona summaries: old chat between user A and user B A: Are you into surfing? I’m super into surfing myself B: Actually I’m looking to learn. Maybe you could give me a basic lesson some time! A: Yeah for sure! We could go to Pacifica, the waves there are pretty light and easy B: That sounds awesome A: There’s even a cool Taco Bell right by the beach, could grab a bite after B: What about this Sunday around noon? A: Yeah let’s do it! user A persona: I like surfing I grew up in Santa Cruz user B persona: I work in tech I live in downtown San Francisco Here’s an example of a good question that sounds natural, and an answer that cannot be directly inferred from user A’s persona: User B’s question for user A B: Remember that one time we went surfing? What was that one place we went to for lunch called? A: Taco Bell! This is an example of a bad question, where the question comes across as unnatural, and the answer can be inferred directly from user A’s persona: User B’s question for user A B: Do you like surfing? A: Yes, I like surfing Never, ever, ever create questions that can be answered from the persona information.</p>
+<h3>6.1.4. DOCUMENT ANALYSIS INSTRUCTIONS</h3>
+<p>Example instructions used in the preprompt for document analysis tasks. You are MemGPT DOC-QA bot. Your job is to answer questions about documents that are stored in your archival memory. The answer to the users question will ALWAYS be in your archival memory, so remember to keep searching if you can’t find the answer. Answer the questions as if though the year is 2018. Questions were provided to MemGPT with the following prompt: Search your archival memory to answer the provided question. Provide both the answer and the archival memory result from which you determined your answer. Format your response with the format ’ANSWER: [YOUR ANSWER], DOCUMENT: [ARCHIVAL MEMORY TEXT]. Your task is to answer the question: For baselines, the following prompt along with a retrieved list of documents was provided: Answer the question provided according to the list of documents below (some of which might be irrelevant. In your response, provide both the answer and the document text from which you determined the answer. Format your response with the format ’ANSWER: &lt;YOUR ANSWER&gt;, DOCUMENT: [DOCUMENT TEXT]’. If none of the documents provided have the answer to the question, reply with ’INSUFFICIENT INFORMATION’. Do NOT provide an answer if you cannot find it in the provided documents. Your response will only be considered correct if you provide both the answer and relevant document text, or say ’INSUFFICIENT INFORMATION’. Answer the question as if though the current year is 2018.</p>
+<h3>6.1.5. LLM JUDGE (DOCUMENT ANALYSIS)</h3>
+<p>In order to both check the correctness of the answer for the document analysis task, and also to ensure that the answer was properly derived from the provided text (rather than from the model weights), we used an LLM judge. The LLM judge was provided the answers generated by both baseline approaches and MemGPT, and asked to make a judgement with the following prompt: Your task is to evaluate whether an LLM correct answered a question. The LLM response should be the format &quot;ANSWER: [answer], DOCUMENT: [document text]&quot; or say &quot;INSUFFICIENT INFORMATION&quot;. The true answer is provided in the format &quot;TRUE ANSWER:[list of possible</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型 question that can be answered using the persona information (that’s considered cheating). Instead, write a question that can only be answered by looking at the old chat log (and is not contained in the persona information). For example, given the following chat log and persona summaries: old chat between user A and user B A: Are you into surfing? I’m super into surfing myself B: Actually I’m looking to learn. Maybe you could give me a basic lesson some time! A: Yeah for sure! We could go to Pacifica, the waves there are pretty light and easy B: That sounds awesome A: There’s even a cool Taco Bell right by the beach, could grab a bite after B: What about this Sunday around noon? A: Yeah let’s do it! user A persona: I like surfing I grew up in Santa Cruz user B persona: I work in tech I live in downtown San Francisco Here’s an example of a good question that sounds natural, and an answer that cannot be directly inferred from user A’s persona: User B’s question for user A B: Remember that one time we went surfing? What was that one place we went to for lunch called? A: Taco Bell! This is an example of a bad question, where the question comes across as unnatural, and the answer can be inferred directly from user A’s persona: User B’s question for user A B: Do you like surfing? A: Yes, I like surfing Never, ever, ever create questions that can be answered from the persona information. 6.1.4 文档分析指令 用于文档分析任务预提示的示例指令。 You are MemGPT DOC-QA bot. Your job is to answer questions about documents that are stored in your archival memory. The answer to the users question will ALWAYS be in your archival memory, so remember to keep searching if you can’t find the answer. Answer the questions as if though the year is 2018. 向 MemGPT 提供问题的提示如下： Search your archival memory to answer the provided question. Provide both the answer and the archival memory result from which you determined your answer. Format your response with the format ’ANSWER: [YOUR ANSWER], DOCUMENT: [ARCHIVAL MEMORY TEXT]. Your task is to answer the question: 对于基线，将如下提示连同检索到的文档列表一起提供： Answer the question provided according to the list of documents below (some of which might be irrelevant. In your response, provide both the answer and the document text from which you determined the answer. Format your response with the format ’ANSWER: &lt;YOUR ANSWER&gt;, DOCUMENT: [DOCUMENT TEXT]’. If none of the documents provided have the answer to the question, reply with ’INSUFFICIENT INFORMATION’. Do NOT provide an answer if you cannot find it in the provided documents. Your response will only be considered correct if you provide both the answer and relevant document text, or say ’INSUFFICIENT INFORMATION’. Answer the question as if though the current year is 2018. 6.1.5 LLM 评判（文档分析） 为检查文档分析任务答案的正确性，并确保答案确实来自所提供文本（而非来自模型权重），我们使用 LLM 评判。该评判被提供基线方法与 MemGPT 生成的答案，并被要求用如下提示作出判断： Your task is to evaluate whether an LLM correct answered a question. The LLM response should be the format &quot;ANSWER: [answer], DOCUMENT: [document text]&quot; or say &quot;INSUFFICIENT INFORMATION&quot;. The true answer is provided in the format &quot;TRUE ANSWER:[list of possible</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页继续附录：造题时禁止用人设作弊；文档机器人被命令「答案一定在档案里，找不到就继续搜」；基线则必须根据给定文档回答或说信息不足。
+这很重要，因为它解释 MemGPT 为何会翻很多页——提示在逼它搜，不是模型天生有耐心。
+类比：老师对一个学生说「答案就在书架上，找不到就别停」；对另一个学生只发一叠讲义，「没有就交白卷」。</p></div>
+  </div>
+</section>
+<section class="page-block" id="page-13" data-page="13">
+  <div class="page-label">第 13 / 13 页</div>
+  <div class="grid4">
+    <div class="panel pdf" data-col="pdf"><img src="pages/page-013.jpg" alt="PDF page 13" loading="lazy" decoding="async"></div>
+    <div class="panel ocr content" data-col="ocr" lang="en"><p>MemGPT: Towards LLMs as Operating Systems answers]&quot;. The questions is provided in the format &quot;QUESTION: [question]&quot;. If the LLM response contains both the correct answer and corresponding document text, the response is correct. Even if the LLM’s answer and the true answer are slightly different in wording, the response is still correct. For example, if the answer is more specific than the true answer or uses a different phrasing that is still correct, the response is correct. If the LLM response if &quot;INSUFFICIENT INFORMATION&quot;, or the &quot;DOCUMENT&quot; field is missing, the response is incorrect. Respond with a single token: &quot;CORRECT&quot; or &quot;INCORRECT&quot;.</p>
+<h3>6.1.6. K/V TASK INSTRUCTIONS</h3>
+<p>The MemGPT agent was defined with the following persona, designed to encourage MemGPT to iteratively search: You are MemGPT DOC-QA bot. Your job is to answer questions about documents that are stored in your archival memory. The answer to the users question will ALWAYS be in your archival memory, so remember to keep searching if you can’t find the answer. DO NOT STOP SEARCHING UNTIL YOU VERIFY THAT THE VALUE IS NOT A KEY. Do not stop making nested lookups until this condition is met. Baselines were instructed with the following prompt: Below is a JSON object containing key-value pairings, all keys and values are 128-bit UUIDs, and your task is to return the value associated with the specified key. If a value itself is also a key, return the value of that key (do a nested lookup). For example, if the value of ’x’ is ’y’, but ’y’ is also a key, return the value of key ’y’.</p></div>
+    <div class="panel zh content" data-col="zh" lang="zh-CN"><p>MemGPT：走向作为操作系统的大语言模型 answers]&quot;. The questions is provided in the format &quot;QUESTION: [question]&quot;. If the LLM response contains both the correct answer and corresponding document text, the response is correct. Even if the LLM’s answer and the true answer are slightly different in wording, the response is still correct. For example, if the answer is more specific than the true answer or uses a different phrasing that is still correct, the response is correct. If the LLM response if &quot;INSUFFICIENT INFORMATION&quot;, or the &quot;DOCUMENT&quot; field is missing, the response is incorrect. Respond with a single token: &quot;CORRECT&quot; or &quot;INCORRECT&quot;. 6.1.6 K/V 任务指令 MemGPT 智能体用如下人设定义，旨在鼓励 MemGPT 迭代搜索： You are MemGPT DOC-QA bot. Your job is to answer questions about documents that are stored in your archival memory. The answer to the users question will ALWAYS be in your archival memory, so remember to keep searching if you can’t find the answer. DO NOT STOP SEARCHING UNTIL YOU VERIFY THAT THE VALUE IS NOT A KEY. Do not stop making nested lookups until this condition is met. 基线用如下提示被指示： Below is a JSON object containing key-value pairings, all keys and values are 128-bit UUIDs, and your task is to return the value associated with the specified key. If a value itself is also a key, return the value of that key (do a nested lookup). For example, if the value of ’x’ is ’y’, but ’y’ is also a key, return the value of key ’y’.</p></div>
+    <div class="panel plain content" data-col="plain" lang="zh-CN"><div class="plain-tag">白话解读</div><p>本页收束附录：文档评判要同时看到答案和出处；嵌套 KV 的人设写明「值还是键就别停」。提示词保持英文。
+这很重要，因为图 7 里 MemGPT 能多跳，很大程度是这条纪律写进了人设。
+类比：迷宫说明书最后一行写「见到死胡同先确认不是下一扇门」——不写这句，很多人走两步就出来。</p></div>
+  </div>
+</section>
+<article class="guide commentary" id="commentary">
+  <div class="guide-inner">
+<p class="eyebrow">读后评论 · 非论文原文</p>
+<h1>会换页，还不等于卸得干净</h1>
+<p class="note-box">以下是读者评论，用来对照正文，不是作者摘要。开读前只需看导读里的浓缩段；此处供读完 §2 与表 2 / 图 7 之后展开。</p>
+
+<h2>它解决的是「窗口装不下」，不是「组件可逆」</h2>
+<p>MemGPT 把上下文当成 RAM，把档案 / 回忆库当成磁盘，用函数和内存压力告警让模型自己换页。对长跑 <strong>agent harness</strong>，这很实用：会话可以跨周，文档可以过百万标记，而不必先换一个 1M 窗口的底座。</p>
+<p>Cordiverse 要的是另一层：卸掉时把副作用干净收回，以及依赖能声明、能随变化自动协调。这篇没有这两刀。消息被驱逐进回忆库、摘要被写进队列头、工作上下文被 <code>replace</code>；旧事实可以改写（图 4 的前男友），但没有「这条记忆依赖那条、撤权限时哪些嵌入该失效」的规约。换页是动态组合的半截：数据能进来出去，回收没有可逆效应，库与工具之间也没有空间可组合性。</p>
+
+<h2>数字好看时要一起读的限制</h2>
+<ul>
+  <li><strong>提示在逼它搜</strong>：附录写明答案一定在档案里、嵌套查找不要停。多跳成绩有一部分是人设纪律，不是模型自发的耐心。</li>
+  <li><strong>函数调用能力是门槛</strong>：GPT-3.5 上文档 QA 与嵌套 KV 明显掉点。和「弱模型造不了工具」同类：自管理内存把工具使用变成一等能力。</li>
+  <li><strong>检索器仍噪</strong>：作者承认常在穷尽结果前停止分页；无限上下文的错觉，受嵌入排序和提前停手两边夹击。</li>
+</ul>
+
+<h2>一句话判断</h2>
+<div class="claim">
+  <p><strong>价值</strong>在于把操作系统的分层内存与中断，做成 LLM 可调用的虚拟上下文，并在对话一致性与多跳检索上压过「摘要 / 一次塞进窗口」。<strong>缺口</strong>是：驱逐与改写没有卸载保证，存储层级没有依赖语义；成绩部分绑在「继续搜」的提示上。Cordiverse 要补的，仍是换页之后如何组合与回收。</p>
+</div>
+<p>若只带着一个问题回正文：盯 <a href="#page-3">图 3</a> 的函数链，和 <a href="#page-13">附录 6.1.6</a> 那句「值还是键就别停」。</p>
+
+    <div class="cta">
+      <button type="button" id="comment-to-guide">回导读</button>
+      <button type="button" id="comment-to-paper">从第 1 页读起</button>
+      <span class="hint">评论在正文之后；用顶栏「评论」可随时跳到这里。</span>
+    </div>
+  </div>
+</article>
+<footer class="note">
+  顶栏三个标签切换导读、正文与评论。正文工具栏可开关列（至少一列）；可见列横向均分撑满。英文「文本抽取」列支持划词查词：离线词库。快捷键：←/→ 或 K/J。
+</footer>
+
+<footer class="site">
+  <p class="copy">© 2026 生睿·SURY</p>
+  <p class="legal">本站由生睿软件（<a href="https://www.surysoft.com">www.surysoft.com</a>）提供，用于学术论文的对照阅读。中文译文、白话解读与读后评论仅供学习参考，不替代原文，亦不代表原作者立场。论文版权归原作者及权利人所有，引用请以原文为准。</p>
+  <p class="suggest">如有推荐的论文或博客，请发送至 <a href="mailto:hi@sury.cn">hi@sury.cn</a></p>
+</footer>
+
+<div id="dict-pop" role="dialog" aria-live="polite"></div>
+<script>
+
+const COLS = ['pdf', 'ocr', 'zh', 'plain'];
+const STORAGE_KEY = 'memgpt-paper-cols-v1';
+const total = 13;
+let cur = 1;
+const jump = document.getElementById('jump');
+const root = document.documentElement;
+for (let i = 1; i <= total; i++) {
+  const opt = document.createElement('option');
+  opt.value = String(i);
+  opt.textContent = String(i);
+  jump.appendChild(opt);
+}
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { pdf: true, ocr: true, zh: true, plain: true };
+    const obj = JSON.parse(raw);
+    const st = {};
+    for (const c of COLS) st[c] = obj[c] !== false;
+    if (!COLS.some(c => st[c])) st.pdf = true;
+    return st;
+  } catch {
+    return { pdf: true, ocr: true, zh: true, plain: true };
+  }
+}
+function saveState(st) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(st)); } catch {}
+}
+function visibleCount(st) {
+  return COLS.reduce((n, c) => n + (st[c] ? 1 : 0), 0);
+}
+function applyColumns(st) {
+  const visible = COLS.filter(c => st[c]);
+  root.style.setProperty('--cols', visible.map(() => 'minmax(0, 1fr)').join(' ') || '1fr');
+  document.querySelectorAll('[data-col]').forEach(el => {
+    el.classList.toggle('off', !st[el.getAttribute('data-col')]);
+  });
+  document.querySelectorAll('[data-col-toggle]').forEach(input => {
+    const c = input.getAttribute('data-col-toggle');
+    input.checked = !!st[c];
+    input.disabled = visibleCount(st) === 1 && st[c];
+    input.closest('label').classList.toggle('on', !!st[c]);
+  });
+  saveState(st);
+}
+let colState = loadState();
+applyColumns(colState);
+document.querySelectorAll('[data-col-toggle]').forEach(input => {
+  input.addEventListener('change', () => {
+    const c = input.getAttribute('data-col-toggle');
+    const next = { ...colState, [c]: input.checked };
+    if (visibleCount(next) < 1) { input.checked = true; return; }
+    colState = next;
+    applyColumns(colState);
+  });
+});
+
+function currentView() {
+  return document.documentElement.dataset.view || 'guide';
+}
+function syncTabs(view) {
+  document.querySelectorAll('.view-tabs a').forEach((a) => {
+    a.setAttribute('aria-selected', a.dataset.view === view ? 'true' : 'false');
+  });
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+}
+function setView(view) {
+  document.documentElement.dataset.view = view;
+  syncTabs(view);
+  syncChromeHeights();
+}
+function syncChromeHeights() {
+  const bar = document.querySelector('header.bar');
+  const tool = document.getElementById('paper-toolbar');
+  if (bar) root.style.setProperty('--bar-h', bar.offsetHeight + 'px');
+  if (tool && currentView() === 'paper' && tool.offsetHeight) {
+    root.style.setProperty('--tool-h', tool.offsetHeight + 'px');
+  }
+}
+function goPage(n) {
+  cur = Math.min(total, Math.max(1, n));
+  jump.value = String(cur);
+  setView('paper');
+  const el = document.getElementById('page-' + cur);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}
+function showGuide() {
+  setView('guide');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#guide') history.replaceState(null, '', '#guide');
+}
+function showComment() {
+  setView('comment');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (location.hash !== '#commentary') history.replaceState(null, '', '#commentary');
+}
+function applyHash() {
+  const h = location.hash.slice(1);
+  if (h === 'commentary') {
+    setView('comment');
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    return;
+  }
+  if (/^page-\d+$/.test(h)) {
+    const n = parseInt(h.slice(5), 10);
+    if (n >= 1 && n <= total) {
+      cur = n;
+      jump.value = String(cur);
+      setView('paper');
+      const el = document.getElementById('page-' + cur);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+      return;
+    }
+  }
+  setView('guide');
+  if (h && h !== 'guide') history.replaceState(null, '', '#guide');
+}
+document.addEventListener('click', (e) => {
+  const a = e.target.closest('a[href^="#"]');
+  if (!a) return;
+  const h = a.getAttribute('href').slice(1);
+  if (h === 'guide') document.documentElement.dataset.view = 'guide';
+  else if (h === 'commentary') document.documentElement.dataset.view = 'comment';
+  else if (/^page-\d+$/.test(h)) document.documentElement.dataset.view = 'paper';
+}, true);
+document.getElementById('prev').onclick = () => goPage(cur - 1);
+document.getElementById('next').onclick = () => goPage(cur + 1);
+document.getElementById('to-comment-from-guide').onclick = () => showComment();
+document.getElementById('start-reading').onclick = () => goPage(1);
+document.getElementById('comment-to-guide').onclick = () => showGuide();
+document.getElementById('comment-to-paper').onclick = () => goPage(1);
+jump.onchange = () => goPage(Number(jump.value));
+document.addEventListener('keydown', (e) => {
+  if (e.target.matches('input,textarea,select')) return;
+  if (e.key === 'Escape') hidePop();
+  if (currentView() !== 'paper') return;
+  if (e.key === 'ArrowLeft' || e.key === 'k') goPage(cur - 1);
+  if (e.key === 'ArrowRight' || e.key === 'j') goPage(cur + 1);
+});
+window.addEventListener('hashchange', applyHash);
+applyHash();
+window.addEventListener('resize', syncChromeHeights);
+const io = new IntersectionObserver((entries) => {
+  if (currentView() !== 'paper') return;
+  const vis = entries.filter(e => e.isIntersecting).sort((a,b) => b.intersectionRatio - a.intersectionRatio)[0];
+  if (!vis) return;
+  cur = Number(vis.target.dataset.page);
+  jump.value = String(cur);
+  const tabPaper = document.getElementById('tab-paper');
+  if (tabPaper) tabPaper.href = '#page-' + cur;
+  const hash = '#page-' + cur;
+  if (location.hash !== hash) history.replaceState(null, '', hash);
+}, { rootMargin: '-20% 0px -60% 0px', threshold: [0.1, 0.4] });
+document.querySelectorAll('.page-block').forEach(el => io.observe(el));
+
+/* ---- offline seamless dictionary ---- */
+const pop = document.getElementById('dict-pop');
+const D = (window.PAPER_DICT && window.PAPER_DICT.dict) || {};
+const ALIAS = (window.PAPER_DICT && window.PAPER_DICT.alias) || {};
+
+function normWord(w) {
+  return String(w || '').toLowerCase().replace(/^[^a-z]+|[^a-z]+$/g, '');
+}
+function morph(w) {
+  const out = [w];
+  if (w.endsWith('ies') && w.length > 4) out.push(w.slice(0, -3) + 'y');
+  if (w.endsWith('es') && w.length > 3) out.push(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 3) out.push(w.slice(0, -1));
+  if (w.endsWith('ing') && w.length > 5) { out.push(w.slice(0, -3)); out.push(w.slice(0, -3) + 'e'); }
+  if (w.endsWith('ed') && w.length > 3) { out.push(w.slice(0, -2)); out.push(w.slice(0, -1)); }
+  if (w.endsWith('ability') && w.length > 8) { out.push(w.slice(0, -7)); out.push(w.slice(0, -8) + 'e'); }
+  return out;
+}
+function lookup(raw) {
+  const words = String(raw).trim().split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 4) return null;
+  // try full phrase then each word
+  const candidates = [];
+  if (words.length > 1) candidates.push(normWord(words.join(' ')), normWord(words.join('-')));
+  for (const w of words) candidates.push(normWord(w));
+  for (const c0 of candidates) {
+    if (!c0) continue;
+    const chain = [c0, ALIAS[c0], ...morph(c0)].filter(Boolean);
+    for (const key of chain) {
+      if (D[key]) return { key, entry: D[key], q: raw.trim() };
+    }
+  }
+  return { key: normWord(words[0]), entry: null, q: raw.trim() };
+}
+function hidePop() { pop.classList.remove('show'); pop.innerHTML = ''; }
+function showPop(html, rect) {
+  pop.innerHTML = html;
+  pop.classList.add('show');
+  const pad = 10;
+  let left = rect.left;
+  let top = rect.bottom + 8;
+  const pw = pop.offsetWidth || 280;
+  const ph = pop.offsetHeight || 120;
+  if (left + pw > window.innerWidth - pad) left = window.innerWidth - pw - pad;
+  if (left < pad) left = pad;
+  if (top + ph > window.innerHeight - pad) top = Math.max(pad, rect.top - ph - 8);
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+function renderLookup(res) {
+  if (!res) return;
+  if (!res.entry) {
+    showPop(
+      `<div class="dw">${escapeHtml(res.q)}</div><div class="dm">词库暂无此词（离线子集）</div><div class="hint">本页划词即查 · 无需联网</div>`,
+      lastRect
+    );
+    return;
+  }
+  const p = res.entry.p ? `<div class="dp">/${escapeHtml(res.entry.p)}/</div>` : '';
+  const note = res.key !== normWord(res.q.split(/\s+/)[0]) ? `<div class="dm">词形还原 → ${escapeHtml(res.key)}</div>` : '';
+  showPop(
+    `<div class="dw">${escapeHtml(res.q)}</div>${p}<div class="dt">${escapeHtml(res.entry.t)}</div>${note}<div class="hint">离线词库 · 长期免费</div>`,
+    lastRect
+  );
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+let lastRect = { left: 0, top: 0, bottom: 0, right: 0 };
+let lookupTimer = null;
+function selectionInOcr() {
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed || !sel.rangeCount) return null;
+  const text = sel.toString().trim();
+  if (!text || text.length > 60) return null;
+  if (!/[A-Za-z]/.test(text)) return null;
+  const range = sel.getRangeAt(0);
+  const node = range.commonAncestorContainer;
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  if (!el || !el.closest) return null;
+  const panel = el.closest('.panel.ocr');
+  if (!panel) return null;
+  return { text, rect: range.getBoundingClientRect() };
+}
+function maybeLookup() {
+  const hit = selectionInOcr();
+  if (!hit) { hidePop(); return; }
+  lastRect = hit.rect;
+  renderLookup(lookup(hit.text));
+}
+document.addEventListener('mouseup', () => {
+  clearTimeout(lookupTimer);
+  lookupTimer = setTimeout(maybeLookup, 120);
+});
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'Shift') {
+    clearTimeout(lookupTimer);
+    lookupTimer = setTimeout(maybeLookup, 80);
+  }
+});
+document.addEventListener('scroll', () => hidePop(), true);
+document.addEventListener('mousedown', (e) => {
+  if (pop.contains(e.target)) return;
+  // allow selecting; hide when clicking elsewhere later via mouseup empty sel
+});
+
+</script>
+</body>
+</html>

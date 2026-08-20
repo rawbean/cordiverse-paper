@@ -1,9 +1,0 @@
-3.  Revertible Effects and Reactive Coeffects
-This section lifts the concepts of effects and coeffects introduced in Section 2 to runtime mechanisms, constructing a theory of dynamic composition. The central idea is to turn the typing 
-contexts carrying effects and coeffects into context types, i.e., runtime-operable types that reify 
-the context as a first-class entity. For the effect type, we model it as a context transformation 
-paired with an inverse, achieving local temporal composability. For the coeffect context, we 
-model it as a type carrying dependency information, achieving local spatial composability. An 
-observational equivalence on the coeffects then supplies the effects with independence. The 
-unified context that carries both effects and coeffects constitutes a programming paradigm in 
-its own right.

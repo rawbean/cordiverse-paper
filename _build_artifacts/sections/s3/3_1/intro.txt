@@ -1,9 +1,0 @@
-3.1.  Revertible Effects
-Temporal composability is the ability to load and unload components at runtime such that, upon 
-unloading, the shared environment is recovered to its pre-composition state. This requires that 
-every modification a component makes to the environment be both trackable and recoverable. 
-We therefore model an effect as a function of type Γ → Γ × (Γ → Γ): applied to the current 
-context, it yields the modified context together with an explicit inverse. Supplying that inverse 
-is what lets the effect be reverted, and returning it to the runtime is what makes the effect 
-trackable. We call such effects revertible: by tracking and composing these inverses during 
-execution, complete environment recovery becomes a structural guarantee.

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: cordiverse-paper
+description: 时空可组合性论文中英对照阅读站点（静态页）
+type: application
+version: 0.1.5
+appVersion: "0.1.5"
+keywords:
+  - paper
+  - static
+  - nginx

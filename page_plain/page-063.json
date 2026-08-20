@@ -1,4 +1,0 @@
-{
- "page": 63,
- "plain": "本页按字段做最小扰动对账：改 id/url 重建，改 isolate 重划领域，intercept 原地改，config 交给组件差分，disabled 装卸。隔离支持本地/全局 realm，并用 delimiter 标签判断绑定是不是自己的。工程直觉：像 reconcile 循环——只动该动的那一块，避免整树推倒重来。"
-}
