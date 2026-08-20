@@ -2,7 +2,7 @@
 image:
   repository: docker.gw.sury.cn/library/cordiverse-paper
   pullPolicy: IfNotPresent
-  tag: "0.1.8"
+  tag: "0.1.9"
 
 imagePullSecrets:
   - name: harbor-registry
