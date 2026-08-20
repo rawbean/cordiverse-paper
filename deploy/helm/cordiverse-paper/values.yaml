@@ -2,7 +2,7 @@
 image:
   repository: docker.gw.sury.cn/library/cordiverse-paper
   pullPolicy: IfNotPresent
-  tag: "0.1.5"
+  tag: "0.1.8"
 
 imagePullSecrets:
   - name: harbor-registry
@@ -33,22 +33,6 @@ service:
   type: ClusterIP
   port: 80
   targetPort: 8080
-
-ingress:
-  enabled: true
-  className: nginx
-  annotations: {}
-    # kubernetes.io/tls-acme: "true"
-    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  hosts:
-    - host: paper.example.com
-      paths:
-        - path: /
-          pathType: Prefix
-  tls: []
-    # - secretName: cordiverse-paper-tls
-    #   hosts:
-    #     - paper.example.com
 
 resources:
   requests:

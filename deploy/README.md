@@ -33,10 +33,7 @@ make release VERSION=1.2.3   # 指定版本，必须与当前不同
 helm upgrade --install cordiverse-paper \
   oci://docker.gw.sury.cn/library/charts/cordiverse-paper \
   --version 0.1.0 \
-  --namespace paper --create-namespace \
-  --set ingress.hosts[0].host=paper.example.com \
-  --set ingress.hosts[0].paths[0].path=/ \
-  --set ingress.hosts[0].paths[0].pathType=Prefix
+  --namespace paper --create-namespace
 ```
 
 本地 chart：

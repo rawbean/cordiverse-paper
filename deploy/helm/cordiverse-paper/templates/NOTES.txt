@@ -2,16 +2,9 @@
 
 1. 在 Rancher 中：
    - 工作负载 → Deployment「{{ include "cordiverse-paper.fullname" . }}」
-   - 服务发现 → Ingress「{{ include "cordiverse-paper.fullname" . }}」
+   - 服务发现 → Service「{{ include "cordiverse-paper.fullname" . }}」
 
-{{- if .Values.ingress.enabled }}
-2. 浏览：
-{{- range .Values.ingress.hosts }}
-   http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}{{ if .paths }}{{ (index .paths 0).path }}{{ else }}/{{ end }}
-{{- end }}
-{{- else }}
-2. 未启用 Ingress 时，用 Service 端口转发：
+2. 用 Service 端口转发：
    kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "cordiverse-paper.fullname" . }} 8080:{{ .Values.service.port }}
-{{- end }}
 
 镜像需已推送到：{{ .Values.image.repository }}:{{ .Values.image.tag }}

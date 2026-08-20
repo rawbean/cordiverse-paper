@@ -37,6 +37,9 @@ site/papers/<category>/<id>/         # 对外阅读页（仅对照阅读需要�
   dict/paper-dict.js
 site/papers.json
 site/updates.json                   # 馆藏「更新记录」，仅论文上线，按日期倒序
+site/robots.txt
+site/sitemap.xml                    # 由 tools/apply_seo.py 重写
+site/site.json                      # origin：对外绝对域名，空则用根相对路径
 ```
 
 现有主题分类：`runtime`（运行时与可组合性）、`cited-harness`（馆藏标题「Cordiverse 所引：Harness 与工具」）、`protocol-loop`、`self-evolve`、`multi-agent`。相关文献可只放 PDF 并登记 json，不必做四栏页。
@@ -144,7 +147,31 @@ site/updates.json                   # 馆藏「更新记录」，仅论文上线
 
 宽度：内容壳不要 `max-width` 居中窄栏；可见列 `minmax(0,1fr)`。
 
-### 6. 自检
+### 6. SEO
+
+登记 `papers.json` 后必须跑：
+
+```bash
+python3 tools/apply_seo.py
+```
+
+不要手写或改阅读页 `<!-- seo -->…<!-- /seo -->` 块；脚本按 `papers.json` 覆盖写入，并更新 `site/sitemap.xml` 与首页 `<!-- seo-noscript -->` 目录。`site/robots.txt` 已指向 `/sitemap.xml`，勿删。
+
+脚本写入的阅读页标签（缺一不可）：
+
+| 项 | 要求 |
+|----|------|
+| `<title>` | `<中文标题> — 论文对照阅读`（不要再用「四栏对照」） |
+| `meta name="description"` | 中英标题 + 作者 + 「含白话导读与读后评论」 |
+| `link rel="canonical"` | `/papers/<category>/<id>/`（`site.json` 的 `origin` 非空则加前缀） |
+| `link rel="icon"` | `../../../assets/SurySoft-mark.svg` |
+| Open Graph / Twitter | `og:type=article`、`og:locale=zh_CN`、`og:site_name=论文对照阅读`、`twitter:card=summary` |
+| 学术 | `citation_title`（英文题）、`citation_author`；有 `source` 则 `link rel="alternate"` 原文 |
+| JSON-LD | `ScholarlyArticle`，`publisher` 为生睿软件 |
+
+馆藏首页与 `updates.html` 已有 WebSite / CollectionPage 的 description、canonical、og；**不要**为加一篇论文去改这两页的 head，只允许脚本改首页 noscript。对外正式域名写入 `site/site.json` 的 `origin`（如 `https://paper.example.com`）后再跑脚本；空字符串保持根相对路径。
+
+### 7. 自检
 
 - [ ] `site/papers/<category>/<id>/index.html`、全页 jpg、`dict/paper-dict.js` 存在
 - [ ] `index.html` 的 `</head>` 前含 `hm.js?868def992b6aa420677094b2f0cd5486`
@@ -152,6 +179,7 @@ site/updates.json                   # 馆藏「更新记录」，仅论文上线
 - [ ] `papers/<category>/<id>/paper.pdf` 已就位；`papers.json` 含 `path`、`file` 与 `source`
 - [ ] `papers.json` 的 `path` 以 `/` 结尾，且 `category` 与目录一致
 - [ ] `site/updates.json` 最前有当天条目，且 `papers` 含该 id
+- [ ] 已跑 `python3 tools/apply_seo.py`；该篇 `index.html` 含 `rel="canonical"` 与 `name="description"`
 - [ ] 馆藏「进入阅读」指向 `papers/<category>/<id>/index.html`（不要只写目录路径）
 - [ ] 硬刷新后：馆藏 → 进入阅读 → 馆藏；三个 Tab 与正文翻页可用
 - [ ] 未改 Helm/Dockerfile（静态 `site/` 已覆盖新目录）
@@ -162,6 +190,7 @@ site/updates.json                   # 馆藏「更新记录」，仅论文上线
 - 不要调用在线翻译/词典 API 作为运行时依赖
 - 不要把 `papers/**/artifacts/`、`papers/_shared/` 打进镜像
 - 不要重写已有论文，除非用户点名
+- 不要手改阅读页 `<!-- seo -->` 块或漏跑 `tools/apply_seo.py`
 
 ## 用户侧最短提示词
 
@@ -174,5 +203,5 @@ site/updates.json                   # 馆藏「更新记录」，仅论文上线
 - id：<slug>
 - 标题中/英：<...>
 - 作者：<...>
-做完登记 papers.json，并自检馆藏进出与导读/评论链接。
+做完登记 papers.json 与 updates.json，跑 apply_seo.py，并自检馆藏进出与导读/评论链接。
 ```
