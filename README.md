@@ -1,6 +1,6 @@
 # A Programming Paradigm for Spatiotemporal Composability
 
-**[推荐阅读](site/papers/featured/cordiverse/)** · **[馆藏](site/index.html)** · **[Read the paper (PDF)](papers/featured/cordiverse/paper.pdf)** · Draft of August 13, 2026
+**[对照阅读](site/papers/featured/cordiverse/)** · **[馆藏](site/index.html)** · **[Read the paper (PDF)](papers/featured/cordiverse/paper.pdf)** · Draft of August 13, 2026
 
 > This is a preprint under active revision. The content may change substantially; please cite the latest version and check back before relying on specific results.
 

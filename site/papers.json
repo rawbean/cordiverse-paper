@@ -1,19 +1,14 @@
 {
   "categories": [
     {
-      "id": "featured",
-      "titleZh": "推荐阅读",
-      "title": "Recommended"
-    },
-    {
       "id": "runtime",
       "titleZh": "运行时与可组合性",
       "title": "Runtime and composability"
     },
     {
       "id": "cited-harness",
-      "titleZh": "论文已引用：Harness 与工具",
-      "title": "Cited: harness and tools"
+      "titleZh": "Cordiverse 所引：Harness 与工具",
+      "title": "Cited by Cordiverse: harness and tools"
     },
     {
       "id": "protocol-loop",

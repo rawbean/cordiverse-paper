@@ -1,0 +1,34 @@
+{
+  "updates": [
+    {
+      "date": "2026-08",
+      "title": "新增对照阅读",
+      "items": [
+        "上线论文对照阅读馆藏，收录下列篇目。"
+      ],
+      "papers": [
+        "cordiverse",
+        "harness-engineering",
+        "harness-design-long-running",
+        "llm-agent-survey",
+        "tool-learning",
+        "memgpt",
+        "multi-agent-survey",
+        "latm",
+        "react",
+        "toolformer",
+        "voyager",
+        "building-effective-agents",
+        "mcp",
+        "swe-agent",
+        "codeact",
+        "darwin-godel-machine",
+        "live-swe-agent",
+        "generative-agents",
+        "autogen",
+        "metagpt",
+        "camel"
+      ]
+    }
+  ]
+}

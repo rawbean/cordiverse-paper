@@ -15,10 +15,10 @@ description: >-
 
 - PDF 路径（或已在仓库里的文件）
 - 文档 id：小写字母/数字/连字符，如 `cordiverse`
-- 分类 category：须是 `site/papers.json` 里已有的主题分类（`runtime`、`cited-harness`、`protocol-loop`、`self-evolve`、`multi-agent`）。不要用 `featured` 当主题：`featured` 只是馆藏「推荐阅读」栏，由带 `path` 的篇目自动列入。
+- 分类 category：须是 `site/papers.json` 里已有的主题分类（`runtime`、`cited-harness`、`protocol-loop`、`self-evolve`、`multi-agent`）。不要用 `featured` 当主题：那只是 Cordiverse 阅读页的历史目录名。
 - 中英文标题、作者（缺则从 PDF 首页抽）
 
-未指定 id 时，从英文标题生成短 slug，先给用户确认再开工。未指定 category 时，先确认主题分类；不要为了「推荐」去改 category，登记 `path` 后会同时出现在推荐阅读与该主题栏。
+未指定 id 时，从英文标题生成短 slug，先给用户确认再开工。未指定 category 时，先确认主题分类。馆藏首页「本地收藏」来自浏览器 `localStorage`，不要往 `papers.json` 加推荐栏。
 
 对外 URL：`/papers/<category>/<id>/`。
 
@@ -36,9 +36,10 @@ site/papers/<category>/<id>/         # 对外阅读页（仅对照阅读需要�
   pages/page-NNN.jpg
   dict/paper-dict.js
 site/papers.json
+site/updates.json                   # 馆藏「更新记录」，仅论文上线，按日期倒序
 ```
 
-现有主题分类：`runtime`（运行时与可组合性）、`cited-harness`、`protocol-loop`、`self-evolve`、`multi-agent`。`featured` 是馆藏「推荐阅读」栏，不是目录分类。相关文献可只放 PDF 并登记 json，不必做四栏页。
+现有主题分类：`runtime`（运行时与可组合性）、`cited-harness`（馆藏标题「Cordiverse 所引：Harness 与工具」）、`protocol-loop`、`self-evolve`、`multi-agent`。相关文献可只放 PDF 并登记 json，不必做四栏页。
 
 用户给了任意 PDF 路径时：先复制为 `papers/<category>/<id>/paper.pdf`，后续只读这份。不要把新 PDF 扔在仓库根目录。
 
@@ -60,7 +61,18 @@ site/papers.json
 
 `path` 相对 `site/`（对照阅读页，仅已组装的篇目需要）；`file` 相对仓库根（本地 PDF）；`source` 为原始出处 URL；`curated` 为整理年月 `YYYY-MM`。
 
-馆藏卡片列表以 `papers.json` 为准，不要往顶栏加具体论文链接。
+馆藏卡片列表以 `papers.json` 为准，不要往顶栏加具体论文链接。上线一篇对照阅读后，在 `site/updates.json` 的 `updates` 数组**最前**插入一条（日期用当天 `YYYY-MM-DD`）：
+
+```json
+{
+  "date": "YYYY-MM-DD",
+  "title": "新增对照阅读",
+  "items": ["上线《<中文标题>》。"],
+  "papers": ["<id>"]
+}
+```
+
+同一天已有「新增对照阅读」则合并进该条的 `items` / `papers`，不要另开。只记论文上线，不要写站点功能变更。`updates.html` 按 `date` 倒序渲染。
 
 ## 实现步骤
 
@@ -106,6 +118,7 @@ site/papers.json
 | 能力 | 要求 |
 |------|------|
 | 馆藏 | 顶栏品牌与馆藏首页一致：标志 +「论文对照阅读」链到 `../../../index.html`；顶栏展示该篇中文标题，其下为作者信息 |
+| 收藏 | `<html>` 带 `data-paper-id="<id>"`；`</head>` 内引入 `../../../assets/favorites.js`（与 Cordiverse 同钥 `sury-paper-favs`）。脚本会在顶栏插入收藏按钮 |
 | 导读 / 正文 / 评论 | 三个 Tab，真链接 `#guide` / `#page-k` / `#commentary`，不是纯按钮 |
 | 四栏 | 仅正文 Tab：PDF 图 · 结构化英文 · 结构化中文 · 白话；正文工具栏可开关列，至少一列，`--cols` 均分撑满横向 |
 | 页码 | 仅正文 1..N；`#page-k`。导读与评论不占页码。列开关与翻页在正文工具栏，不进顶栏 |
@@ -135,8 +148,10 @@ site/papers.json
 
 - [ ] `site/papers/<category>/<id>/index.html`、全页 jpg、`dict/paper-dict.js` 存在
 - [ ] `index.html` 的 `</head>` 前含 `hm.js?868def992b6aa420677094b2f0cd5486`
+- [ ] `<html>` 有 `data-paper-id="<id>"`，且引入 `../../../assets/favorites.js`
 - [ ] `papers/<category>/<id>/paper.pdf` 已就位；`papers.json` 含 `path`、`file` 与 `source`
 - [ ] `papers.json` 的 `path` 以 `/` 结尾，且 `category` 与目录一致
+- [ ] `site/updates.json` 最前有当天条目，且 `papers` 含该 id
 - [ ] 馆藏「进入阅读」指向 `papers/<category>/<id>/index.html`（不要只写目录路径）
 - [ ] 硬刷新后：馆藏 → 进入阅读 → 馆藏；三个 Tab 与正文翻页可用
 - [ ] 未改 Helm/Dockerfile（静态 `site/` 已覆盖新目录）
